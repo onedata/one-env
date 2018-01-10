@@ -1,0 +1,10 @@
+# Default values for onedata-cli.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image: onedata/rest-cli:17.06.0-beta6
+imagePullPolicy: IfNotPresent
+
+wait_for:
+  image: onedata/k8s-wait-for:v1.0.1
+  imagePullPolicy: IfNotPresent

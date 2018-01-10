@@ -1,0 +1,81 @@
+{{- $nodes := (default .Values .Values.mountBinaries).nodes }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" $ }}-onezone-config
+  labels:
+    app: {{ template "fullname" $ }}
+    chart: {{ $.Chart.Name }}
+    release: {{ $.Release.Name  }}
+    heritage: {{ $.Release.Service }}
+  annotations:
+    version: "{{ $.Chart.Version }}"
+data:
+  ONEPANEL_LOG_LEVEL: {{ default $.Values.log_level "info" | quote }}
+  ONEPANEL_BATCH_MODE: {{ $.Values.onepanel_batch_mode_enabled | quote }}
+  ONEZONE_CONFIG: |
+      cluster:
+        autoDeploy: true
+        domainName: {{ template "service_url" $ }}
+        nodes:
+          {{- range $node := $nodes }}
+          {{ $node.name }}:
+            hostname: {{ template "fullname" $ }}-{{ $node.name }}-0
+          {{- end }}
+        managers:
+          mainNode: {{ $.Values.mainNode }}
+          nodes:
+      {{- with $.Values.cluster_config.managers }}
+          {{- range $node := . }}
+            - {{ $node }}
+          {{- end }}
+      {{- else }}
+          {{- range $node := $nodes }}
+            - {{ $node.name }}
+          {{- end }}
+      {{- end }}
+        workers:
+          nodes:
+      {{- with $.Values.cluster_config.workers }}
+          {{- range $node := . }}
+            - {{ $node }}
+          {{- end }}
+      {{- else }}
+          {{- range $node := $nodes }}
+            - {{ $node.name }}
+          {{- end }}
+      {{- end }}
+        databases:
+          nodes:
+      {{- with $.Values.cluster_config.databases }}
+          {{- range $node := . }}
+            - {{ $node }}
+          {{- end }}
+      {{- else }}
+          {{- range $node :=  $nodes }}
+            - {{ $node.name }}
+          {{- end }}
+      {{- end }}
+      onezone:
+        {{ if $.Values.name -}}
+        name: {{ $.Values.name }}
+        {{- else -}}
+        name: {{ template "fullname" $ }}
+        {{- end }}
+        domainName: {{ template "service_url" $ }}
+        {{- if or $.Values.onepanel_admin_users $.Values.onepanel_users }}
+      onepanel:
+        users:
+          {{- range $.Values.onepanel_admin_users }}
+          {{ .login }}:
+            password: {{ .password }}
+            userRole: admin
+          {{- end }}
+          {{- range $.Values.onepanel_users }}
+          {{ .login }}:
+            password: {{ .password }}
+            userRole: regular
+          {{- end }}
+      {{- end }}
+{{ toYaml $.Values.onezoneConfig | indent 2 }}

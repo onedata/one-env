@@ -1,0 +1,177 @@
+{{- $nodes := (default .Values .Values.mountBinaries).nodes }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" . }}-oneprovider-config
+  labels:
+    app: {{ template "fullname" . }}
+    chart: {{ .Chart.Name }}
+    release: {{ .Release.Name  }}
+    heritage: {{ .Release.Service }}
+  annotations:
+    version: "{{ .Chart.Version }}"
+data:
+  ONEPANEL_LOG_LEVEL: {{ default .Values.log_level "info" | quote }}
+  ONEPANEL_BATCH_MODE: {{ .Values.onepanel_batch_mode_enabled | quote }}
+  ONEPROVIDER_CONFIG: |
+              cluster:
+                domainName: "{{ template "service_url" $ }}"
+                nodes:
+                  {{- range $node := $nodes }}
+                  {{ $node.name }}:
+                    hostname: {{ template "fullname" $ }}-{{ $node.name }}-0
+                  {{- end }}
+                managers:
+                  mainNode: {{ .Values.mainNode }}
+                  nodes:
+              {{- with .Values.cluster_config.managers }}
+                  {{- range $node := . }}
+                    - {{ $node }}
+                  {{- end }}
+              {{- else }}
+                  {{- range $node := $nodes }}
+                    - {{ $node.name }}
+                  {{- end }}
+              {{- end }}
+                workers:
+                  nodes:
+              {{- with .Values.cluster_config.workers }}
+                  {{- range $node := . }}
+                    - {{ $node }}
+                  {{- end }}
+              {{- else }}
+                  {{- range $node := $nodes }}
+                    - {{ $node.name }}
+                  {{- end }}
+              {{- end }}
+                databases:
+                  nodes:
+              {{- with $.Values.cluster_config.databases }}
+                  {{- range $node := . }}
+                    - {{ $node }}
+                  {{- end }}
+              {{- else }}
+                  {{- range $node :=  $nodes }}
+                    - {{ $node.name }}
+                  {{- end }}
+              {{- end }}
+                {{- if or (eq (len $nodes) 1) (or (index $.Values "volume-s3" "enabled")) (or (index $.Values "volume-ceph" "enabled") (or (index $.Values "volume-gluster" "enabled") (index $.Values "volume-swift" "enabled"))) }}
+                storages:
+                {{- end }}
+                {{- if and (index $.Values "posix" "enabled") (eq (len $nodes) 1) }}
+                  posix:
+                    type: posix
+                    # TODO: why this path is hardcoeded and why i don't have it during installation -> /volumes/storage
+                    # I  deleted job check.... mby that's why should investigate this
+                    mountPoint: /volumes
+                  {{- if (index $.Values "posix" "luma-enabled") }}
+                    lumaEnabled: {{ $.Values.luma.enabled }}
+                    lumaUrl: {{ template "luma_name" $ }}:5000
+                    lumaCacheTimeout: {{ $.Values.luma.lumaCacheTimeout }}
+                    lumaApiKey: {{ $.Values.luma.lumaApiKey }}
+                  {{- end }}
+                {{- end }}
+                {{- if (index $.Values "volume-nfs" "enabled") }}
+                  nfs:
+                    type: posix
+                    mountPoint: {{ index $.Values "volume-nfs" "container_mount_path" }}
+                  {{- if (index $.Values "volume-nfs" "luma-enabled") }}
+                    lumaEnabled: {{ $.Values.luma.enabled }}
+                    lumaUrl: {{ template "luma_name" $ }}:5000
+                    lumaCacheTimeout: {{ $.Values.luma.lumaCacheTimeout }}
+                    lumaApiKey: {{ $.Values.luma.lumaApiKey }}
+                  {{- end }}
+                {{- end }}
+                {{- if (index $.Values "volume-s3" "enabled") }}
+                  s3:
+                    type: s3
+                    hostname: {{ template "volume-s3_name" $ }}:8000
+                    bucketName: {{ index $.Values "volume-s3" "bucketName" }}
+                    accessKey: {{ index $.Values "volume-s3" "key_id" }}
+                    secretKey: {{ index $.Values "volume-s3" "access_key" }}
+                    insecure: {{ index $.Values "volume-s3" "insecure" }}
+                  {{- if (index $.Values "volume-s3" "luma-enabled") }}
+                    lumaEnabled: {{ $.Values.luma.enabled }}
+                    lumaUrl: {{ template "luma_name" $ }}:5000
+                    lumaCacheTimeout: {{ $.Values.luma.lumaCacheTimeout }}
+                    lumaApiKey: {{ $.Values.luma.lumaApiKey }}
+                  {{- end }}
+                {{- end }}
+                {{- if (index $.Values "volume-ceph" "enabled") }}
+                  ceph:
+                    type: ceph
+                    username: {{ index $.Values "volume-ceph" "username" }}
+                    key: {{ index $.Values "volume-ceph" "key" }}
+                    monitorHostname: {{ template "volume-ceph_name" $ }}
+                    clusterName: {{ index $.Values "volume-ceph" "cluster_name" }}
+                    poolName: {{ index $.Values "volume-ceph" "pool_name" }}
+                    insecure: {{ index $.Values "volume-ceph" "insecure" }}
+                  {{- if (index $.Values "volume-ceph" "luma-enabled") }}
+                    lumaEnabled: {{ $.Values.luma.enabled }}
+                    lumaUrl: {{ template "luma_name" $ }}:5000
+                    lumaCacheTimeout: {{ $.Values.luma.lumaCacheTimeout }}
+                    lumaApiKey: {{ $.Values.luma.lumaApiKey }}
+                  {{- end }}
+                {{- end }}
+                {{- if (index $.Values "volume-gluster" "enabled") }}
+                  gluster:
+                    type: glusterfs
+                    hostname: {{ template "volume-gluster_name" $ }}
+                    volume: {{ index $.Values "volume-gluster" "volumeName" }}
+                    transport: tcp
+                    insecure: {{ index $.Values "volume-gluster" "insecure" }}
+                  {{- if (index $.Values "volume-gluster" "luma-enabled") }}
+                    lumaEnabled: {{ $.Values.luma.enabled }}
+                    lumaUrl: {{ template "luma_name" $ }}:5000
+                    lumaCacheTimeout: {{ $.Values.luma.lumaCacheTimeout }}
+                    lumaApiKey: {{ $.Values.luma.lumaApiKey }}
+                  {{- end }}
+                {{- end }}
+                {{- if (index $.Values "volume-swift" "enabled") }}
+                  swift:
+                    type: swift
+                    authUrl: http://{{ template "volume-swift_name" $ }}:5000/v2.0/tokens
+                    tenantName: {{ index $.Values "volume-swift" "tenantName" }}
+                    containerName: {{ index $.Values "volume-swift" "containerName" }}
+                    username: {{ index $.Values "volume-swift" "username" }}
+                    password: {{ index $.Values "volume-swift" "password" }}
+                    insecure: {{ index $.Values "volume-swift" "insecure" }}
+                  {{- if (index $.Values "volume-swift" "luma-enabled") }}
+                    lumaEnabled: {{ $.Values.luma.enabled }}
+                    lumaUrl: {{ template "luma_name" $ }}:5000
+                    lumaCacheTimeout: {{ $.Values.luma.lumaCacheTimeout }}
+                    lumaApiKey: {{ $.Values.luma.lumaApiKey }}
+                  {{- end }}
+                {{- end }}
+              oneprovider:
+                register: true
+                {{ if $.Values.name -}}
+                name: {{ $.Values.name }}
+                {{- else -}}
+                name: {{ template "fullname" $ }}
+                {{- end }}
+                subdomainDelegation: false
+                domain: {{ template "service_url" $ }}
+                geoLatitude: {{ $.Values.geoLatitude }}
+                geoLongitude: {{ $.Values.geoLongitude }}
+              # TODO: make it possible for onedata services to communicate using
+              # system configured DNS. this will allow to put here just service name
+              # instead of FQDN
+              onezone:
+                domainName: {{ template "onezone_service_url" $ }}
+              {{- if or $.Values.onepanel_admin_users $.Values.onepanel_users }}
+              onepanel:
+                users:
+                  {{- range $.Values.onepanel_admin_users }}
+                  {{ .login }}:
+                    password: {{ .password }}
+                    userRole: admin
+                  {{- end }}
+                  {{- range $.Values.onepanel_users }}
+                  {{ .login }}:
+                    password: {{ .password }}
+                    userRole: regular
+                  {{- end }}
+              {{- end }}
+{{ toYaml .Values.oneproviderEnv | indent 2 }}

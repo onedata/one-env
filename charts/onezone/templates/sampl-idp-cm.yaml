@@ -1,0 +1,49 @@
+{{- if (index .Values "saml-idp" "enabled") }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" . }}-saml-config
+  labels:
+    app: {{ template "fullname" . }}
+    chart: {{ .Chart.Name }}
+    release: {{ .Release.Name  }}
+    heritage: {{ .Release.Service }}
+  annotations:
+    version: "{{ .Chart.Version }}"
+data:
+  saml.config: |-
+    #{
+        sp_config => #{
+            entity_id => "https://{{ template "service_url" . }}/sp",
+            cert_file => "/etc/oz_panel/certs/cert.pem",
+            key_file => "/etc/oz_panel/certs/key.pem",
+            organization_name => "Onedata",
+            organization_display_name => "Onedata",
+            tech_contact_name => "Lukasz Opiola",
+            tech_contact_email => "lopiola@cyfronet.pl",
+            sign_metadata => false,
+            sign_requests => true,
+            want_assertions_signed => true
+        },
+
+        supported_idps => #{
+
+            unitedid => #{
+                metadata_url => "https://{{ template "saml-idp_service_url" . }}/simplesaml/saml2/idp/metadata.php",
+                trusted_fingerprints => [
+                    "11:9b:9e:02:79:59:cd:b7:c6:62:cf:d0:75:d9:e2:ef:38:4e:44:5f"
+                ],
+                encrypts_assertions => true,
+                signs_assertions => true,
+                signs_envelopes => true,
+                attribute_mapping => #{
+                    id => uid,
+                    name => displayName,
+                    login => eduPersonPrincipalName,
+                    email => email
+                }
+            }
+
+        }
+    }.
+{{- end }}

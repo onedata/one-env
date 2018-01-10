@@ -1,0 +1,266 @@
+{{- $nodes := (default .Values .Values.mountBinaries).nodes }}
+{{- range $node := $nodes }}
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: {{ template "fullname" $ }}-{{$node.name}}
+  labels:
+    app: {{ template "fullname" $ }}
+    chart: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    heritage: {{ $.Release.Service }}
+    onedata-service: "oneprovider"
+  annotations:
+    version: "{{ $.Chart.Version }}"
+spec:
+  serviceName: {{ template "fullname" $ }}
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" $ }}
+        chart: {{ $.Chart.Name }}
+        release: {{ $.Release.Name }}
+        heritage: {{ $.Release.Service }}
+        onedata-service: "oneprovider"
+      annotations:
+        version: "{{ $.Chart.Version }}"
+    spec:
+      subdomain: {{ template "fullname" $ }}-{{$node.name}}
+      terminationGracePeriodSeconds: 0
+      {{- if $.Values.onedata_anti_affinity_enabled }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: onedata-service
+                operator: In
+                values:
+                - oneprovider
+                - onezone
+              - key: release
+                operator: In
+                values:
+                - {{ $.Release.Name }}
+            topologyKey: kubernetes.io/hostname
+      {{- end }}
+{{ include "imagePullSecrets" $ | indent 6 }}
+      {{- if or (eq (len $nodes) 1) (or (index $.Values "volume-s3" "enabled")) (or (index $.Values "volume-ceph" "enabled") (or (index $.Values "volume-gluster" "enabled") (or (index $.Values "volume-swift" "enabled") (index $.Values "generate-certificates" "enabled")))) }}
+      initContainers:
+      {{- end }}
+      {{- if (index $.Values "generate-certificates" "enabled") }}
+        - name: certificate-init-container
+          image: {{ index $.Values "generate-certificates" "image" }}
+          imagePullPolicy: {{ default $.Values.imagePullPolicy $.Values.global.imagePullPolicy | default "IfNotPresent" }}
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: CERT_DIR
+              value: /etc/tls
+          # TODO: POD_NAME
+          command:
+            - "/bin/sh"
+            - "-c"
+            - >
+              if [[ $POD_NAME != {{ template "fullname" $ }}-0 ]] ; then echo "Not generating certificates" ; exit 0 ; fi ;
+              mkdir $(CERT_DIR) ;
+              /certificate-init-container -secret-name={{ template "fullname" $ }}-secret-tls -labels=app={{ template "fullname" $ }},chart={{ $.Chart.Name }},release={{ $.Release.Name }},heritage={{ $.Release.Service }} -additional-dnsnames={{ template "fullname" $ }},{{ template "fullname" $ }}.$(NAMESPACE),{{ template "fullname" $ }}.$(NAMESPACE).svc -cert-dir=$(CERT_DIR) -namespace=$(NAMESPACE) -pod-ip=$(POD_IP) -pod-name=$(POD_NAME) -service-names={{ template "fullname" $ }} -cluster-domain={{ template "cluster_domain" $ }} ;
+      {{- end }}
+      {{- if (index $.Values "volume-s3" "enabled") }}
+        - name: wait-for-volume-s3-init
+          image: {{ $.Values.wait_for.image }}
+          imagePullPolicy: {{ default $.Values.wait_for.imagePullPolicy $.Values.global.imagePullPolicy | default "IfNotPresent" }}
+          args:
+            - "job"
+            - "{{ template "volume-s3_name" $ }}-init"
+      {{- end }}
+      {{- if (index $.Values "volume-ceph" "enabled") }}
+        - name: wait-for-volume-ceph
+          image: {{ $.Values.wait_for.image }}
+          imagePullPolicy: {{ default $.Values.wait_for.imagePullPolicy $.Values.global.imagePullPolicy | default "IfNotPresent" }}
+          args:
+            - "pod"
+            - "-lapp={{ template "volume-ceph_name" $ }}"
+      {{- end }}
+      {{- if (index $.Values "volume-gluster" "enabled") }}
+        - name: wait-for-volume-gluster
+          image: {{ $.Values.wait_for.image }}
+          imagePullPolicy: {{ default $.Values.wait_for.imagePullPolicy $.Values.global.imagePullPolicy | default "IfNotPresent" }}
+          args:
+            - "pod"
+            - "-lapp={{ template "volume-gluster_name" $ }}"
+      {{- end }}
+      {{- if (index $.Values "volume-swift" "enabled") }}
+        - name: wait-for-volume-swift
+          image: {{ $.Values.wait_for.image }}
+          imagePullPolicy: {{ default $.Values.wait_for.imagePullPolicy $.Values.global.imagePullPolicy | default "IfNotPresent" }}
+          args:
+            - "pod"
+            - "-lapp={{ template "volume-swift_name" $ }}"
+      {{- end }}
+      containers:
+      - name: {{ $.Chart.Name }}
+        image: {{ $.Values.image }}
+        imagePullPolicy: {{ default $.Values.imagePullPolicy $.Values.global.imagePullPolicy | default "IfNotPresent" }}
+        {{- if or $.Values.cpu $.Values.memory }}
+        resources:
+          requests:
+          {{- if $.Values.cpu }}
+            cpu: {{ $.Values.cpu }}
+          {{- end }}
+          {{- if $.Values.memory }}
+            memory: {{ $.Values.memory }}
+          {{- end }}
+        {{- end }}
+        ports:
+          - containerPort: 53
+          - containerPort: 80
+          - containerPort: 443
+          - containerPort: 5555
+          - containerPort: 5556
+          - containerPort: 6665
+          - containerPort: 6666
+          - containerPort: 7443
+          - containerPort: 8443
+          - containerPort: 8876
+          - containerPort: 8877
+          - containerPort: 9443
+        command:
+          - "/bin/bash"
+          - "-c"
+          - >
+            if [[ {{ quote $node.name }} != {{ quote $.Values.mainNode }} ]]; then export ONEPANEL_BATCH_MODE="false" ; fi ;
+            env ;
+            /root/oneprovider.sh ;
+            cat /var/log/op_panel/info.log ;
+            exit 1 ;
+        lifecycle:
+          preStop:
+            exec:
+              command:
+                - "sh"
+                - "-c"
+                - >
+                  op_panel stop ;
+                  op_worker stop ;
+                  cluster_manager stop ;
+                  /etc/init.d/couchbase-server stop ;
+                  pkill -f oneprovider.py ;
+        readinessProbe:
+          exec:
+            command:
+              - "/bin/bash"
+              - "-c"
+              - >
+                onepanel_ready() { sleep 5 ; exit 0 ; } ;
+                if [[ {{ quote $node.name }} == {{ quote $.Values.mainNode }} ]]; then exit 0 ; else onepanel_ready ; fi ;
+
+        {{- if $.Values.mountBinaries }}
+        env:
+          {{ range $node.binaries }}
+            {{ if eq .name "op-panel" }}
+              {{ if eq $.Values.suffix "" }}
+          - name: ONEPANEL_CONFIG_FILE
+            value: {{ default $.Values.mountBinaries.hostPathPrefix .hostPathPrefix }}/{{ .hostPath }}/tmp/{{ print "/oneprovider_" $node.name "_env.config" }}
+              {{ else }}
+          - name: ONEPANEL_CONFIG_FILE
+            value: {{ default $.Values.mountBinaries.hostPathPrefix .hostPathPrefix }}/{{ .hostPath }}/tmp/{{ print "/oneprovider-" $.Values.suffix  "_" $node.name "_env.config" }}
+              {{ end }}
+          - name: ONEPANEL_PATH
+            value: {{ default $.Values.mountBinaries.hostPathPrefix .hostPathPrefix }}/{{ .hostPath }}
+
+            {{ end }}
+          {{ end }}
+        {{- end }}
+
+        envFrom:
+        - configMapRef:
+            name: {{ template "fullname" $ }}-oneprovider-config
+
+        {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "volume-nfs" "enabled") ($.Values.mountBinaries) }}
+        volumeMounts:
+        {{- end }}
+      {{- if $.Values.mountBinaries }}
+        {{- range $node.binaries }}
+          {{- if .hostPath }}
+            - mountPath: {{ default $.Values.mountBinaries.hostPathPrefix .hostPathPrefix }}/{{ default .hostPath .mountPath }}
+              name: {{ .name }}
+            - mountPath: {{ default $.Values.mountBinaries.hostPathPrefix .hostPathPrefix }}/{{ default .hostPath .mountPath }}/tmp/base-rel-{{ $node.name }}
+              name: oneprovider-{{ .name }}-base-rel
+            - mountPath: {{ default $.Values.mountBinaries.hostPathPrefix .hostPathPrefix }}/{{ default .hostPath .mountPath }}/_build/default/rel/{{ .name | replace "-" "_"  }}
+              name: oneprovider-{{ .name }}-rel
+          {{- end }}
+        {{- end }}
+      {{- end }}
+      {{- if (index $.Values "generate-certificates" "enabled") }}
+          - mountPath: /etc/op_panel/certs/key.pem
+            subPath: tls.key
+            name: tls
+            readOnly: true
+          - mountPath: /etc/op_panel/certs/cert.pem
+            subPath: tls.crt
+            name: tls
+            readOnly: true
+          - mountPath: /etc/op_panel/cacerts/cacert.pem
+            subPath: k8s.crt
+            name: tls
+            readOnly: true
+          - mountPath: /etc/op_worker/cacerts/cacert.pem
+            subPath: k8s.crt
+            name: tls
+            readOnly: true
+          - mountPath: /etc/ssl/certs/kubernetes.crt
+            subPath: k8s.crt
+            name: tls
+            readOnly: true
+      {{- end }}
+      {{- if (index $.Values "volume-nfs" "enabled") }}
+          - mountPath: {{ index $.Values "volume-nfs" "container_mount_path" }}
+            name: nfs
+      {{- end }}
+    {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "volume-nfs" "enabled") ($.Values.mountBinaries) }}
+      volumes:
+    {{- end }}
+    {{- if $.Values.mountBinaries }}
+      {{- range $node.binaries }}
+        {{- if .hostPath }}
+          - name: {{ .name }}
+            hostPath:
+              path: {{ default $.Values.mountBinaries.vmPathPrefix .vmPathPrefix }}/{{ .hostPath }}
+          - name: oneprovider-{{ .name }}-base-rel
+            hostPath:
+              path: {{ default $.Values.mountBinaries.vmPathPrefix .vmPathPrefix }}/{{ .hostPath }}/_build/default/rel/{{ .name | replace "-" "_"  }}
+          - name: oneprovider-{{ .name }}-rel
+            hostPath:
+              {{ if eq $.Values.suffix "" }}
+                path: {{ default $.Values.mountBinaries.vmPathPrefix .vmPathPrefix }}/{{ .hostPath }}/tmp/oneprovider-{{ $node.name }}-{{ .name }}-rel
+              {{ else }}
+                path: {{ default $.Values.mountBinaries.vmPathPrefix .vmPathPrefix }}/{{ .hostPath }}/tmp/oneprovider-{{ $.Values.suffix }}-{{ $node.name }}-{{ .name }}-rel
+              {{ end }}
+
+        {{- end }}
+      {{- end }}
+    {{- end }}
+    {{- if (index $.Values "generate-certificates" "enabled") }}
+      - name: tls
+        secret:
+          secretName: {{ template "fullname" $ }}-secret-tls
+    {{- end }}
+    {{- if (index $.Values "volume-nfs" "enabled") }}
+      - name: nfs
+        persistentVolumeClaim:
+          claimName: {{ template "fullname" $ }}-nfs-pvc
+    {{- end }}
+{{ end }}

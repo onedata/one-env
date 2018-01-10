@@ -1,0 +1,92 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+  annotations:
+    version: "{{ .Chart.Version }}"
+spec:
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" . }}
+        chart: "{{ .Chart.Name }}"
+        release: "{{ .Release.Name }}"
+        heritage: "{{ .Release.Service }}"
+      annotations:
+        version: "{{ .Chart.Version }}"
+    spec:
+      initContainers:
+        - name: wait-for-onezone
+          image: {{ .Values.wait_for.image }}
+          imagePullPolicy: {{ default .Values.wait_for.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
+          args:
+            - "pod"
+            - "-lapp={{ template "onezone_name" . }}"
+        - name: get-client-token
+          image: {{ .Values.onedata_cli.image }}
+          imagePullPolicy: {{ default .Values.wait_for.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
+          env:
+            - name: ONEZONE_HOST
+              value: https://{{ template "onezone_name" . }}
+            - name: ONEZONE_BASIC_AUTH
+              value: admin:password
+          command:
+            - "sh"
+            - "-c"
+            - >
+              curl -k -u $ONEZONE_BASIC_AUTH -X POST -d "" -H "content-type: application/json" $ONEZONE_HOST/api/v3/onezone/user/client_tokens | jq -r ".token" > /shared/token
+          volumeMounts:
+          - mountPath: /shared
+            name: shared
+        - name: wait-for-oneprovider
+          image: {{ .Values.wait_for.image }}
+          imagePullPolicy: {{ default .Values.wait_for.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
+          args:
+            - "pod"
+            - "-lapp={{ template "oneprovider_name" . }}"
+      hostname: {{ .Chart.Name }}
+      subdomain: {{ template "fullname" . }}
+{{ include "imagePullSecrets" . | indent 6 }}
+      volumes:
+      - name: shared
+        emptyDir: {}
+      containers:
+      - name: {{ .Chart.Name }}
+        image: {{ .Values.image }}
+        imagePullPolicy: {{ default .Values.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
+        env:
+          - name: ONECLIENT_INSECURE
+            value: "true"
+          - name: ONECLIENT_ACCESS_TOKEN
+            value: "supplied_at_runtime"
+          - name: ONECLIENT_PROVIDER_HOST
+            value: "{{ template "oneprovider_name" . }}"
+        command:
+         - "sh"
+         - "-c"
+         - >
+           export ONECLIENT_ACCESS_TOKEN=$(cat /shared/token) ;
+           cat /shared/token ;
+           {{ if .Values.debug_mode }}
+           oneclient "/mnt/oneclient" ;
+           sleep infinity ;
+           {{ else }}
+           oneclient -f "/mnt/oneclient" ;
+           {{ end }}
+        readinessProbe:
+          exec:
+            command:
+             - "sh"
+             - "-c"
+             - >
+                mount | grep /mnt/oneclient ;
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /shared
+          name: shared

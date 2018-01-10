@@ -1,0 +1,14 @@
+dependencies:
+- name: oneclient
+  version: 0.2.9
+  repository: file://../../charts/oneclient
+  condition: oneclient.enabled
+
+- name: onedata-cli
+  version: 0.2.9
+  repository: file://../../charts/onedata-cli
+  condition: onedata-cli.enabled
+
+- name: onedata-chart-utils
+  version: 0.2.9
+  repository: file://../../charts/onedata-chart-utils

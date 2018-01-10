@@ -1,0 +1,31 @@
+onedata-1p:
+  onezone:
+    mainNode: node1
+    mountBinaries:
+      vmPathPrefix: "/hosthome"
+      hostPathPrefix: "/home"
+
+      nodes:
+        - name: node1
+          binaries:
+            - name: oz-panel
+              hostPath: michal/onedataThings/newEnvUp/onepanel_develop/onepanel
+            - name: oz-worker
+              hostPath: michal/onedataThings/newEnvUp/oz_worker
+            - name: cluster-manager
+              hostPath: michal/onedataThings/newEnvUp/cluster_manager
+
+  oneprovider-krakow:
+    mainNode: node1
+    mountBinaries:
+      vmPathPrefix: "/hosthome"
+      hostPathPrefix: "/home"
+
+      nodes:
+        - name: node1
+          binaries:
+            - name: op-panel
+              hostPath: michal/onedataThings/newEnvUp/onepanel_develop/op_panel/onepanel
+            - name: op-worker
+              hostPath: michal/onedataThings/newEnvUp/op_worker
+            - name: cluster-manager

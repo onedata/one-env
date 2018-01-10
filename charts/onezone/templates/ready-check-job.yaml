@@ -1,0 +1,44 @@
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "fullname" . }}-ready-check
+  labels:
+    app: {{ template "fullname" . }}
+    chart: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  annotations:
+    version: "{{ .Chart.Version }}"
+spec:
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" . }}
+        chart: {{ .Chart.Name }}
+        release: {{ .Release.Name  }}
+        heritage: {{ .Release.Service }}
+      annotations:
+        version: "{{ .Chart.Version }}"
+    spec:
+      restartPolicy: Never
+{{ include "imagePullSecrets" . | indent 6 }}
+      initContainers:
+      - name: wait-for-{{ .Chart.Name }}
+        image: byrnedo/alpine-curl
+        imagePullPolicy: {{ default .Values.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
+        command:
+          - "/bin/sh"
+          - "-c"
+          - >
+            user="" ;
+            while [ "$user" = "" ] ; do user="$(curl -k -u admin:password -sS --tlsv1.2 -X GET 'https://{{ template "onezone_name" . }}:9443/api/v3/onepanel/users/user')"; echo "Waiting for https://{{ template "onezone_name" . }}:9443/api/v3/onepanel/users/user to return something..." ; echo "$user" ; sleep 2 ; done ;
+      containers:
+      - name: onezone-ready-check
+        image: alpine:3.6
+        imagePullPolicy: {{ default .Values.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
+        command:
+          - "sh"
+          - "-c"
+          - >
+            echo 'all ok, exiting' ;  

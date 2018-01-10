@@ -1,0 +1,57 @@
+# Default values for onezone.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image: onedata/oneprovider:17.06.0-rc1
+imagePullPolicy: IfNotPresent
+serviceType: ClusterIP
+
+# onezone name, if empty defaults to a chart name
+name: ''
+
+# Resources requested by onezone
+cpu: 1.5
+memory: 4Gi
+
+# Log level of the processes in the container
+log_level: "info"
+
+# Enable loading oneozne configuration from ONEZONE_CONFIG env variable
+onepanel_batch_mode_enabled: true
+
+# Number of nodes (pod replicas) for of this onezone
+# their indexes will be asigned FROM 0 (ZERO!)
+# up to, but not including the count value
+onezone_nodes_count: 1
+
+# you can use values form the rage <0,onezone_nodes_count)
+# by default the node with the highest index (onezone_nodes_count-1)
+# is configured as a mainNode
+# If a service list is empty, all avilable nodes are assigned that service. 
+cluster_config:
+  managers: [ ]
+  workers: [ ]
+  databases: [ ]
+
+# Generate certificates to access this onezone having trusted https connection
+# You need to add cluster root certificate to your system for this to work
+generate-certificates: 
+  enabled: false
+  image: onedata/certificate-init-container:8434eb0
+
+# If set true, onezone will not be deployed on the same node as other onezones
+# or oneproviders that are part of this deployment
+onedata_anti_affinity_enabled: false
+
+# List of onezone onepanel users with administrative privileges
+onepanel_admin_users:
+  - login: admin
+    password: password
+
+# List of onezone onepanel regular users
+onepanel_users:
+  - login: user
+    password: password
+
+saml-idp:
+  enabled: false
