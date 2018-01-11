@@ -144,7 +144,7 @@ spec:
             {{ range $node.binaries }}
               {{ if eq .name "oz-panel" }}
           - name: ONEPANEL_CONFIG_FILE
-            value: {{ default $.Values.mountBinaries.hostPathPrefix .hostPathPrefix }}/{{ .hostPath }}/{{ print "/onezone_" $node.name "_env.config" }}
+            value: {{ default $.Values.mountBinaries.hostPathPrefix .hostPathPrefix }}/{{ .hostPath }}/tmp/{{ print "/onezone_" $node.name "_env.config" }}
           - name: ONEPANEL_PATH
             value: {{ default $.Values.mountBinaries.hostPathPrefix .hostPathPrefix }}/{{ .hostPath }}
               {{ end }}
