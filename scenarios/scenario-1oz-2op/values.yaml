@@ -1,0 +1,44 @@
+# Default values for cross-support-job
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image: onedata/rest-cli:17.06.0-beta6
+imagePullPolicy: IfNotPresent
+
+wait_for:
+  image: onedata/k8s-wait-for:v1.0.1
+  imagePullPolicy: IfNotPresent
+
+# You can enable automatic deployment od the environment
+# that this chart initializes
+onedata-2p:
+  enabled: true
+
+# Or manually specify a helm release name of the already
+# deployed environment
+# releaseName: dev
+
+oneprovider:
+  - oneprovider-krakow
+
+spaces:
+  - name: "krk-c"
+    supports:
+      - provider: "krakow"
+        storage_name: "ceph"
+        size: '1000000000'
+  - name: "krk-n"
+    supports:
+      - provider: "krakow"
+        storage_name: "nfs"
+        size: '1000000000'
+  - name: "krk-3"
+    supports:
+      - provider: "krakow"
+        storage_name: "s3"
+        size: '1000000000'
+  - name: "krk-g"
+    supports:
+      - provider: "krakow"
+        storage_name: "gluster"
+        size: '1000000000'

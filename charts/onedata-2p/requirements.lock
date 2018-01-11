@@ -1,0 +1,12 @@
+dependencies:
+- name: onezone
+  repository: file://../../charts/onezone
+  version: 0.2.9
+- name: oneprovider
+  repository: file://../../charts/oneprovider
+  version: 0.3.0
+- name: oneprovider
+  repository: file://../../charts/oneprovider
+  version: 0.3.0
+digest: sha256:e352555108ae2ce3cf55661dc4062acd4667492266c452f0066f0ffca0712cd4
+generated: 2018-01-11T13:52:39.346924476+01:00

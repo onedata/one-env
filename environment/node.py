@@ -16,7 +16,7 @@ class Node(object):
         self.apps = apps
 
         for app in self.apps:
-            if 'panel' in app.name:
+            if 'panel' in app.name and hasattr(app, 'project_path'):
                 panel_path = app.project_path
 
         file_name = '{}_{}_{}'.format(service_name, self.name,

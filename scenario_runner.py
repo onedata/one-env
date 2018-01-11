@@ -39,6 +39,13 @@ parser.add_argument(
     dest='debug'
 )
 
+parser.add_argument(
+    '-c', '--config',
+    action='store',
+    help='',
+    dest='config'
+)
+
 if __name__ == '__main__':
     args = parser.parse_args()
 
@@ -68,8 +75,12 @@ if __name__ == '__main__':
 
     if args.binaries:
         subprocess.check_call(['python3', 'config_generator.py', '--c',
-                               os.path.join(scenario_tmp, 'BinVal.yaml')])
+                               os.path.join(scenario_tmp, 'BinVal.yaml'),
+                               '-s', args.scenario])
 
         helm_install_cmd += ['-f', os.path.join(scenario_tmp, 'BinVal.yaml')]
+
+    if args.config:
+        helm_install_cmd += ['-f', args.config]
 
     subprocess.check_call(helm_install_cmd, stderr=subprocess.STDOUT)

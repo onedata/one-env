@@ -7,15 +7,22 @@ import os
 import argparse
 
 
+def scenario_key(scenario):
+    return {'scenario-1oz-1op': 'onedata-1p',
+            'scenario-1oz-2op': 'onedata-2p'}.get(scenario)
+
+
 class Env(object):
-    def __init__(self, cfg, args):
+    def __init__(self, cfg, args, scenario):
         self.apps = []
         self.nodes = []
 
-        if cfg.get('onedata-1p'):
-            for service in cfg['onedata-1p']:
-                prefix = cfg['onedata-1p'][service]['mountBinaries']['hostPathPrefix']
-                nodes = cfg['onedata-1p'][service]['mountBinaries']['nodes']
+        cfg = cfg.get(scenario_key(os.path.basename(os.path.normpath(scenario))))
+
+        if scenario:
+            for service in cfg:
+                prefix = cfg[service]['mountBinaries']['hostPathPrefix']
+                nodes = cfg[service]['mountBinaries']['nodes']
 
                 for n in nodes:
                     for app in n['binaries']:
@@ -78,6 +85,13 @@ parser.add_argument(
     default=os.getcwd(),
     dest='out_dir')
 
+parser.add_argument(
+    '-s', '-scenario',
+    action='store',
+    help='',
+    default='',
+    dest='scenario')
+
 
 if __name__ == '__main__':
     args = parser.parse_args()
@@ -87,4 +101,4 @@ if __name__ == '__main__':
     env_cfg = reader.load()
 
     # create config files
-    env = Env(env_cfg, args)
+    env = Env(env_cfg, args, args.scenario)

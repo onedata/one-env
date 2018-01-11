@@ -39,9 +39,9 @@ volume-gluster:
 volume-swift:
   enabled: *swift_enabled
 
-# onedata-1p conf
+# onedata-2p conf
 
-onedata-1p:
+onedata-2p:
   oz_image: &oz_image docker.onedata.org/onezone-dev:minikube-mem-changed
   op_image: &op_image docker.onedata.org/oneprovider-dev:minikube-mem-changed
   oc_image: &oc_image onedata/oneclient:17.06.0-rc6
@@ -137,6 +137,80 @@ onedata-1p:
     memory: 1Gi
     cpu: 1
     suffix: &op1s krakow
+    geoLatitude: 50.0647
+    geoLongitude: 19.9450
+
+    cluster_config:
+      managers: []
+      workers: []
+      databases: []
+
+
+    oneproviderEnv:
+      ONEPANEL_LOG_LEVEL: error
+      ONEPANEL_DEBUG_MODE: "true"
+
+    image: *op_image
+    onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
+    log_level: *log_level
+    nameOverride: oneprovider
+    wait-for-onezone: *wait-for-onezone-enabled
+
+    onezone_service_url:
+      type: auto-generate
+      disableSuffix: true
+
+    generate-certificates:
+      enabled: *oneproviders_generate_certificates
+
+    luma:
+      suffix: *op1s
+      << : *luma_global
+
+    oneclient:
+      image: *oc_image
+      debug_mode: *oneclients_debug_mode_enabled
+      enabled: *oneclients_enabled
+      suffix: *op1s
+      onedata_cli:
+        image: *cli_image
+    onedata-cli:
+      image: *cli_image
+      enabled: *onedata_cli_enabled
+      suffix: *op1s
+    posix:
+      enabled: *posix_enabled
+      luma-enabled: *luma_enabled_posix
+    volume-s3:
+      enabled: *s3_enabled
+      suffix: *op1s
+      luma-enabled: *luma_enabled_s3
+    volume-ceph:
+      enabled: *ceph_enabled
+      suffix: *op1s
+      luma-enabled: *luma_enabled_ceph
+    volume-nfs:
+      enabled: *nfs_enabled
+      suffix: *op1s
+      luma-enabled: *luma_enabled_nfs
+    volume-gluster:
+      enabled: *gluster_enabled
+      suffix: *op1s
+      luma-enabled: *luma_enabled_gluster
+    volume-swift:
+      enabled: *swift_enabled
+      suffix: *op1s
+      luma-enabled: *luma_enabled_swift
+
+
+  oneprovider-paris:
+    nodes:
+      - name: node1
+    mainNode: node1
+
+    memory: 1Gi
+    cpu: 1
+    suffix: &op1s paris
     geoLatitude: 50.0647
     geoLongitude: 19.9450
 
