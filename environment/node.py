@@ -48,13 +48,13 @@ def write_line_to_config_file(app, file, offset, last_app=False):
             file.write(offset * ' ' + '{{{0}, "{1}"}},\n'.format(attr, val))
         file.write('\n')
     else:
-        for attr, val in app.config.items()[:-1]:
+        for attr, val in list(app.config.items())[:-1]:
             # TODO:
             if 'panel' not in app.name:
                 attr = '{}_{}'.format(app.name, attr)
             file.write(offset * ' ' + '{{{0}, "{1}"}},\n'.format(attr, val))
 
-        attr, val = app.config.items()[-1]
+        attr, val = list(app.config.items())[-1]
         # TODO:
         if 'panel' not in app.name:
             attr = '{}_{}'.format(app.name, attr)

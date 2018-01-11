@@ -67,7 +67,7 @@ if __name__ == '__main__':
         helm_install_cmd += ['--debug']
 
     if args.binaries:
-        subprocess.check_call(['python', 'config_generator.py', '--c',
+        subprocess.check_call(['python3', 'config_generator.py', '--c',
                                os.path.join(scenario_tmp, 'BinVal.yaml')])
 
         helm_install_cmd += ['-f', os.path.join(scenario_tmp, 'BinVal.yaml')]

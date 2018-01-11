@@ -36,14 +36,14 @@ def default_config(name):
     }
 
     apps = {
-        'cluster_manager': dict(env_file_arg.items() + files_args.items() +
+        'cluster_manager': dict(env_file_arg.items() | files_args.items() |
                                 cmds.items()),
-        'oz_worker': dict(web_args.items() + files_args.items() +
+        'oz_worker': dict(web_args.items() | files_args.items() |
                           cmds.items()),
-        'op_worker': dict(web_args.items() + files_args.items() +
-                          protocol_args.items() + cmds.items()),
-        'oz_panel': dict(cmds.items() + files_args.items() + test_web_cert_domain.items()),
-        'op_panel': dict(cmds.items() + files_args.items() + test_web_cert_domain.items())
+        'op_worker': dict(web_args.items() | files_args.items() |
+                          protocol_args.items() | cmds.items()),
+        'oz_panel': dict(cmds.items() | files_args.items() | test_web_cert_domain.items()),
+        'op_panel': dict(cmds.items() | files_args.items() | test_web_cert_domain.items())
     }
     return apps.get(name, dict())
 
