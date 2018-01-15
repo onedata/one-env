@@ -1,0 +1,12 @@
+# Name of the scenario to run
+scenario: "scenario-test"
+
+# Onezone image to use. Note that if 'binaries' option is enabled, it must
+# be based off onedata/worker image (it contains all the machinery to run the
+# application from sources).
+onezoneImage: "docker.onedata.org/onezone-dev:test"
+
+# Oneprovider image to use. Note that if 'binaries' option is enabled, it must
+# be based off onedata/worker image.
+oneproviderImage: "docker.onedata.org/oneprovider-dev:test"
+
