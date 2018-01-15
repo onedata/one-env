@@ -1,0 +1,14 @@
+# Absolute path to user's home dir on this host
+hostHomeDir: $hostHomeDir
+
+# Absolute path to the path where user's home dir is mounted on kubernetes host.
+# If kubernetes is running natively on the host, just leave the same value as
+# above (hostHomeDir).
+kubeHostHomeDir: $kubeHostHomeDir
+
+# How many deployments will be kept in history - when they exceed this number,
+# oldest ones are deleted. Deployments data can be found in
+# ~/.one-env/deployments.
+maxPersistentHistory: 50
+
+
