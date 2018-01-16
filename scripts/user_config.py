@@ -33,7 +33,7 @@ def exists():
 
 def config_template_path():
     script_dir = os.path.dirname(os.path.realpath(__file__))
-    return os.path.join(script_dir, 'config_template.yaml')
+    return os.path.join(script_dir, 'user_config_template.yaml')
 
 
 def replace_in_file(file, pattern, replace):
@@ -59,15 +59,16 @@ def initialize():
 
         console.info('Initializing config: ')
 
+        host_home_value = "'{}'".format(host_home())
         console.info('{key: >23}: {val: <0}'.format(
             key='hostHomeDir',
-            val=host_home()))
-        replace_in_file(user_config_path(), '$hostHomeDir', host_home())
+            val=host_home_value))
+        replace_in_file(user_config_path(), '$hostHomeDir', host_home_value)
 
         console.info('{key: >23}: {val: <0}'.format(
             key='kubeHostHomeDir',
-            val=host_home()))
-        replace_in_file(user_config_path(), '$kubeHostHomeDir', host_home())
+            val=host_home_value))
+        replace_in_file(user_config_path(), '$kubeHostHomeDir', host_home_value)
 
         console.warning(
             'Please make sure that the auto-generated config is correct')
