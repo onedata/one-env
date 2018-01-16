@@ -11,18 +11,14 @@ OFFSET = 4
 
 
 class Node(object):
-    def __init__(self, name, apps, out_dir, service_name):
+    def __init__(self, name, apps, service_name, deployment_dir):
         self.name = name
         self.apps = apps
-
-        for app in self.apps:
-            if 'panel' in app.name and hasattr(app, 'project_path'):
-                panel_path = app.project_path
 
         file_name = '{}_{}_{}'.format(service_name, self.name,
                                       ENV_CONFIG_FILE_SUFFIX)
 
-        with open(os.path.join(panel_path, 'tmp', file_name), 'w') as f:
+        with open(os.path.join(deployment_dir, service_name, file_name), 'w') as f:
             # TODO:
             offset = 0
             f.write('[\n')

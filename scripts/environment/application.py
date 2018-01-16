@@ -49,7 +49,8 @@ def default_config(name):
 
 
 class Application(object):
-    def __init__(self, name, node_name, project_path, additional_args, service):
+    def __init__(self, name, node_name, project_path, additional_args, service,
+                 service_dir):
         self.name = name.replace('-', '_')
 
         if not project_path:
@@ -78,13 +79,8 @@ class Application(object):
             'status_cmd': 'bin/{} ping'.format(self.name)
         }
 
-        # create tmp dir for project
-        tmp_dir = os.path.join(self.project_path, 'tmp')
-        if not os.path.exists(tmp_dir):
-            os.mkdir(tmp_dir)
-
-        # create rel dir for project
-        rel_dir = os.path.join(self.project_path, 'tmp',
+        # create application's rel dir for current installation
+        rel_dir = os.path.join(service_dir,
                                '{}-{}-{}-rel'.format(service, node_name, name))
         if os.path.exists(rel_dir):
             shutil.rmtree(rel_dir)

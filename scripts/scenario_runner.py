@@ -5,6 +5,7 @@ import shutil
 from time import gmtime, strftime, time
 import user_config
 import config_generator
+from config import readers
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -48,53 +49,54 @@ parser.add_argument(
 )
 
 
-def run_scenario(scenario, binaries, release_name):
+def run_scenario(env_config_dir_path):
+    reader = readers.ConfigReader(os.path.join(env_config_dir_path,
+                                  'env_config.yaml'))
+    env_cfg = reader.load()
 
-    # TODO: better dealing with time
-    one_env_deployment_dir = os.path.join(
-        user_config.one_env_directory(),
-        'deployment_{}'.format(time()))
+    original_scenario_path = os.path.join('scenarios', env_cfg.get('scenario'))
 
-    charts_tmp_dir = os.path.join(one_env_deployment_dir, 'charts')
-    scenario_tmp = os.path.join(one_env_deployment_dir, scenario)
+    env_config_charts_path = os.path.join(env_config_dir_path, 'charts')
+    env_config_scenario_path = os.path.join(env_config_dir_path,
+                                            original_scenario_path)
 
-    os.mkdir(one_env_deployment_dir)
-
-    shutil.copytree('charts', charts_tmp_dir)
-    shutil.copytree(scenario, scenario_tmp)
+    shutil.copytree('charts', env_config_charts_path)
+    shutil.copytree(original_scenario_path, env_config_scenario_path)
 
     helm_dep_update_cmd = ['helm', 'dependency', 'update']
 
-    for chart in os.listdir(charts_tmp_dir):
+    for chart in os.listdir(env_config_charts_path):
         subprocess.check_call(helm_dep_update_cmd +
-                              [os.path.join(charts_tmp_dir, chart)],
+                              [os.path.join(env_config_charts_path, chart)],
                               stderr=subprocess.STDOUT)
-    subprocess.check_call(helm_dep_update_cmd + [scenario_tmp],
+    subprocess.check_call(helm_dep_update_cmd + [env_config_scenario_path],
                           stderr=subprocess.STDOUT)
 
-    helm_install_cmd = ['helm', 'install',
-                        os.path.join(one_env_deployment_dir, scenario), '-f',
-                        os.path.join(scenario, 'MyValues.yaml'),
-                        '--name', release_name]
+    # TODO: configure release name
+    helm_install_cmd = ['helm', 'install', env_config_scenario_path, '-f',
+                        os.path.join(env_config_scenario_path, 'MyValues.yaml'),
+                        '--name', 'develop']
 
     # if args.debug:
     helm_install_cmd += ['--debug']
 
-    # TODO: This should be python module
-    if binaries:
-        config_generator.generate_configs(scenario, one_env_deployment_dir,
-                                          os.path.join(scenario_tmp,
+    # TODO: BinVals hardcoded
+    if env_cfg.get('binaries'):
+        config_generator.generate_configs(env_config_scenario_path,
+                                          env_config_dir_path,
+                                          os.path.join(env_config_scenario_path,
                                                        'BinVal.yaml'))
 
-        helm_install_cmd += ['-f', os.path.join(scenario_tmp, 'BinVal.yaml')]
+        helm_install_cmd += ['-f', os.path.join(env_config_scenario_path,
+                                                'BinVal.yaml')]
 
     # if args.config:
     #     helm_install_cmd += ['-f', args.config]
 
     subprocess.check_call(helm_install_cmd, stderr=subprocess.STDOUT)
 
-
-if __name__ == '__main__':
-    args = parser.parse_args()
-
-    run_scenario(args.scenario, args.binaries, args.release_name)
+#
+# if __name__ == '__main__':
+#     args = parser.parse_args()
+#
+#     run_scenario(args.scenario, args.binaries, args.release_name)

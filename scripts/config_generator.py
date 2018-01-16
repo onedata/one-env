@@ -10,9 +10,9 @@ import binaries
 import time
 
 
-def generate_config_for_installation(cfg, scenario_key, cfg_path,
-                                     deployment_dir):
-    scenario_cfg = cfg[scenario_key]
+def generate_config_for_installation(bin_cfg, scenario_key, bin_cfg_path,
+                                     env_config_dir_path):
+    scenario_cfg = bin_cfg[scenario_key]
     host_home_dir = user_config.get('hostHomeDir')
     kube_host_home_dir = user_config.get('kubeHostHomeDir')
 
@@ -20,9 +20,9 @@ def generate_config_for_installation(cfg, scenario_key, cfg_path,
         scenario_cfg[service]['hostPathPrefix'] = host_home_dir
         scenario_cfg[service]['vmPathPrefix'] = kube_host_home_dir
         scenario_cfg[service]['deploymentDir'] = os.path.relpath(
-            deployment_dir, host_home_dir)
+            env_config_dir_path, host_home_dir)
 
-        service_dir_path = os.path.join(deployment_dir, service)
+        service_dir_path = os.path.join(env_config_dir_path, service)
         os.mkdir(service_dir_path)
 
         config_nodes = scenario_cfg[service]['nodes']
@@ -40,11 +40,11 @@ def generate_config_for_installation(cfg, scenario_key, cfg_path,
                     app.get('additionalArgs', None), service, service_dir_path
                 ))
 
-            nodes.append(node.Node(n['name'], apps, service, deployment_dir))
+            nodes.append(node.Node(n['name'], apps, service, env_config_dir_path))
             apps = []
 
-    writer = writers.ConfigWriter(cfg, 'yaml')
-    with open(cfg_path, 'w') as f:
+    writer = writers.ConfigWriter(bin_cfg, 'yaml')
+    with open(bin_cfg_path, 'w') as f:
         f.write(writer.dump())
 
 
@@ -81,10 +81,10 @@ def generate_config_for_single_service(cfg):
         apps = []
 
 
-def generate_configs(scenario_path, deployment_dir, cfg_path):
+def generate_configs(scenario_path, env_config_dir_path, bin_cfg_path):
     # create yaml or json reader and read data
-    reader = readers.ConfigReader(cfg_path)
-    env_cfg = reader.load()
+    reader = readers.ConfigReader(bin_cfg_path)
+    bin_cfg = reader.load()
 
     r = readers.ConfigReader(os.path.join(scenario_path, 'requirements.yaml'))
     requirements = r.load()
@@ -97,10 +97,10 @@ def generate_configs(scenario_path, deployment_dir, cfg_path):
                 scenario_key = req.get('name')
 
     if scenario_key:
-        generate_config_for_installation(env_cfg, scenario_key,
-                                         cfg_path, deployment_dir)
+        generate_config_for_installation(bin_cfg, scenario_key,
+                                         bin_cfg_path, env_config_dir_path)
     else:
-        generate_config_for_single_service(env_cfg)
+        generate_config_for_single_service(bin_cfg)
 
 
 parser = argparse.ArgumentParser(
