@@ -10,6 +10,7 @@ __license__ = "This software is released under the MIT license cited in " \
 import argparse
 import user_config
 import binaries
+import scenario_runner
 
 SCRIPT_DESCRIPTION = 'Sets up a onedata deployment on kubernetes cluster.'
 
@@ -22,7 +23,7 @@ parser.add_argument(
     '-s', '--scenario',
     type=str,
     action='store',
-    default='1op_1oz',
+    default='scenarios/scenario-1oz-1op',
     help='predefined scenario to be set up',
     dest='scenario')
 
@@ -41,5 +42,6 @@ if not user_config.exists():
 
 print(user_config.get('hostHomeDir'))
 print(user_config.get('kubeHostHomeDir'))
-print(binaries.locate('op-worker'))
+print(binaries.locate('oz-worker'))
 
+scenario_runner.run_scenario(args.scenario, args.binaries, 'develop')

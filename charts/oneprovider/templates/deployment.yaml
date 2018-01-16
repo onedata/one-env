@@ -1,10 +1,9 @@
-{{- $nodes := (default .Values .Values.mountBinaries).nodes }}
-{{- range $node := $nodes }}
+{{ range $node := .Values.nodes }}
 ---
 apiVersion: apps/v1beta1
 kind: StatefulSet
 metadata:
-  name: {{ template "fullname" $ }}-{{$node.name}}
+  name: {{ template "fullname" $ }}-{{ $node.name }}
   labels:
     app: {{ template "fullname" $ }}
     chart: {{ $.Chart.Name }}
@@ -27,7 +26,7 @@ spec:
       annotations:
         version: "{{ $.Chart.Version }}"
     spec:
-      subdomain: {{ template "fullname" $ }}-{{$node.name}}
+      subdomain: {{ template "fullname" $ }}-{{ $node.name }}
       terminationGracePeriodSeconds: 0
       {{- if $.Values.onedata_anti_affinity_enabled }}
       affinity:
@@ -47,7 +46,7 @@ spec:
             topologyKey: kubernetes.io/hostname
       {{- end }}
 {{ include "imagePullSecrets" $ | indent 6 }}
-      {{- if or (eq (len $nodes) 1) (or (index $.Values "volume-s3" "enabled")) (or (index $.Values "volume-ceph" "enabled") (or (index $.Values "volume-gluster" "enabled") (or (index $.Values "volume-swift" "enabled") (index $.Values "generate-certificates" "enabled")))) }}
+      {{- if or (eq (len $.Values.nodes) 1) (or (index $.Values "volume-s3" "enabled")) (or (index $.Values "volume-ceph" "enabled") (or (index $.Values "volume-gluster" "enabled") (or (index $.Values "volume-swift" "enabled") (index $.Values "generate-certificates" "enabled")))) }}
       initContainers:
       {{- end }}
       {{- if (index $.Values "generate-certificates" "enabled") }}
@@ -167,19 +166,20 @@ spec:
                 onepanel_ready() { sleep 5 ; exit 0 ; } ;
                 if [[ {{ quote $node.name }} == {{ quote $.Values.mainNode }} ]]; then exit 0 ; else onepanel_ready ; fi ;
 
-        {{- if $.Values.mountBinaries }}
+        {{- if $node.binaries }}
         env:
           {{ range $node.binaries }}
+            # assuming here that op-panel will always have such name
             {{ if eq .name "op-panel" }}
               {{ if eq $.Values.suffix "" }}
           - name: ONEPANEL_CONFIG_FILE
-            value: {{ default $.Values.mountBinaries.hostPathPrefix .hostPathPrefix }}/{{ .hostPath }}/tmp/{{ print "/oneprovider_" $node.name "_env.config" }}
+            value: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider/{{ print "oneprovider_" $node.name "_env.config" }}
               {{ else }}
           - name: ONEPANEL_CONFIG_FILE
-            value: {{ default $.Values.mountBinaries.hostPathPrefix .hostPathPrefix }}/{{ .hostPath }}/tmp/{{ print "/oneprovider-" $.Values.suffix  "_" $node.name "_env.config" }}
+            value: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider-{{- $.Values.suffix -}}/{{ print "oneprovider-" $.Values.suffix  "_" $node.name "_env.config" }}
               {{ end }}
           - name: ONEPANEL_PATH
-            value: {{ default $.Values.mountBinaries.hostPathPrefix .hostPathPrefix }}/{{ .hostPath }}
+            value: {{ $.Values.hostPathPrefix }}/{{ .hostPath }}
             {{ end }}
           {{ end }}
         {{- end }}
@@ -188,21 +188,26 @@ spec:
         - configMapRef:
             name: {{ template "fullname" $ }}-oneprovider-config
 
-        {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "volume-nfs" "enabled") ($.Values.mountBinaries) }}
+        {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "volume-nfs" "enabled") ($node.binaries) }}
         volumeMounts:
         {{- end }}
-      {{- if $.Values.mountBinaries }}
+        {{ if eq $.Values.suffix "" }}
+            - mountPath: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider/{{ print "oneprovider_" $node.name "_env.config" }}
+              name: onepanel-config-file
+        {{ else }}
+            - mountPath: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider-{{- $.Values.suffix -}}/{{ print "/oneprovider-" $.Values.suffix  "_" $node.name "_env.config" }}
+              name: onepanel-config-file
+        {{ end }}
         {{- range $node.binaries }}
           {{- if .hostPath }}
-            - mountPath: {{ default $.Values.mountBinaries.hostPathPrefix .hostPathPrefix }}/{{ default .hostPath .mountPath }}
+            - mountPath: {{ $.Values.hostPathPrefix }}/{{ default .hostPath .mountPath }}
               name: {{ .name }}
-            - mountPath: {{ default $.Values.mountBinaries.hostPathPrefix .hostPathPrefix }}/{{ default .hostPath .mountPath }}/tmp/base-rel-{{ $node.name }}
+            - mountPath: {{ $.Values.hostPathPrefix }}/{{ default .hostPath .mountPath }}/tmp/base-rel-{{ $node.name }}
               name: oneprovider-{{ .name }}-base-rel
-            - mountPath: {{ default $.Values.mountBinaries.hostPathPrefix .hostPathPrefix }}/{{ default .hostPath .mountPath }}/_build/default/rel/{{ .name | replace "-" "_"  }}
+            - mountPath: {{ $.Values.hostPathPrefix }}/{{ default .hostPath .mountPath }}/_build/default/rel/{{ .name | replace "-" "_"  }}
               name: oneprovider-{{ .name }}-rel
           {{- end }}
         {{- end }}
-      {{- end }}
       {{- if (index $.Values "generate-certificates" "enabled") }}
           - mountPath: /etc/op_panel/certs/key.pem
             subPath: tls.key
@@ -229,26 +234,33 @@ spec:
           - mountPath: {{ index $.Values "volume-nfs" "container_mount_path" }}
             name: nfs
       {{- end }}
-    {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "volume-nfs" "enabled") ($.Values.mountBinaries) }}
+    {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "volume-nfs" "enabled") ($node.binaries) }}
       volumes:
     {{- end }}
-    {{- if $.Values.mountBinaries }}
-      {{- range $node.binaries }}
-        {{- if .hostPath }}
+    {{ if eq $.Values.suffix "" }}
+          - name: onepanel-config-file
+            hostPath:
+              path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider/{{ print "oneprovider_" $node.name "_env.config" }}
+    {{ else }}
+          - name: onepanel-config-file
+            hostPath:
+              path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider-{{- $.Values.suffix -}}/{{ print "/oneprovider-" $.Values.suffix  "_" $node.name "_env.config" }}
+    {{ end }}
+    {{- range $node.binaries }}
+      {{- if .hostPath }}
           - name: {{ .name }}
             hostPath:
-              path: {{ default $.Values.mountBinaries.vmPathPrefix .vmPathPrefix }}/{{ .hostPath }}
+              path: {{ $.Values.vmPathPrefix }}/{{ .hostPath }}
           - name: oneprovider-{{ .name }}-base-rel
             hostPath:
-              path: {{ default $.Values.mountBinaries.vmPathPrefix .vmPathPrefix }}/{{ .hostPath }}/_build/default/rel/{{ .name | replace "-" "_"  }}
+              path: {{ $.Values.vmPathPrefix }}/{{ .hostPath }}/_build/default/rel/{{ .name | replace "-" "_"  }}
           - name: oneprovider-{{ .name }}-rel
             hostPath:
               {{ if eq $.Values.suffix "" }}
-                path: {{ default $.Values.mountBinaries.vmPathPrefix .vmPathPrefix }}/{{ .hostPath }}/tmp/oneprovider-{{ $node.name }}-{{ .name }}-rel
+                path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider/oneprovider-{{ $node.name }}-{{ .name }}-rel
               {{ else }}
-                path: {{ default $.Values.mountBinaries.vmPathPrefix .vmPathPrefix }}/{{ .hostPath }}/tmp/oneprovider-{{ $.Values.suffix }}-{{ $node.name }}-{{ .name }}-rel
+                path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider-{{- $.Values.suffix -}}/oneprovider-{{ $.Values.suffix }}-{{ $node.name }}-{{ .name }}-rel
               {{ end }}
-        {{- end }}
       {{- end }}
     {{- end }}
     {{- if (index $.Values "generate-certificates" "enabled") }}

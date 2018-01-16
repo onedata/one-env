@@ -59,8 +59,7 @@ class Application(object):
         self.project_path = project_path
 
         release_path = '_build/default/rel/{}'.format(self.name)
-        self.release_path = release_path if os.path.isabs(release_path) \
-            else os.path.join(self.project_path, release_path)
+        self.release_path = os.path.join(self.project_path, release_path)
 
         self.node_path = os.path.join('/root/bin/node', self.name)
 

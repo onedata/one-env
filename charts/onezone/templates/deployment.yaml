@@ -1,5 +1,4 @@
-{{- $nodes := (default .Values .Values.mountBinaries).nodes }}
-{{- range $node := $nodes }}
+{{- range $node := .Values.nodes }}
 ---
 apiVersion: apps/v1beta1
 kind: StatefulSet
@@ -139,34 +138,35 @@ spec:
         - configMapRef:
             name: {{ template "fullname" $ }}-onezone-config
 
-        {{- if $.Values.mountBinaries }}
+        {{ if $node.binaries }}
         env:
-            {{ range $node.binaries }}
-              {{ if eq .name "oz-panel" }}
+          {{ range $node.binaries }}
+            # assuming here that oz-panel will always have such name
+            {{ if eq .name "oz-panel" }}
           - name: ONEPANEL_CONFIG_FILE
-            value: {{ default $.Values.mountBinaries.hostPathPrefix .hostPathPrefix }}/{{ .hostPath }}/tmp/{{ print "/onezone_" $node.name "_env.config" }}
+            value: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}/onezone/{{ print "onezone_" $node.name "_env.config" }}
           - name: ONEPANEL_PATH
-            value: {{ default $.Values.mountBinaries.hostPathPrefix .hostPathPrefix }}/{{ .hostPath }}
-              {{ end }}
+            value: {{ $.Values.hostPathPrefix }}/{{ .hostPath }}
             {{ end }}
+          {{ end }}
         {{- end }}
 
-        {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "saml-idp" "enabled") ($.Values.mountBinaries) }}
+        {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "saml-idp" "enabled") ($node.binaries) }}
         volumeMounts:
         {{- end }}
-      {{- if $.Values.mountBinaries }}
-        {{- range $node.binaries}}
+              - mountPath: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}/onezone/{{ print "onezone_" $node.name "_env.config" }}
+                name: onepanel-config-file
+        {{- range $node.binaries }}
           {{- if .hostPath }}
               # mountPath is path in the pod, we want that path to be exactly the same as the path on the host machine
-              - mountPath: {{ default $.Values.mountBinaries.hostPathPrefix .hostPathPrefix }}/{{ default .hostPath .mountPath }}
+              - mountPath: {{ $.Values.hostPathPrefix }}/{{ default .hostPath .mountPath }}
                 name: {{ .name }}
-              - mountPath: {{ default $.Values.mountBinaries.hostPathPrefix .hostPathPrefix }}/{{ default .hostPath .mountPath }}/tmp/base-rel-{{ $node.name }}
+              - mountPath: {{ $.Values.hostPathPrefix }}/{{ default .hostPath .mountPath }}/tmp/base-rel-{{ $node.name }}
                 name: onezone-{{ .name }}-base-rel
-              - mountPath: {{ default $.Values.mountBinaries.hostPathPrefix .hostPathPrefix }}/{{ default .hostPath .mountPath }}/_build/default/rel/{{ .name | replace "-" "_"  }}
+              - mountPath: {{ $.Values.hostPathPrefix }}/{{ default .hostPath .mountPath }}/_build/default/rel/{{ .name | replace "-" "_"  }}
                 name: onezone-{{ .name }}-rel
           {{- end }}
         {{- end }}
-      {{- end }}
       {{- if (index $.Values "generate-certificates" "enabled") }}
           - mountPath: /etc/oz_panel/certs/key.pem
             subPath: tls.key
@@ -195,25 +195,26 @@ spec:
             name: saml-config
             readOnly: false
     {{- end }}
-    {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "saml-idp" "enabled") ($.Values.mountBinaries) }}
+    {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "saml-idp" "enabled") ($node.binaries) }}
       volumes:
     {{- end }}
-    {{- if $.Values.mountBinaries }}
-      {{- range $node.binaries}}
-        {{- if .hostPath }}
+            - name: onepanel-config-file
+              hostPath:
+                path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/onezone/{{ print "onezone_" $node.name "_env.config" }}
+    {{- range $node.binaries }}
+      {{- if .hostPath }}
             - name: {{ .name }}
               # hostPath is the path in minikube
               hostPath:
-                path: {{ default $.Values.mountBinaries.vmPathPrefix .vmPathPrefix }}/{{ .hostPath }}
+                path: {{ $.Values.vmPathPrefix }}/{{ .hostPath }}
             - name: onezone-{{ .name }}-base-rel
               hostPath:
-                path: {{ default $.Values.mountBinaries.vmPathPrefix .vmPathPrefix }}/{{ .hostPath }}/_build/default/rel/{{ .name | replace "-" "_"  }}
+                path: {{ $.Values.vmPathPrefix }}/{{ .hostPath }}/_build/default/rel/{{ .name | replace "-" "_"  }}
                 type: DirectoryOrCreate
             - name: onezone-{{ .name }}-rel
               hostPath:
-                path: {{ default $.Values.mountBinaries.vmPathPrefix .vmPathPrefix }}/{{ .hostPath }}/tmp/onezone-{{ $node.name }}-{{ .name }}-rel
+                path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/onezone/onezone-{{ $node.name }}-{{ .name }}-rel
                 type: DirectoryOrCreate
-        {{- end }}
       {{- end }}
     {{- end }}
     {{- if (index $.Values "generate-certificates" "enabled") }}

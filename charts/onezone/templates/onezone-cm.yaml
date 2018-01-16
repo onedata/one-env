@@ -1,4 +1,4 @@
-{{- $nodes := (default .Values .Values.mountBinaries).nodes }}
+{{- $nodes := .Values.nodes }}
 ---
 apiVersion: v1
 kind: ConfigMap

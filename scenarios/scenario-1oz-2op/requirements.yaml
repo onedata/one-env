@@ -7,3 +7,5 @@ dependencies:
   version: 0.2.6
   repository: file://../../charts/onedata-2p
   condition: onedata-2p.enabled
+  tags:
+    - bin-vals
