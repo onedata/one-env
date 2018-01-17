@@ -42,8 +42,8 @@ volume-swift:
 # onedata-2p conf
 
 onedata-2p:
-  oz_image: &oz_image docker.onedata.org/onezone-dev:minikube-mem-changed
-  op_image: &op_image docker.onedata.org/oneprovider-dev:minikube-mem-changed
+  oz_image: &oz_image docker.onedata.org/onezone-dev:minikube
+  op_image: &op_image docker.onedata.org/oneprovider-dev:minikube
   oc_image: &oc_image onedata/oneclient:17.06.0-rc6
   cli_image: &cli_image onedata/rest-cli:17.06.0-rc6
 
