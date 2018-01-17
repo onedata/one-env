@@ -191,12 +191,14 @@ spec:
         {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "volume-nfs" "enabled") ($node.binaries) }}
         volumeMounts:
         {{- end }}
-        {{ if eq $.Values.suffix "" }}
+        {{ if ($node.binaries) }}
+          {{ if eq $.Values.suffix "" }}
             - mountPath: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider/{{ print "oneprovider_" $node.name "_env.config" }}
               name: onepanel-config-file
-        {{ else }}
+          {{ else }}
             - mountPath: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider-{{- $.Values.suffix -}}/{{ print "/oneprovider-" $.Values.suffix  "_" $node.name "_env.config" }}
               name: onepanel-config-file
+          {{ end }}
         {{ end }}
         {{- range $node.binaries }}
           {{- if .hostPath }}
@@ -237,15 +239,17 @@ spec:
     {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "volume-nfs" "enabled") ($node.binaries) }}
       volumes:
     {{- end }}
-    {{ if eq $.Values.suffix "" }}
+    {{ if ($node.binaries) }}
+      {{ if eq $.Values.suffix "" }}
           - name: onepanel-config-file
             hostPath:
               path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider/{{ print "oneprovider_" $node.name "_env.config" }}
-    {{ else }}
+      {{ else }}
           - name: onepanel-config-file
             hostPath:
               path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider-{{- $.Values.suffix -}}/{{ print "/oneprovider-" $.Values.suffix  "_" $node.name "_env.config" }}
-    {{ end }}
+      {{ end }}
+    {{- end }}
     {{- range $node.binaries }}
       {{- if .hostPath }}
           - name: {{ .name }}

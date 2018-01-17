@@ -138,7 +138,7 @@ spec:
         - configMapRef:
             name: {{ template "fullname" $ }}-onezone-config
 
-        {{ if $node.binaries }}
+        {{- if $node.binaries }}
         env:
           {{ range $node.binaries }}
             # assuming here that oz-panel will always have such name
@@ -154,8 +154,10 @@ spec:
         {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "saml-idp" "enabled") ($node.binaries) }}
         volumeMounts:
         {{- end }}
+        {{ if ($node.binaries) }}
               - mountPath: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}/onezone/{{ print "onezone_" $node.name "_env.config" }}
                 name: onepanel-config-file
+        {{ end }}
         {{- range $node.binaries }}
           {{- if .hostPath }}
               # mountPath is path in the pod, we want that path to be exactly the same as the path on the host machine
@@ -198,9 +200,11 @@ spec:
     {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "saml-idp" "enabled") ($node.binaries) }}
       volumes:
     {{- end }}
+    {{ if ($node.binaries) }}
             - name: onepanel-config-file
               hostPath:
                 path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/onezone/{{ print "onezone_" $node.name "_env.config" }}
+    {{ end }}
     {{- range $node.binaries }}
       {{- if .hostPath }}
             - name: {{ .name }}
