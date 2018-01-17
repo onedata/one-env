@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR=$( cd ${0%/*} && pwd -P )
+
+usage_and_exit() {
+    echo "usage: ${0} [<command>]"
+    echo "  allowed commands:"
+    echo "      up - creates a new deployment (default)"
+    echo "      status - displays information about current deployment (if any)"
+    echo "      exec - performs 'kubectl exec' to given pod"
+    echo ""
+    echo "  run '${0} <command> -h' to get more detailed help"
+    exit 1
+}
+
+if [[ -z ${1} ]]; then
+    usage_and_exit
+fi
+
+case "${1}" in
+    up)
+        SCRIPT="onenv_up.py"
+        ;;
+
+    status)
+        SCRIPT="onenv_status.py"
+        ;;
+
+    exec)
+        SCRIPT="onenv_exec.py"
+        ;;
+
+    attach)
+        SCRIPT="onenv_attach.py"
+        ;;
+
+    *)
+        usage_and_exit
+        ;;
+esac
+
+shift
+/usr/bin/env python3 ${SCRIPT_DIR}/scripts/${SCRIPT} "$@"

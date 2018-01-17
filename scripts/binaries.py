@@ -11,21 +11,33 @@ import os
 import sys
 import console
 
+# app can be one of:
+#   op-worker
+#   oz-worker
+#   op-panel
+#   oz-panel
+#   cluster-manager
 
-def binaries_path(component):
+
+def relative_binaries_path(app):
     return os.path.join('_build', 'default', 'rel',
-                        component.replace('-', '_'))
+                        app.replace('-', '_'))
 
 
-def locate(component):
-    component_underscores = component.replace('-', '_')
-    component_dashes = component.replace('_', '-')
+def relative_start_script_path(app):
+    return os.path.join(relative_binaries_path(app), 'bin',
+                        app.replace('-', '_'))
+
+
+def locate(app):
+    app_underscores = app.replace('-', '_')
+    app_dashes = app.replace('_', '-')
     cwd = os.getcwd()
     paths_to_check = [
-        os.path.join(cwd, component_underscores),
-        os.path.join(cwd, component_dashes),
-        os.path.join(cwd, '../', component_underscores),
-        os.path.join(cwd, '../', component_dashes)
+        os.path.join(cwd, app_underscores),
+        os.path.join(cwd, app_dashes),
+        os.path.join(cwd, '../', app_underscores),
+        os.path.join(cwd, '../', app_dashes)
     ]
     location = None
     for path in paths_to_check:
@@ -34,18 +46,25 @@ def locate(component):
 
     if not location:
         console.error('Cannot locate directory for {}, tried:'.format(
-            component))
+            app))
         for path in paths_to_check:
             console.error('    ' + path)
         sys.exit(1)
 
-    console.info('{} - using directory {}'.format(component, location))
-    precompile_binaries_location = os.path.join(location,
-                                                binaries_path(component))
-    if not os.path.isdir(precompile_binaries_location):
+    console.info('{} - using directory {}'.format(app, location))
+    precompiled_binaries_location = os.path.join(location,
+                                                 relative_binaries_path(app))
+    if not os.path.isdir(precompiled_binaries_location):
         console.error(
             'Cannot locate precompiled binaries for {}, tried: {}'.format(
-                component, binaries_path(precompile_binaries_location)))
+                app, precompiled_binaries_location))
         sys.exit(1)
 
     return location
+
+
+def start_script_path(app, binaries):
+    if binaries:
+        return os.path.join(locate(app), relative_start_script_path(app))
+    else:
+        return app.replace('-', '_')
