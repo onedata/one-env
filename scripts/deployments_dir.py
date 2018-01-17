@@ -14,6 +14,7 @@ import datetime
 import random
 import string
 import shutil
+import sys
 import user_config
 import console
 
@@ -34,6 +35,15 @@ def prune_deployments_history():
         console.warning('Removing old deployment data as maxPersistentHistory '
                         'was reached: {}'.format(oldest))
         shutil.rmtree(os.path.join(deployments_directory(), oldest))
+
+
+def current_deployment_dir():
+    all_deployments = os.listdir(deployments_directory())
+    if len(all_deployments) == 0:
+        console.error('There are no deployments yet')
+        sys.exit(1)
+    else:
+        return os.path.join(deployments_directory(), all_deployments[-1])
 
 
 def new():

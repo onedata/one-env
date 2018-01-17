@@ -1,5 +1,5 @@
 """
-Main script for setting up a onedata deployment on kubernetes cluster.
+Part of onenv tool that starts a onedata deployment on kubernetes cluster.
 """
 
 __author__ = "Lukasz Opiola"
@@ -19,6 +19,7 @@ import scenario_runner
 SCRIPT_DESCRIPTION = 'Sets up a onedata deployment on kubernetes cluster.'
 
 parser = argparse.ArgumentParser(
+    prog='onenv up',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     description=SCRIPT_DESCRIPTION
 )
