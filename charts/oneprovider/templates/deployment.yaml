@@ -111,7 +111,7 @@ spec:
       {{- end }}
       containers:
       - name: {{ $.Chart.Name }}
-        image: {{ $.Values.image }}
+        image: {{ default $.Values.image }}
         imagePullPolicy: {{ default $.Values.imagePullPolicy $.Values.global.imagePullPolicy | default "IfNotPresent" }}
         {{- if or $.Values.cpu $.Values.memory }}
         resources:
@@ -178,8 +178,10 @@ spec:
           - name: ONEPANEL_CONFIG_FILE
             value: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider-{{- $.Values.suffix -}}/{{ print "oneprovider-" $.Values.suffix  "_" $node.name "_env.config" }}
               {{ end }}
+              {{ if .hostPath }}
           - name: ONEPANEL_PATH
             value: {{ $.Values.hostPathPrefix }}/{{ .hostPath }}
+              {{ end }}
             {{ end }}
           {{ end }}
         {{- end }}

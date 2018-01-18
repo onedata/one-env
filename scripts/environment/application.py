@@ -50,14 +50,14 @@ def default_config(name):
 
 class Application(object):
     def __init__(self, name, node_name, project_path, additional_args, service,
-                 service_dir):
+                 service_dir, host_home_dir):
         self.name = name.replace('-', '_')
 
         if not project_path:
             self.config = default_config(self.name)
             return
 
-        self.project_path = project_path
+        self.project_path = os.path.join(host_home_dir, project_path)
 
         release_path = '_build/default/rel/{}'.format(self.name)
         self.release_path = os.path.join(self.project_path, release_path)

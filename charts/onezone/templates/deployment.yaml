@@ -76,7 +76,7 @@ spec:
       {{- end }}
       containers:
       - name: {{ $.Chart.Name }}
-        image: {{ $.Values.image }}
+        image: {{ default $.Values.image $.Values.onezoneImage }}
         imagePullPolicy: {{ default $.Values.imagePullPolicy $.Values.global.imagePullPolicy | default "IfNotPresent" }}
         {{- if or $.Values.cpu $.Values.memory }}
         resources:
@@ -145,8 +145,10 @@ spec:
             {{ if eq .name "oz-panel" }}
           - name: ONEPANEL_CONFIG_FILE
             value: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}/onezone/{{ print "onezone_" $node.name "_env.config" }}
+              {{ if .hostPath }}
           - name: ONEPANEL_PATH
             value: {{ $.Values.hostPathPrefix }}/{{ .hostPath }}
+              {{ end }}
             {{ end }}
           {{ end }}
         {{- end }}

@@ -10,8 +10,16 @@ import binaries
 import time
 
 
+def onezone_apps():
+    return {'oz-panel', 'cluster-manager', 'oz-worker'}
+
+
+def oneprovider_apps():
+    return {'op-panel', 'cluster-manager', 'op-worker'}
+
+
 def generate_config_for_installation(bin_cfg, scenario_key, bin_cfg_path,
-                                     env_config_dir_path):
+                                     env_config_dir_path, env_cfg, scenario_path):
     scenario_cfg = bin_cfg[scenario_key]
     host_home_dir = user_config.get('hostHomeDir')
     kube_host_home_dir = user_config.get('kubeHostHomeDir')
@@ -25,23 +33,40 @@ def generate_config_for_installation(bin_cfg, scenario_key, bin_cfg_path,
         service_dir_path = os.path.join(env_config_dir_path, service)
         os.mkdir(service_dir_path)
 
-        config_nodes = scenario_cfg[service]['nodes']
-        apps = []
-        nodes = []
+        nodes_config = scenario_cfg[service]['nodes']
 
-        for n in config_nodes:
-            for app in n['binaries']:
-                app['hostPath'] = os.path.relpath(
-                    os.path.abspath(binaries.locate(app['name'])),
-                    host_home_dir)
+        if 'onezone' in service:
+            service_apps = onezone_apps()
+        else:
+            service_apps = oneprovider_apps()
+
+        nodes = []
+        node_confs = []
+
+        for n in nodes_config:
+            apps = []
+            apps_confs = []
+            for app_name in service_apps:
+                app_config = {'name': app_name}
+
+                if app_name in [a['name'] for a in n['binaries']]:
+                    app_config['hostPath'] = os.path.relpath(
+                        os.path.abspath(binaries.locate(app_name)),
+                        host_home_dir)
+                else:
+                    app_config['hostPath'] = ''
+
                 apps.append(application.Application(
-                    app['name'], n['name'],
-                    os.path.join(host_home_dir, app['hostPath']),
-                    app.get('additionalArgs', None), service, service_dir_path
+                    app_name, n['name'], app_config['hostPath'],
+                    None, service, service_dir_path, host_home_dir
                 ))
 
+                apps_confs.append(app_config)
+
             nodes.append(node.Node(n['name'], apps, service, env_config_dir_path))
-            apps = []
+            node_confs.append({'name': n['name'], 'binaries': apps_confs})
+
+        bin_cfg[scenario_key][service]['nodes'] = node_confs
 
     writer = writers.ConfigWriter(bin_cfg, 'yaml')
     with open(bin_cfg_path, 'w') as f:
@@ -81,24 +106,16 @@ def generate_config_for_single_service(cfg):
         apps = []
 
 
-def generate_configs(scenario_path, env_config_dir_path, bin_cfg_path):
+def generate_configs(scenario_path, env_config_dir_path, bin_cfg_path, env_cfg,
+                     scenario_key):
     # create yaml or json reader and read data
     reader = readers.ConfigReader(bin_cfg_path)
     bin_cfg = reader.load()
 
-    r = readers.ConfigReader(os.path.join(scenario_path, 'requirements.yaml'))
-    requirements = r.load()
-
-    scenario_key = ""
-
-    for req in requirements.get('dependencies'):
-        for tag in req.get('tags', []):
-            if 'bin-vals' in tag:
-                scenario_key = req.get('name')
-
     if scenario_key:
         generate_config_for_installation(bin_cfg, scenario_key,
-                                         bin_cfg_path, env_config_dir_path)
+                                         bin_cfg_path, env_config_dir_path,
+                                         env_cfg, scenario_path)
     else:
         generate_config_for_single_service(bin_cfg)
 

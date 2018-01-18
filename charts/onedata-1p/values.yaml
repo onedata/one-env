@@ -2,8 +2,8 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-oz_image: &oz_image onedata/onezone:17.06.0-rc1
-op_image: &op_image onedata/oneprovider:17.06.0-rc1
+onezoneImage: &onezoneImage onedata/onezone:17.06.0-rc1
+oneproviderImage: &oneproviderImage onedata/oneprovider:17.06.0-rc1
 oc_image: &oc_image onedata/oneclient:17.06.0-rc1
 cli_image: &cli_image onedata/rest-cli:17.06.0-beta6
 
@@ -90,7 +90,7 @@ luma: &luma_global
 
 # Onezone configuration
 onezone:
-  image: *oz_image
+  image: *onezoneImage
   onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
   onedata_anti_affinity_enabled: *onedata_anti_affinity_enabled
   log_level: *log_level
@@ -113,7 +113,7 @@ oneprovider-krakow:
   geoLatitude: 50.0647
   geoLongitude: 19.9450
 
-  image: *op_image
+  image: *oneproviderImage
   onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
   onedata_anti_affinity_enabled: *onedata_anti_affinity_enabled
   log_level: *log_level

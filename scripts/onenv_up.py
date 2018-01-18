@@ -111,11 +111,12 @@ env_config.coalesce(env_config_output_dir, args.env_config, args.scenario,
                     args.binaries, args.packages, args.onezone_image,
                     args.oneprovider_image, args.no_pull)
 
-scenario_runner.run_scenario(env_config_output_dir)
-
 # TODO w tym katalogu jest przygotowany env_config.yaml, odpalasz tutaj swoj
 # TODO skrypt
 print('o tutej: ' + env_config_output_dir)
+
+scenario_runner.run_scenario(env_config_output_dir)
+
 
 # print(user_config.get('hostHomeDir'))
 # print(user_config.get('kubeHostHomeDir'))
