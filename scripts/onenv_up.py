@@ -10,11 +10,12 @@ __license__ = "This software is released under the MIT license cited in " \
 import sys
 import argparse
 import console
-import binaries
+import helm
 import user_config
 import env_config
 import deployments_dir
 import scenario_runner
+import pods
 
 SCRIPT_DESCRIPTION = 'Sets up a onedata deployment on kubernetes cluster.'
 
@@ -82,7 +83,23 @@ parser.add_argument(
     help='do not pull images if they are present on the host',
     dest='no_pull')
 
+parser.add_argument(
+    '-f', '--force',
+    action='store_true',
+    default=argparse.SUPPRESS,
+    help='forces a new deployment - deletes an old one if present',
+    dest='force')
+
 args = parser.parse_args()
+
+if 'force' in args:
+    if helm.deployment_exists():
+        console.warning('Removing an old deployment (forced)')
+        helm.clean_deployment()
+        pods.clean_jobs()
+else:
+    helm.ensure_deployment(exists=False, fail_with_error=True)
+
 if 'env_config' not in args:
     args.env_config = None
 if 'scenario' not in args:
@@ -111,13 +128,4 @@ env_config.coalesce(env_config_output_dir, args.env_config, args.scenario,
                     args.binaries, args.packages, args.onezone_image,
                     args.oneprovider_image, args.no_pull)
 
-# TODO w tym katalogu jest przygotowany env_config.yaml, odpalasz tutaj swoj
-# TODO skrypt
-print('o tutej: ' + env_config_output_dir)
-
 scenario_runner.run_scenario(env_config_output_dir)
-
-
-# print(user_config.get('hostHomeDir'))
-# print(user_config.get('kubeHostHomeDir'))
-# print(binaries.locate('op-worker'))

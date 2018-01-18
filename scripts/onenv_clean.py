@@ -20,10 +20,10 @@ parser = argparse.ArgumentParser(
     description=SCRIPT_DESCRIPTION
 )
 
+helm.ensure_deployment(exists=True, fail_with_error=False)
+
 args = parser.parse_args()
 
-if helm.deployment_exists():
-    helm.clean_deployment()
-    pods.clean_jobs()
-else:
-    console.info('There is no active deployment')
+helm.clean_deployment()
+pods.clean_jobs()
+

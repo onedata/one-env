@@ -8,9 +8,8 @@ __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
 import argparse
-import time
-import sys
 import pods
+import helm
 
 SCRIPT_DESCRIPTION = 'Displays logs of chosen pod.'
 
@@ -34,6 +33,8 @@ parser.add_argument(
     default=argparse.SUPPRESS,
     help='pod name (or any matching, unambiguous substring)',
     dest='pod')
+
+helm.ensure_deployment(exists=True, fail_with_error=True)
 
 args = parser.parse_args()
 if 'pod' not in args:

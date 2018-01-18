@@ -11,6 +11,7 @@ __license__ = "This software is released under the MIT license cited in " \
 import argparse
 import cmd
 import pods
+import helm
 
 SCRIPT_DESCRIPTION = 'Opens the GUI hosted by the service on given pod in ' \
                      'your default browser (uses the `open` command ' \
@@ -46,6 +47,8 @@ parser.add_argument(
     help='use pod\'s IP rather than domain - useful when kubernetes domains '
          'cannot be resolved from the host.',
     dest='ip')
+
+helm.ensure_deployment(exists=True, fail_with_error=True)
 
 args = parser.parse_args()
 if 'pod' not in args:

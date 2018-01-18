@@ -7,8 +7,10 @@ __copyright__ = "Copyright (C) 2018 ACK CYFRONET AGH"
 __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
+import sys
 import cmd
 import user_config
+import console
 
 
 def GET_DEPLOYMENT(name): return ['helm', 'get', name]
@@ -27,3 +29,19 @@ def deployment_exists():
 
 def clean_deployment():
     cmd.call(DELETE_DEPLOYMENT(deployment_name()))
+
+
+def ensure_deployment(exists=True, fail_with_error=False):
+    if exists:
+        log = 'There is no active deployment'
+    else:
+        log = 'There already is an active deployment'
+
+    if exists is not deployment_exists():
+        if fail_with_error:
+            console.error(log)
+            sys.exit(1)
+        else:
+            console.info(log)
+            sys.exit(0)
+
