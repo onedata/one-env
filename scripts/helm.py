@@ -1,5 +1,5 @@
 """
-Convenience functions for manipulating pods via kubectl.
+Convenience functions for manipulating deployments via helm.
 """
 
 __author__ = "Lukasz Opiola"
@@ -16,21 +16,7 @@ import deployments_dir
 import env_config
 from config import readers
 
-LIST_PODS = ['kubectl', 'get', 'pods', '-o', 'go-template', '--template',
-             '{{range .items}}{{.metadata.name}}{{"\\n"}}{{end}}']
-
-
-def POD_READY(pod): return ['kubectl', 'get', 'pod', pod]
-
-
-def EXEC(pod, cmd):
-    if isinstance(cmd, list):
-        return ['kubectl', 'exec', '-it', pod] + cmd
-    else:
-        return ['kubectl', 'exec', '-it', pod, cmd]
-
-
-def GET_POD(pod): return ['kubectl', 'get', 'pod', pod, '-o', 'yaml']
+def GET_DEPLOYMENT(name): return ['helm', 'get', name]
 
 
 def command_output(tokens):

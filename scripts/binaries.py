@@ -11,6 +11,7 @@ import os
 import sys
 import console
 
+
 # app can be one of:
 #   op-worker
 #   oz-worker
@@ -39,6 +40,14 @@ def locate(app):
         os.path.join(cwd, '../', app_underscores),
         os.path.join(cwd, '../', app_dashes)
     ]
+
+    # FIXME hack
+    if app_dashes == 'oz-panel' or app_dashes == 'op-panel':
+        paths_to_check.extend([
+            os.path.join(cwd, 'onepanel'),
+            os.path.join(cwd, '../', 'onepanel')
+        ])
+
     location = None
     for path in paths_to_check:
         if os.path.isdir(path):

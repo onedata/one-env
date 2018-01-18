@@ -13,7 +13,7 @@ import pods
 import console
 
 SCRIPT_DESCRIPTION = 'Attaches directly to erlang VM in chosen pod. By ' \
-                     ' default, will attach to worker console, unless other' \
+                     'default, will attach to worker console, unless other ' \
                      'choice is specified in argument.'
 
 parser = argparse.ArgumentParser(
@@ -26,33 +26,35 @@ parser.add_argument(
     type=str,
     nargs='?',
     action='store',
-    default=None,
-    help='Pod name (or any matching, unambiguous substring)',
+    default=argparse.SUPPRESS,
+    help='pod name (or any matching, unambiguous substring)',
     dest='pod')
 
 parser.add_argument(
     '-p', '--panel',
     action='store_true',
-    default=None,
-    help='Attaches to onepanel\'s console in given pod',
+    default=argparse.SUPPRESS,
+    help='attach to onepanel\'s console in given pod',
     dest='panel')
 
 parser.add_argument(
     '-c', '--cluster-manager',
     action='store_true',
-    default=None,
-    help='Attaches to cluster-manager\'s console in given pod',
+    default=argparse.SUPPRESS,
+    help='attach to cluster-manager\'s console in given pod',
     dest='cluster_manager')
 
 args = parser.parse_args()
+if 'pod' not in args:
+    args.pod = None
 
-if args.panel and args.cluster_manager:
+if 'panel' in args and 'cluster_manager' in args:
     console.error('-p and -c options cannot be used together')
 else:
     app_type = 'worker'
-    if args.panel:
+    if 'panel' in args:
         app_type = 'panel'
-    elif args.cluster_manager:
+    elif 'cluster_manager' in args:
         app_type = 'cluster-manager'
 
     def attach_fun(pod):
