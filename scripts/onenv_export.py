@@ -45,14 +45,15 @@ args = parser.parse_args()
 
 
 def copytree_no_overwrite(src, dst):
+    if not os.path.isdir(dst):
+        os.mkdir(dst)
     for item in os.listdir(src):
         s = os.path.join(src, item)
         d = os.path.join(dst, item)
-        if os.path.isdir(s):
-            if os.path.isdir(d):
-                copytree_no_overwrite(s, d)
-            else:
-                shutil.copytree(s, d)
+        if os.path.islink(s):
+            pass
+        elif os.path.isdir(s):
+            copytree_no_overwrite(s, d)
         else:
             shutil.copy2(s, d)
 

@@ -118,15 +118,12 @@ def logs(pod, interactive=False, follow=False):
 
 # app is one of: worker | panel | cluster-manager
 def attach(pod, app_type='worker'):
-    chart = get_chart(pod)
-    current_deployment = deployments_dir.current_deployment_dir()
-    env_cfg = readers.YamlConfigReader(
-        env_config.config_path(current_deployment)).load()
     try:
+        chart = get_chart(pod)
         app = chart_and_app_type_to_app(chart, app_type)
-        command = [binaries.start_script_path(app, env_cfg['binaries']),
-               'attach-direct']
-        cmd.call(EXEC(pod, command))
+        uses_binaries = env_config.uses_binaries(pod, app)
+        start_script = binaries.start_script_path(app, uses_binaries)
+        cmd.call(EXEC(pod, [start_script, 'attach-direct']))
     except KeyError:
         console.error('Only pods hosting onezone or oneprovider are supported.')
         sys.exit(1)

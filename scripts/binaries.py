@@ -74,6 +74,7 @@ def locate(app):
 
 def start_script_path(app, binaries):
     if binaries:
-        return os.path.join(locate(app), relative_start_script_path(app))
+        return os.path.normpath(
+            os.path.join(locate(app), relative_start_script_path(app)))
     else:
         return app.replace('-', '_')

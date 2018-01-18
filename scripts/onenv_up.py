@@ -92,6 +92,9 @@ parser.add_argument(
 
 args = parser.parse_args()
 
+if not user_config.exists():
+    user_config.initialize()
+
 if 'force' in args:
     if helm.deployment_exists():
         console.warning('Removing an old deployment (forced)')
@@ -118,9 +121,6 @@ if 'no_pull' not in args:
 if args.binaries and args.packages:
     console.error('-b and -p options cannot be used together')
     sys.exit(1)
-
-if not user_config.exists():
-    user_config.initialize()
 
 env_config_output_dir = deployments_dir.new()
 

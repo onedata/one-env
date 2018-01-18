@@ -8,11 +8,9 @@ __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
 import os
-from shutil import copyfile
-import fileinput
-import console
 # FIXME use config reader from readers
 import yaml
+import deployments_dir
 
 
 # FIXME use config reader from readers
@@ -34,6 +32,23 @@ def config_template_path():
 
 def config_path(deployment_dir):
     return os.path.join(deployment_dir, 'env_config.yaml')
+
+
+def uses_binaries(pod, app):
+    deployment_dir = deployments_dir.current_deployment_dir()
+    env_cfg = load_yaml(config_path(deployment_dir))
+
+    binaries = env_cfg['binaries']
+    matched_services = list(filter(lambda s: s in pod, binaries.keys()))
+    if len(matched_services) != 1:
+        return False
+
+    nodes = env_cfg['binaries'][matched_services[0]]
+    matched_nodes = list(filter(lambda n: n in pod, nodes.keys()))
+    if len(matched_nodes) != 1:
+        return False
+
+    return app in nodes[matched_nodes[0]]
 
 
 def coalesce(output_path, env_config_path=None, scenario=None, binaries=None,
