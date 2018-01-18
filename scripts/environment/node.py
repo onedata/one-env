@@ -4,7 +4,6 @@
 import os
 import sys
 import requests
-import subprocess
 
 ENV_CONFIG_FILE_SUFFIX = 'env.config'
 OFFSET = 4

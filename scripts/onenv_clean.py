@@ -8,9 +8,9 @@ __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
 import argparse
-import time
-import sys
+import helm
 import pods
+import console
 
 SCRIPT_DESCRIPTION = 'Cleans current onedata deployment.'
 
@@ -22,4 +22,8 @@ parser = argparse.ArgumentParser(
 
 args = parser.parse_args()
 
-print('hehe')
+if helm.deployment_exists():
+    helm.clean_deployment()
+    pods.clean_jobs()
+else:
+    console.info('There is no active deployment')

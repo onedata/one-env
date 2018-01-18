@@ -9,7 +9,7 @@ __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
 import argparse
-import subprocess
+import cmd
 import pods
 
 SCRIPT_DESCRIPTION = 'Opens the GUI hosted by the service on given pod in ' \
@@ -61,7 +61,7 @@ def open_fun(pod):
         hostname = pods.get_ip(pod)
     else:
         hostname = pods.get_hostname(pod)
-    subprocess.call(['open', 'https://{}:{}'.format(hostname, port)])
+    cmd.call(['open', 'https://{}:{}'.format(hostname, port)])
 
 
 pods.match_pod_and_run(args.pod, open_fun)

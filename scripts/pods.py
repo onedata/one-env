@@ -7,7 +7,7 @@ __copyright__ = "Copyright (C) 2018 ACK CYFRONET AGH"
 __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
-import subprocess
+import cmd
 import console
 import yaml
 import sys
@@ -18,6 +18,9 @@ from config import readers
 
 LIST_PODS = ['kubectl', 'get', 'pods', '-o', 'go-template', '--template',
              '{{range .items}}{{.metadata.name}}{{"\\n"}}{{end}}']
+
+
+DELETE_JOBS = ['kubectl', 'delete', 'jobs', '--all']
 
 
 def POD_READY(pod): return ['kubectl', 'get', 'pod', pod]
@@ -33,13 +36,8 @@ def EXEC(pod, cmd):
 def GET_POD(pod): return ['kubectl', 'get', 'pod', pod, '-o', 'yaml']
 
 
-def command_output(tokens):
-    output = subprocess.check_output(tokens)
-    return output.decode('utf-8').strip()
-
-
 def is_pod_ready(pod):
-    status = command_output(POD_READY(pod))
+    status = cmd.check_output(POD_READY(pod))
     # The above returns a string like this:
     #   NAME                      READY     STATUS    RESTARTS   AGE
     #   develop-onezone-node1-0   1/1       Running   0          1h
@@ -51,7 +49,7 @@ def is_pod_ready(pod):
 
 
 def get_chart(pod):
-    output = yaml.load(command_output(GET_POD(pod)))
+    output = yaml.load(cmd.check_output(GET_POD(pod)))
     return output['metadata']['labels']['chart']
 
 
@@ -67,7 +65,7 @@ def chart_and_app_type_to_app(chart, app_type):
 
 
 def list_pods():
-    output = command_output(LIST_PODS)
+    output = cmd.check_output(LIST_PODS)
     lines = output.split('\n')
     return lines
 
@@ -85,15 +83,15 @@ def are_all_pods_ready(pods):
 
 
 def get_hostname(pod):
-    return command_output(EXEC(pod, ['--', 'hostname', '-f']))
+    return cmd.check_output(EXEC(pod, ['--', 'hostname', '-f']))
 
 
 def get_ip(pod):
-    return command_output(EXEC(pod, ['--', 'hostname', '-i']))
+    return cmd.check_output(EXEC(pod, ['--', 'hostname', '-i']))
 
 
 def exec(pod):
-    subprocess.call(EXEC(pod, 'bash'))
+    cmd.call(EXEC(pod, 'bash'))
 
 
 # app is one of: worker | panel | cluster-manager
@@ -106,10 +104,14 @@ def attach(pod, app_type='worker'):
         app = chart_and_app_type_to_app(chart, app_type)
         cmd = [binaries.start_script_path(app, env_cfg['binaries']),
                'attach-direct']
-        subprocess.call(EXEC(pod, cmd))
+        cmd.call(EXEC(pod, cmd))
     except KeyError:
         console.error('Only pods hosting onezone or oneprovider are supported.')
         sys.exit(1)
+
+
+def clean_jobs():
+    cmd.call(DELETE_JOBS)
 
 
 def match_pods(substring):
