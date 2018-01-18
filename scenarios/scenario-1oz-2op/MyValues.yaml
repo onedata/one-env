@@ -108,8 +108,8 @@ onedata-2p:
       - name: node1
     mainNode: node1
 
-    memory: 1Gi
-    cpu: 1
+    memory: 0.5Gi
+    cpu: 0.3
     image: *oz_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
     log_level: *log_level
@@ -134,8 +134,8 @@ onedata-2p:
       - name: node1
     mainNode: node1
 
-    memory: 1Gi
-    cpu: 1
+    memory: 0.5Gi
+    cpu: 0.3
     suffix: &op1s krakow
     geoLatitude: 50.0647
     geoLongitude: 19.9450
@@ -208,8 +208,8 @@ onedata-2p:
       - name: node1
     mainNode: node1
 
-    memory: 1Gi
-    cpu: 1
+    memory: 0.5Gi
+    cpu: 0.3
     suffix: &op1s paris
     geoLatitude: 50.0647
     geoLongitude: 19.9450

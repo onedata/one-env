@@ -23,38 +23,73 @@ parser.add_argument(
     type=str,
     nargs='?',
     action='store',
-    default=None,
-    help='(optional) displays detailed status of given pod. The pod can be '
-         'identified by any matching substring',
+    default=argparse.SUPPRESS,
+    help='pod name (or any matching, unambiguous substring) - '
+         'display detailed status of given pod.',
     dest='pod')
 
+parser.add_argument(
+    '-i', '--ip',
+    action='store_true',
+    default=argparse.SUPPRESS,
+    help='display only pod\'s IP (pod must be specified)',
+    dest='ip')
+
+parser.add_argument(
+    '-hn', '--hostname',
+    action='store_true',
+    default=argparse.SUPPRESS,
+    help='display only pod\'s hostname (pod must be specified)',
+    dest='hostname')
+
 args = parser.parse_args()
+if 'pod' not in args:
+    args.pod = None
 
 
 def deployment_status():
     pods_list = pods.list_pods()
     print('ready: {}'.format(pods.are_all_pods_ready(pods_list)))
-    print(' pods:')
-    max_len = len(max(pods_list, key=len))
+    print('pods:')
     for pod in pods_list:
-        ready = 'Ready' if pods.is_pod_ready(pod) else 'Initializing'
-        print('    {pod}    {readiness}'.format(pod=pod.rjust(max_len),
-                                                readiness=ready))
+        pod_status(pod, multiple=True, indent='    ')
 
 
-def pod_status(pod):
-    print('pod_status: ', pod)
+def pod_status(pod, multiple=False, indent=''):
+    if multiple:
+        print('{}{}:'.format(indent, pod))
+        indent = indent + '    '
+
+    if not multiple:
+        print('{}name: {}'.format(indent, pod))
+    print('{}ready: {}'.format(indent, pods.is_pod_ready(pod)))
+    print('{}hostname: {}'.format(indent, pods.get_hostname(pod)))
+    print('{}ip: {}'.format(indent, pods.get_ip(pod)))
+
+
+def pod_ip(pod, multiple=False):
+    ip = pods.get_ip(pod)
+    if multiple:
+        print('{}: {}'.format(pod, ip))
+    else:
+        print(ip)
+
+
+def pod_hostname(pod, multiple=False):
+    hostname = pods.get_hostname(pod)
+    if multiple:
+        print('{}: {}'.format(pod, hostname))
+    else:
+        print(hostname)
 
 
 if args.pod:
-    matching_pods = pods.match_pods(args.pod)
-    if len(matching_pods) == 0:
-        console.error('There are no pods matching {}'.format(args.pod))
-    elif len(matching_pods) == 1:
-        pod_status(matching_pods[0])
+    if 'ip' in args:
+        fun = pod_ip
+    elif 'hostname' in args:
+        fun = pod_hostname
     else:
-        console.error('There is more than one matching pod:')
-        for pod in matching_pods:
-            print('    {}'.format(pod))
+        fun = pod_status
+    pods.match_pod_and_run(args.pod, fun, allow_multiple=True)
 else:
     deployment_status()

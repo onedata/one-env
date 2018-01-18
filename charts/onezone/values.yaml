@@ -10,8 +10,8 @@ serviceType: ClusterIP
 name: ''
 
 # Resources requested by onezone
-cpu: 1.5
-memory: 4Gi
+cpu: 0.3
+memory: 0.5Gi
 
 # Log level of the processes in the container
 log_level: "info"

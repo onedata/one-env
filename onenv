@@ -3,13 +3,16 @@
 SCRIPT_DIR=$( cd ${0%/*} && pwd -P )
 
 usage_and_exit() {
-    echo "usage: ${0} [<command>]"
-    echo "  allowed commands:"
-    echo "      up - creates a new deployment (default)"
-    echo "      status - displays information about current deployment (if any)"
-    echo "      exec - performs 'kubectl exec' to given pod"
+    echo "usage: ${0} <command> - one of:"
+    echo "      up - sets up a onedata deployment on kubernetes cluster"
+    echo "      status - displays the status of current onedata deployment"
+    echo "      wait - waits for current deployment to be ready"
+    echo "      exec - execs to chosen pod with an interactive shell"
+    echo "      attach - attaches directly to erlang VM in chosen pod"
+    echo "      open - opens the GUI hosted on given pod in default browser"
+    echo "      clean - removes current onedata deployment and cleans up"
     echo ""
-    echo "  run '${0} <command> -h' to get more detailed help"
+    echo "run '${0} <command> -h' to get more detailed help"
     exit 1
 }
 
@@ -26,12 +29,24 @@ case "${1}" in
         SCRIPT="onenv_status.py"
         ;;
 
+    wait)
+        SCRIPT="onenv_wait.py"
+        ;;
+
     exec)
         SCRIPT="onenv_exec.py"
         ;;
 
     attach)
         SCRIPT="onenv_attach.py"
+        ;;
+
+    open)
+        SCRIPT="onenv_open.py"
+        ;;
+
+    clean)
+        SCRIPT="onenv_clean.py"
         ;;
 
     *)

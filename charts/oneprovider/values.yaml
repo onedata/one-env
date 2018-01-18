@@ -38,8 +38,8 @@ onezone_service_url: &onezone_service_url
 name: ''
 
 # Resources requested by oneprovider
-cpu: 1.5
-memory: 4Gi
+cpu: 0.3
+memory: 0.5Gi
 
 # Coordinates of a Oneprovider on a onezone map
 geoLatitude: 55.333

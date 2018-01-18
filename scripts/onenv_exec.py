@@ -23,10 +23,12 @@ parser.add_argument(
     type=str,
     nargs='?',
     action='store',
-    default=None,
-    help='Pod name (or any matching, unambiguous substring)',
+    default=argparse.SUPPRESS,
+    help='pod name (or any matching, unambiguous substring)',
     dest='pod')
 
 args = parser.parse_args()
+if 'pod' not in args:
+    args.pod = None
 
 pods.match_pod_and_run(args.pod, pods.exec)
