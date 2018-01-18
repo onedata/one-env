@@ -31,8 +31,12 @@ args = parser.parse_args()
 
 start_time = time.time()
 
-while int(time.time() - start_time) <= int(args.timeout):
-    if pods.are_all_pods_ready(pods.list_pods()):
-        sys.exit(0)
 
-sys.exit(1)
+try:
+    while int(time.time() - start_time) <= int(args.timeout):
+        if pods.are_all_pods_ready(pods.list_pods()):
+            sys.exit(0)
+
+    sys.exit(1)
+except KeyboardInterrupt:
+    pass

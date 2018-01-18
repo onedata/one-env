@@ -26,14 +26,24 @@ DELETE_JOBS = ['kubectl', 'delete', 'jobs', '--all']
 def POD_READY(pod): return ['kubectl', 'get', 'pod', pod]
 
 
-def EXEC(pod, cmd):
-    if isinstance(cmd, list):
-        return ['kubectl', 'exec', '-it', pod] + cmd
+def EXEC(pod, command):
+    if isinstance(command, list):
+        return ['kubectl', 'exec', '-it', pod] + command
     else:
-        return ['kubectl', 'exec', '-it', pod, cmd]
+        return ['kubectl', 'exec', '-it', pod, command]
+
+
+def LOGS(pod, follow=False):
+    if follow:
+        return ['kubectl', 'logs', '-f', pod]
+    else:
+        return ['kubectl', 'logs', pod]
 
 
 def GET_POD(pod): return ['kubectl', 'get', 'pod', pod, '-o', 'yaml']
+
+
+DESCRIBE_STATEFUL_SET = ['kubectl', 'describe', 'statefulset']
 
 
 def is_pod_ready(pod):
@@ -75,6 +85,11 @@ def print_pods(pods):
         print('    {}'.format(pod))
 
 
+def describe_stateful_set():
+    return cmd.check_output(DESCRIBE_STATEFUL_SET)
+
+
+
 def are_all_pods_ready(pods):
     for pod in pods:
         if not is_pod_ready(pod):
@@ -94,6 +109,13 @@ def exec(pod):
     cmd.call(EXEC(pod, 'bash'))
 
 
+def logs(pod, interactive=False, follow=False):
+    if interactive:
+        cmd.call(LOGS(pod, follow))
+    else:
+        return cmd.check_output(LOGS(pod))
+
+
 # app is one of: worker | panel | cluster-manager
 def attach(pod, app_type='worker'):
     chart = get_chart(pod)
@@ -102,9 +124,9 @@ def attach(pod, app_type='worker'):
         env_config.config_path(current_deployment)).load()
     try:
         app = chart_and_app_type_to_app(chart, app_type)
-        cmd = [binaries.start_script_path(app, env_cfg['binaries']),
+        command = [binaries.start_script_path(app, env_cfg['binaries']),
                'attach-direct']
-        cmd.call(EXEC(pod, cmd))
+        cmd.call(EXEC(pod, command))
     except KeyError:
         console.error('Only pods hosting onezone or oneprovider are supported.')
         sys.exit(1)

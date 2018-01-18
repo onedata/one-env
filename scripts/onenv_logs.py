@@ -1,5 +1,5 @@
 """
-Part of onenv tool that allows to exec to chosen pod in onedata deployment.
+Part of onenv tool that allows to display logs of chosen pod.
 """
 
 __author__ = "Lukasz Opiola"
@@ -8,16 +8,24 @@ __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
 import argparse
+import time
+import sys
 import pods
-import console
 
-SCRIPT_DESCRIPTION = 'Execs to chosen pod with an interactive shell.'
+SCRIPT_DESCRIPTION = 'Displays logs of chosen pod.'
 
 parser = argparse.ArgumentParser(
-    prog='onenv exec',
+    prog='onenv logs',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     description=SCRIPT_DESCRIPTION
 )
+
+parser.add_argument(
+    '-f', '--follow',
+    action='store_true',
+    default=False,
+    help='logs will be streamed',
+    dest='follow')
 
 parser.add_argument(
     type=str,
@@ -31,7 +39,12 @@ args = parser.parse_args()
 if 'pod' not in args:
     args.pod = None
 
+
+def logs(pod):
+    pods.logs(pod, interactive=True, follow=args.follow)
+
+
 try:
-    pods.match_pod_and_run(args.pod, pods.exec)
+    pods.match_pod_and_run(args.pod, logs)
 except KeyboardInterrupt:
     pass

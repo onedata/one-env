@@ -51,13 +51,16 @@ if 'pod' not in args:
 if 'panel' in args and 'cluster_manager' in args:
     console.error('-p and -c options cannot be used together')
 else:
-    app_type = 'worker'
-    if 'panel' in args:
-        app_type = 'panel'
-    elif 'cluster_manager' in args:
-        app_type = 'cluster-manager'
+    try:
+        app_type = 'worker'
+        if 'panel' in args:
+            app_type = 'panel'
+        elif 'cluster_manager' in args:
+            app_type = 'cluster-manager'
 
-    def attach_fun(pod):
-        pods.attach(pod, app_type)
+        def attach_fun(pod):
+            pods.attach(pod, app_type)
 
-    pods.match_pod_and_run(args.pod, attach_fun)
+        pods.match_pod_and_run(args.pod, attach_fun)
+    except KeyboardInterrupt:
+        pass
