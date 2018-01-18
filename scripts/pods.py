@@ -12,7 +12,7 @@ import console
 import yaml
 import sys
 import binaries
-import deployments_dir
+import subprocess
 import env_config
 from config import readers
 
@@ -98,11 +98,17 @@ def are_all_pods_ready(pods):
 
 
 def get_hostname(pod):
-    return cmd.check_output(EXEC(pod, ['--', 'hostname', '-f']))
+    try:
+        return cmd.check_output(EXEC(pod, ['--', 'hostname', '-f']))
+    except subprocess.CalledProcessError:
+        return None
 
 
 def get_ip(pod):
-    return cmd.check_output(EXEC(pod, ['--', 'hostname', '-i']))
+    try:
+        return cmd.check_output(EXEC(pod, ['--', 'hostname', '-i']))
+    except subprocess.CalledProcessError:
+        return None
 
 
 def exec(pod):
@@ -120,6 +126,9 @@ def logs(pod, interactive=False, follow=False):
 def attach(pod, app_type='worker'):
     try:
         chart = get_chart(pod)
+        # @fixme hack
+        if '-' in chart:
+            chart = chart.split('-')[0]
         app = chart_and_app_type_to_app(chart, app_type)
         uses_binaries = env_config.uses_binaries(pod, app)
         start_script = binaries.start_script_path(app, uses_binaries)

@@ -92,8 +92,7 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-if not user_config.exists():
-    user_config.initialize()
+user_config.ensure_exists()
 
 if 'force' in args:
     if helm.deployment_exists():

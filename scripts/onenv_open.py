@@ -12,6 +12,7 @@ import argparse
 import cmd
 import pods
 import helm
+import user_config
 
 SCRIPT_DESCRIPTION = 'Opens the GUI hosted by the service on given pod in ' \
                      'your default browser (uses the `open` command ' \
@@ -48,6 +49,7 @@ parser.add_argument(
          'cannot be resolved from the host.',
     dest='ip')
 
+user_config.ensure_exists()
 helm.ensure_deployment(exists=True, fail_with_error=True)
 
 args = parser.parse_args()

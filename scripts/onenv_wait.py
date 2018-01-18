@@ -12,6 +12,7 @@ import time
 import sys
 import pods
 import helm
+import user_config
 
 SCRIPT_DESCRIPTION = 'Waits for current deployment to be ready.'
 
@@ -28,6 +29,7 @@ parser.add_argument(
     help='timeout (in seconds) after which the script terminates with failure',
     dest='timeout')
 
+user_config.ensure_exists()
 helm.ensure_deployment(exists=True, fail_with_error=True)
 
 args = parser.parse_args()

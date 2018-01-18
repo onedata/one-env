@@ -12,6 +12,7 @@ import argparse
 import pods
 import helm
 import console
+import user_config
 
 SCRIPT_DESCRIPTION = 'Attaches directly to erlang VM in chosen pod. By ' \
                      'default, will attach to worker console, unless other ' \
@@ -45,6 +46,7 @@ parser.add_argument(
     help='attach to cluster-manager\'s console in given pod',
     dest='cluster_manager')
 
+user_config.ensure_exists()
 helm.ensure_deployment(exists=True, fail_with_error=True)
 
 args = parser.parse_args()

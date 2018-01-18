@@ -15,6 +15,7 @@ import pods
 import helm
 import deployments_dir
 import console
+import user_config
 
 SCRIPT_DESCRIPTION = 'Gathers all logs and relevant data from current ' \
                      'deployment and places them in desired location.'
@@ -39,6 +40,7 @@ parser.add_argument(
          '(~/.one-env/deployments/<timestamp>)',
     dest='path')
 
+user_config.ensure_exists()
 helm.ensure_deployment(exists=True, fail_with_error=True)
 
 args = parser.parse_args()

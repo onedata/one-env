@@ -10,7 +10,7 @@ __license__ = "This software is released under the MIT license cited in " \
 import argparse
 import helm
 import pods
-import console
+import user_config
 
 SCRIPT_DESCRIPTION = 'Cleans current onedata deployment.'
 
@@ -20,6 +20,7 @@ parser = argparse.ArgumentParser(
     description=SCRIPT_DESCRIPTION
 )
 
+user_config.ensure_exists()
 helm.ensure_deployment(exists=True, fail_with_error=False)
 
 args = parser.parse_args()

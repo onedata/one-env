@@ -23,5 +23,5 @@ def check_return_code(tokens):
 
 
 def check_output(tokens):
-    output = subprocess.check_output(tokens)
+    output = subprocess.check_output(tokens, stderr=open(os.devnull, 'w'))
     return output.decode('utf-8').strip()
