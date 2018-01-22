@@ -27,4 +27,5 @@ args = parser.parse_args()
 
 helm.clean_deployment()
 pods.clean_jobs()
+pods.clean_pods()
 

@@ -19,8 +19,9 @@ from config import readers
 LIST_PODS = ['kubectl', 'get', 'pods', '-o', 'go-template', '--template',
              '{{range .items}}{{.metadata.name}}{{"\\n"}}{{end}}']
 
-
 DELETE_JOBS = ['kubectl', 'delete', 'jobs', '--all']
+
+DELETE_PODS = ['kubectl', 'delete', 'pod', '--all']
 
 
 def POD_READY(pod): return ['kubectl', 'get', 'pod', pod]
@@ -28,9 +29,9 @@ def POD_READY(pod): return ['kubectl', 'get', 'pod', pod]
 
 def EXEC(pod, command):
     if isinstance(command, list):
-        return ['kubectl', 'exec', '-it', pod] + command
+        return ['kubectl', 'exec', '-it', pod, '--'] + command
     else:
-        return ['kubectl', 'exec', '-it', pod, command]
+        return ['kubectl', 'exec', '-it', pod, '--', command]
 
 
 def LOGS(pod, follow=False):
@@ -76,8 +77,9 @@ def chart_and_app_type_to_app(chart, app_type):
 
 def list_pods():
     output = cmd.check_output(LIST_PODS)
-    lines = output.split('\n')
-    return lines
+    if len(output.strip()) == 0:
+        return []
+    return output.strip().split('\n')
 
 
 def print_pods(pods):
@@ -89,7 +91,6 @@ def describe_stateful_set():
     return cmd.check_output(DESCRIBE_STATEFUL_SET)
 
 
-
 def are_all_pods_ready(pods):
     for pod in pods:
         if not is_pod_ready(pod):
@@ -99,14 +100,26 @@ def are_all_pods_ready(pods):
 
 def get_hostname(pod):
     try:
-        return cmd.check_output(EXEC(pod, ['--', 'hostname', '-f']))
+        return cmd.check_output(EXEC(pod, ['hostname', '-f']))
     except subprocess.CalledProcessError:
         return None
 
 
+def parse_domain(hostname):
+    if not hostname:
+        return None
+    else:
+        return '.'.join(hostname.split('.')[1:])
+
+
+def get_domain(pod):
+    hostname = get_hostname(pod)
+    return parse_domain(hostname)
+
+
 def get_ip(pod):
     try:
-        return cmd.check_output(EXEC(pod, ['--', 'hostname', '-i']))
+        return cmd.check_output(EXEC(pod, ['hostname', '-i']))
     except subprocess.CalledProcessError:
         return None
 
@@ -120,6 +133,28 @@ def logs(pod, interactive=False, follow=False):
         cmd.call(LOGS(pod, follow))
     else:
         return cmd.check_output(LOGS(pod))
+
+
+def app_logs(pod, app_type='worker', interactive=False, follow=False):
+    try:
+        chart = get_chart(pod)
+        # @fixme hack
+        if '-' in chart:
+            chart = chart.split('-')[0]
+        app = chart_and_app_type_to_app(chart, app_type)
+        uses_binaries = env_config.uses_binaries(pod, app)
+        logs_path = binaries.info_logs_path(app, uses_binaries)
+        print(logs_path)
+        if interactive:
+            if follow:
+                cmd.call(EXEC(pod, ['tail', '-n', '+1', '-f', logs_path]))
+            else:
+                cmd.call(EXEC(pod, ['cat', logs_path]))
+        else:
+            return cmd.check_output(EXEC(pod, ['cat', logs_path]))
+    except KeyError:
+        console.error('Only pods hosting onezone or oneprovider are supported.')
+        sys.exit(1)
 
 
 # app is one of: worker | panel | cluster-manager
@@ -140,6 +175,10 @@ def attach(pod, app_type='worker'):
 
 def clean_jobs():
     cmd.call(DELETE_JOBS)
+
+
+def clean_pods():
+    cmd.call(DELETE_PODS)
 
 
 def match_pods(substring):

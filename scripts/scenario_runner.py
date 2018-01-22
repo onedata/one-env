@@ -106,10 +106,11 @@ def parse_custom_binaries_config(custom_binaries_cfg, base_binaries_cfg,
                                  scenario_key, env_config_scenario_path):
     for service in base_binaries_cfg[scenario_key]:
         nodes = []
-        for node_name, node_binaries in custom_binaries_cfg[service].items():
-            node = {'name': node_name,
-                    'binaries': [{'name': binary} for binary in node_binaries]}
-            nodes.append(node)
+        if service in custom_binaries_cfg:
+            for node_name, node_binaries in custom_binaries_cfg[service].items():
+                node = {'name': node_name,
+                        'binaries': [{'name': b} for b in node_binaries]}
+                nodes.append(node)
         base_binaries_cfg[scenario_key][service]['nodes'] = nodes
 
     writer = writers.ConfigWriter(base_binaries_cfg, 'yaml')

@@ -12,6 +12,7 @@ import time
 import sys
 import pods
 import helm
+import console
 import user_config
 
 SCRIPT_DESCRIPTION = 'Waits for current deployment to be ready.'
@@ -42,6 +43,9 @@ try:
         if pods.are_all_pods_ready(pods.list_pods()):
             sys.exit(0)
 
+    console.error('Deployment failed to initialize within {} seconds'.format(
+        args.timeout
+    ))
     sys.exit(1)
 except KeyboardInterrupt:
     pass

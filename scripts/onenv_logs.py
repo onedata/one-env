@@ -12,13 +12,22 @@ import pods
 import helm
 import user_config
 
-SCRIPT_DESCRIPTION = 'Displays logs of chosen pod.'
+SCRIPT_DESCRIPTION = 'Displays logs of chosen pod - by default the output of ' \
+                     'container entrypoint.'
 
 parser = argparse.ArgumentParser(
     prog='onenv logs',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     description=SCRIPT_DESCRIPTION
 )
+
+parser.add_argument(
+    type=str,
+    nargs='?',
+    action='store',
+    default=argparse.SUPPRESS,
+    help='pod name (or any matching, unambiguous substring)',
+    dest='pod')
 
 parser.add_argument(
     '-f', '--follow',
@@ -28,12 +37,25 @@ parser.add_argument(
     dest='follow')
 
 parser.add_argument(
-    type=str,
-    nargs='?',
-    action='store',
+    '-w', '--worker',
+    action='store_true',
     default=argparse.SUPPRESS,
-    help='pod name (or any matching, unambiguous substring)',
-    dest='pod')
+    help='display info level logs from (op|oz)-worker',
+    dest='worker')
+
+parser.add_argument(
+    '-p', '--panel',
+    action='store_true',
+    default=argparse.SUPPRESS,
+    help='display info level logs from (op|oz)-panel',
+    dest='panel')
+
+parser.add_argument(
+    '-c', '--cluster-manager',
+    action='store_true',
+    default=argparse.SUPPRESS,
+    help='display info level logs from cluster-manager',
+    dest='cluster_manager')
 
 user_config.ensure_exists()
 helm.ensure_deployment(exists=True, fail_with_error=True)
@@ -44,7 +66,15 @@ if 'pod' not in args:
 
 
 def logs(pod):
-    pods.logs(pod, interactive=True, follow=args.follow)
+    if 'worker' in args:
+        pods.app_logs(pod, 'worker', interactive=True, follow=args.follow)
+    elif 'panel' in args:
+        pods.app_logs(pod, 'panel', interactive=True, follow=args.follow)
+    elif 'cluster_manager' in args:
+        pods.app_logs(pod, 'cluster-manager', interactive=True,
+                      follow=args.follow)
+    else:
+        pods.logs(pod, interactive=True, follow=args.follow)
 
 
 try:

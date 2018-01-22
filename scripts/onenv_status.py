@@ -64,10 +64,12 @@ def pod_status(pod, multiple=False, indent=''):
         print('{}{}:'.format(indent, pod))
         indent = indent + '    '
 
+    hostname = pods.get_hostname(pod)
     if not multiple:
         print('{}name: {}'.format(indent, pod))
     print('{}ready: {}'.format(indent, pods.is_pod_ready(pod)))
     print('{}hostname: {}'.format(indent, pods.get_hostname(pod)))
+    print('{}domain: {}'.format(indent, pods.parse_domain(hostname)))
     print('{}ip: {}'.format(indent, pods.get_ip(pod)))
 
 

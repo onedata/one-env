@@ -13,6 +13,7 @@ import cmd
 import pods
 import helm
 import user_config
+import console
 
 SCRIPT_DESCRIPTION = 'Opens the GUI hosted by the service on given pod in ' \
                      'your default browser (uses the `open` command ' \
@@ -65,8 +66,12 @@ def open_fun(pod):
     if 'ip' in args:
         hostname = pods.get_ip(pod)
     else:
-        hostname = pods.get_hostname(pod)
-    cmd.call(['open', 'https://{}:{}'.format(hostname, port)])
+        hostname = pods.get_domain(pod)
+
+    if not hostname:
+        console.error('The pod is not ready yet')
+    else:
+        cmd.call(['open', 'https://{}:{}'.format(hostname, port)])
 
 
 pods.match_pod_and_run(args.pod, open_fun)

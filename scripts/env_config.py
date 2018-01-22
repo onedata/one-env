@@ -39,6 +39,11 @@ def uses_binaries(pod, app):
     env_cfg = load_yaml(config_path(deployment_dir))
 
     binaries = env_cfg['binaries']
+    if binaries is True:
+        return True
+    elif binaries is False:
+        return False
+
     matched_services = list(filter(lambda s: s in pod, binaries.keys()))
     if len(matched_services) != 1:
         return False

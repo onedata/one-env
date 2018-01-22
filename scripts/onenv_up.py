@@ -99,6 +99,7 @@ if 'force' in args:
         console.warning('Removing an old deployment (forced)')
         helm.clean_deployment()
         pods.clean_jobs()
+        pods.clean_pods()
 else:
     helm.ensure_deployment(exists=False, fail_with_error=True)
 
