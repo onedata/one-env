@@ -10,7 +10,9 @@ __license__ = "This software is released under the MIT license cited in " \
 
 import argparse
 import pods
+import helm
 import console
+import user_config
 
 SCRIPT_DESCRIPTION = 'Attaches directly to erlang VM in chosen pod. By ' \
                      'default, will attach to worker console, unless other ' \
@@ -44,6 +46,9 @@ parser.add_argument(
     help='attach to cluster-manager\'s console in given pod',
     dest='cluster_manager')
 
+user_config.ensure_exists()
+helm.ensure_deployment(exists=True, fail_with_error=True)
+
 args = parser.parse_args()
 if 'pod' not in args:
     args.pod = None
@@ -51,13 +56,16 @@ if 'pod' not in args:
 if 'panel' in args and 'cluster_manager' in args:
     console.error('-p and -c options cannot be used together')
 else:
-    app_type = 'worker'
-    if 'panel' in args:
-        app_type = 'panel'
-    elif 'cluster_manager' in args:
-        app_type = 'cluster-manager'
+    try:
+        app_type = 'worker'
+        if 'panel' in args:
+            app_type = 'panel'
+        elif 'cluster_manager' in args:
+            app_type = 'cluster-manager'
 
-    def attach_fun(pod):
-        pods.attach(pod, app_type)
+        def attach_fun(pod):
+            pods.attach(pod, app_type)
 
-    pods.match_pod_and_run(args.pod, attach_fun)
+        pods.match_pod_and_run(args.pod, attach_fun)
+    except KeyboardInterrupt:
+        pass

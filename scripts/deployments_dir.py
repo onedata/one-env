@@ -40,7 +40,7 @@ def prune_deployments_history():
 def current_deployment_dir():
     all_deployments = os.listdir(deployments_directory())
     if len(all_deployments) == 0:
-        console.error('There are no deployments yet')
+        console.error('There are no deployments')
         sys.exit(1)
     else:
         return os.path.join(deployments_directory(), all_deployments[-1])
@@ -52,7 +52,6 @@ def new():
     except FileExistsError:
         pass
 
-    # TODO: use colon?
     dir_name = datetime.datetime.fromtimestamp(time.time()).strftime(
         '%Y.%m.%d-%H.%M.%S')
     dir_name = os.path.join(deployments_directory(), dir_name)

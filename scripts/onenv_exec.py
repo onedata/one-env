@@ -9,7 +9,8 @@ __license__ = "This software is released under the MIT license cited in " \
 
 import argparse
 import pods
-import console
+import helm
+import user_config
 
 SCRIPT_DESCRIPTION = 'Execs to chosen pod with an interactive shell.'
 
@@ -27,8 +28,14 @@ parser.add_argument(
     help='pod name (or any matching, unambiguous substring)',
     dest='pod')
 
+user_config.ensure_exists()
+helm.ensure_deployment(exists=True, fail_with_error=True)
+
 args = parser.parse_args()
 if 'pod' not in args:
     args.pod = None
 
-pods.match_pod_and_run(args.pod, pods.exec)
+try:
+    pods.match_pod_and_run(args.pod, pods.exec)
+except KeyboardInterrupt:
+    pass

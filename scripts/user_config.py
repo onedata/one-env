@@ -74,6 +74,11 @@ def initialize():
             'Please make sure that the auto-generated config is correct')
 
 
+def ensure_exists():
+    if not exists():
+        initialize()
+
+
 # FIXME use config reader from reauserders
 def load_yaml(path):
     with open(path) as f:

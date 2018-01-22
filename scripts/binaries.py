@@ -30,6 +30,10 @@ def relative_start_script_path(app):
                         app.replace('-', '_'))
 
 
+def relative_logs_dir(app):
+    return os.path.join(relative_binaries_path(app), 'log')
+
+
 def locate(app):
     app_underscores = app.replace('-', '_')
     app_dashes = app.replace('_', '-')
@@ -52,6 +56,7 @@ def locate(app):
     for path in paths_to_check:
         if os.path.isdir(path):
             location = path
+            break
 
     if not location:
         console.error('Cannot locate directory for {}, tried:'.format(
@@ -74,6 +79,16 @@ def locate(app):
 
 def start_script_path(app, binaries):
     if binaries:
-        return os.path.join(locate(app), relative_start_script_path(app))
+        return os.path.normpath(
+            os.path.join(locate(app), relative_start_script_path(app)))
     else:
         return app.replace('-', '_')
+
+
+def info_logs_path(app, binaries):
+    if binaries:
+        return os.path.normpath(
+            os.path.join(locate(app), relative_logs_dir(app), 'info.log'))
+    else:
+        return os.path.join('/', 'var', 'log', app.replace('-', '_'),
+                            'info.log')

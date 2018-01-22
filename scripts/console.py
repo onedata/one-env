@@ -11,7 +11,7 @@ from termcolor import colored
 
 
 def info(s):
-    print(colored('   [INFO] ' + s, 'white'))
+    print(colored('[INFO] ' + s, 'white'))
 
 
 def warning(s):
@@ -19,4 +19,4 @@ def warning(s):
 
 
 def error(s):
-    print(colored('  [ERROR] ' + s, 'red'))
+    print(colored('[ERROR] ' + s, 'red'))

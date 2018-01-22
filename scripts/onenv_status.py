@@ -9,7 +9,8 @@ __license__ = "This software is released under the MIT license cited in " \
 
 import argparse
 import pods
-import console
+import helm
+import user_config
 
 SCRIPT_DESCRIPTION = 'Displays the status of current onedata deployment.'
 
@@ -42,6 +43,9 @@ parser.add_argument(
     help='display only pod\'s hostname (pod must be specified)',
     dest='hostname')
 
+user_config.ensure_exists()
+helm.ensure_deployment(exists=True, fail_with_error=False)
+
 args = parser.parse_args()
 if 'pod' not in args:
     args.pod = None
@@ -60,10 +64,12 @@ def pod_status(pod, multiple=False, indent=''):
         print('{}{}:'.format(indent, pod))
         indent = indent + '    '
 
+    hostname = pods.get_hostname(pod)
     if not multiple:
         print('{}name: {}'.format(indent, pod))
     print('{}ready: {}'.format(indent, pods.is_pod_ready(pod)))
     print('{}hostname: {}'.format(indent, pods.get_hostname(pod)))
+    print('{}domain: {}'.format(indent, pods.parse_domain(hostname)))
     print('{}ip: {}'.format(indent, pods.get_ip(pod)))
 
 

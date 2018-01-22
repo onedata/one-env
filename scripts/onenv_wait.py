@@ -11,6 +11,9 @@ import argparse
 import time
 import sys
 import pods
+import helm
+import console
+import user_config
 
 SCRIPT_DESCRIPTION = 'Waits for current deployment to be ready.'
 
@@ -27,12 +30,22 @@ parser.add_argument(
     help='timeout (in seconds) after which the script terminates with failure',
     dest='timeout')
 
+user_config.ensure_exists()
+helm.ensure_deployment(exists=True, fail_with_error=True)
+
 args = parser.parse_args()
 
 start_time = time.time()
 
-while int(time.time() - start_time) <= int(args.timeout):
-    if pods.are_all_pods_ready(pods.list_pods()):
-        sys.exit(0)
 
-sys.exit(1)
+try:
+    while int(time.time() - start_time) <= int(args.timeout):
+        if pods.are_all_pods_ready(pods.list_pods()):
+            sys.exit(0)
+
+    console.error('Deployment failed to initialize within {} seconds'.format(
+        args.timeout
+    ))
+    sys.exit(1)
+except KeyboardInterrupt:
+    pass

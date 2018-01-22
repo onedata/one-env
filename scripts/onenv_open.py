@@ -9,8 +9,11 @@ __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
 import argparse
-import subprocess
+import cmd
 import pods
+import helm
+import user_config
+import console
 
 SCRIPT_DESCRIPTION = 'Opens the GUI hosted by the service on given pod in ' \
                      'your default browser (uses the `open` command ' \
@@ -47,6 +50,9 @@ parser.add_argument(
          'cannot be resolved from the host.',
     dest='ip')
 
+user_config.ensure_exists()
+helm.ensure_deployment(exists=True, fail_with_error=True)
+
 args = parser.parse_args()
 if 'pod' not in args:
     args.pod = None
@@ -60,8 +66,12 @@ def open_fun(pod):
     if 'ip' in args:
         hostname = pods.get_ip(pod)
     else:
-        hostname = pods.get_hostname(pod)
-    subprocess.call(['open', 'https://{}:{}'.format(hostname, port)])
+        hostname = pods.get_domain(pod)
+
+    if not hostname:
+        console.error('The pod is not ready yet')
+    else:
+        cmd.call(['open', 'https://{}:{}'.format(hostname, port)])
 
 
 pods.match_pod_and_run(args.pod, open_fun)
