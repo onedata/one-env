@@ -157,7 +157,7 @@ def run_scenario(env_config_dir_path):
     modify_config(scenario_key, env_cfg, env_config_scenario_path, bin_cfg)
 
     helm_install_cmd += ['-f', os.path.join(env_config_scenario_path,
-                                            'env_config.yaml'), '--debug']
+                                            'env_config.yaml')]
 
     # if args.config:
     #     helm_install_cmd += ['-f', args.config]
