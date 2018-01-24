@@ -17,7 +17,8 @@ def default_config(name):
 
     web_args = {
         'web_key_file': "/etc/{0}/certs/web_key.pem".format(name),
-        'web_cert_file': "/etc/{0}/certs/web_cert.pem".format(name)
+        'web_cert_file': "/etc/{0}/certs/web_cert.pem".format(name),
+        'cacerts_dir': "/etc/{0}/cacerts/".format(name)
     }
 
     protocol_args = {
@@ -72,6 +73,7 @@ class Application(object):
             'env_file': 'lib/env.sh',
             'web_key_file': 'etc/certs/web_key.pem',
             'web_cert_file': 'etc/certs/web_cert.pem',
+            'cacerts_dir': 'etc/cacerts/',
             'protocol_key_file': 'etc/certs/protocol_key.pem',
             'protocol_cert_file': 'etc/certs/protocol_cert.pem',
             'start_cmd': 'bin/{} start'.format(self.name),
