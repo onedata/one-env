@@ -70,7 +70,7 @@ def modify_config(scenario_key, env_cfg, env_config_scenario_path, bin_cfg):
             'Always' if force_image_pull else 'IfNotPresent'
 
         if env_cfg.get(service):
-            new_env_cfg[scenario_key][service] = env_cfg[service]
+            new_env_cfg[scenario_key][service] = {**new_env_cfg[scenario_key][service],  **env_cfg[service]}
 
     writer = writers.ConfigWriter(new_env_cfg, 'yaml')
     with open(os.path.join(env_config_scenario_path, 'env_config.yaml'), "w") as f:
