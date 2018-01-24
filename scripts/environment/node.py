@@ -14,8 +14,7 @@ class Node(object):
         self.name = name
         self.apps = apps
 
-        file_name = '{}_{}_{}'.format(service_name, self.name,
-                                      ENV_CONFIG_FILE_SUFFIX)
+        file_name = 'overlay.config'
 
         with open(os.path.join(deployment_dir, service_name, file_name), 'w') as f:
             # TODO:

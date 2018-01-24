@@ -30,6 +30,7 @@ def random_string():
 def prune_deployments_history():
     limit = user_config.get('maxPersistentHistory')
     all_deployments = os.listdir(deployments_directory())
+    all_deployments.sort()
     while len(all_deployments) > limit:
         oldest = all_deployments.pop(0)
         console.warning('Removing old deployment data as maxPersistentHistory '

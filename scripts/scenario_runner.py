@@ -49,27 +49,28 @@ parser.add_argument(
 )
 
 
-def modify_config(scenario_key, env_cfg, env_config_scenario_path, bin_cfg):
-    # TODO: figure out how to deal with it better
-    new_env_cfg = dict()
-    new_env_cfg[scenario_key] = dict()
+def providers_mapping(name):
+    return {'oneprovider-krakow': 'oneprovider-p1',
+            'oneprovider-paris': 'oneprovider-p2'}.get(name, name)
 
-    for key, val in env_cfg.items():
-        if 'spaces' in key:
-            new_env_cfg['spaces'] = env_cfg['spaces']
-        elif 'oneproviderimage' in key.lower():
-            oneprovider_image = env_cfg[key]
-        elif 'onezoneimage' in key.lower():
-            onezone_image = env_cfg[key]
-        else:
-            new_env_cfg[scenario_key][key] = env_cfg[key]
+
+def modify_config(scenario_key, env_cfg, env_config_scenario_path, bin_cfg):
+    new_env_cfg = {scenario_key: dict()}
+
+    # get global variables
+    force_image_pull = env_cfg.get('forceImagePull')
+    oneprovider_image = env_cfg.get('oneproviderImage')
+    onezone_image = env_cfg.get('onezoneImage')
 
     for service in bin_cfg[scenario_key].keys():
-        new_env_cfg[scenario_key][service] = dict()
-        if 'onezone' in service:
-            new_env_cfg[scenario_key][service]['image'] = onezone_image
-        else:
-            new_env_cfg[scenario_key][service]['image'] = oneprovider_image
+        new_env_cfg[scenario_key][service] = \
+            {'image': onezone_image if 'onezone' in service else oneprovider_image}
+
+        new_env_cfg[scenario_key][service]['imagePullPolicy'] = \
+            'Always' if force_image_pull else 'IfNotPresent'
+
+        if env_cfg.get(service):
+            new_env_cfg[scenario_key][service] = env_cfg[service]
 
     writer = writers.ConfigWriter(new_env_cfg, 'yaml')
     with open(os.path.join(env_config_scenario_path, 'env_config.yaml'), "w") as f:
@@ -106,11 +107,10 @@ def parse_custom_binaries_config(custom_binaries_cfg, base_binaries_cfg,
                                  scenario_key, env_config_scenario_path):
     for service in base_binaries_cfg[scenario_key]:
         nodes = []
-        if service in custom_binaries_cfg:
-            for node_name, node_binaries in custom_binaries_cfg[service].items():
-                node = {'name': node_name,
-                        'binaries': [{'name': b} for b in node_binaries]}
-                nodes.append(node)
+        for node_name, node_binaries in custom_binaries_cfg[providers_mapping(service)].items():
+            node = {'name': node_name,
+                    'binaries': [{'name': binary} for binary in node_binaries]}
+            nodes.append(node)
         base_binaries_cfg[scenario_key][service]['nodes'] = nodes
 
     writer = writers.ConfigWriter(base_binaries_cfg, 'yaml')
@@ -157,7 +157,7 @@ def run_scenario(env_config_dir_path):
     modify_config(scenario_key, env_cfg, env_config_scenario_path, bin_cfg)
 
     helm_install_cmd += ['-f', os.path.join(env_config_scenario_path,
-                                            'env_config.yaml')]
+                                            'env_config.yaml'), '--debug']
 
     # if args.config:
     #     helm_install_cmd += ['-f', args.config]

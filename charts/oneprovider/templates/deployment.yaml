@@ -171,13 +171,13 @@ spec:
           {{ range $node.binaries }}
             # assuming here that op-panel will always have such name
             {{ if eq .name "op-panel" }}
-              {{ if eq $.Values.suffix "" }}
-          - name: ONEPANEL_CONFIG_FILE
-            value: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider/{{ print "oneprovider_" $node.name "_env.config" }}
-              {{ else }}
-          - name: ONEPANEL_CONFIG_FILE
-            value: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider-{{- $.Values.suffix -}}/{{ print "oneprovider-" $.Values.suffix  "_" $node.name "_env.config" }}
-              {{ end }}
+#              {{ if eq $.Values.suffix "" }}
+#          - name: ONEPANEL_CONFIG_FILE
+#            value: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider/{{ print "oneprovider_" $node.name "_env.config" }}
+#              {{ else }}
+#          - name: ONEPANEL_CONFIG_FILE
+#            value: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider-{{- $.Values.suffix -}}/{{ print "oneprovider-" $.Values.suffix  "_" $node.name "_env.config" }}
+#              {{ end }}
               {{ if .hostPath }}
           - name: ONEPANEL_PATH
             value: {{ $.Values.hostPathPrefix }}/{{ .hostPath }}
@@ -194,23 +194,31 @@ spec:
         volumeMounts:
         {{- end }}
         {{ if ($node.binaries) }}
-          {{ if eq $.Values.suffix "" }}
-            - mountPath: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider/{{ print "oneprovider_" $node.name "_env.config" }}
-              name: onepanel-config-file
-          {{ else }}
-            - mountPath: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider-{{- $.Values.suffix -}}/{{ print "/oneprovider-" $.Values.suffix  "_" $node.name "_env.config" }}
-              name: onepanel-config-file
-          {{ end }}
+
         {{ end }}
         {{- range $node.binaries }}
           {{- if .hostPath }}
             - mountPath: {{ $.Values.hostPathPrefix }}/{{ default .hostPath .mountPath }}
               name: {{ .name }}
-            - mountPath: {{ $.Values.hostPathPrefix }}/{{ default .hostPath .mountPath }}/tmp/base-rel-{{ $node.name }}
+            {{ if eq $.Values.suffix "" }}
+            - mountPath: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider/oneprovider-{{ $node.name }}-{{ .name }}-base-rel
               name: oneprovider-{{ .name }}-base-rel
+            {{ else }}
+            - mountPath: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider-{{- $.Values.suffix -}}/oneprovider-{{ $.Values.suffix }}-{{ $node.name }}-{{ .name }}-base-rel
+              name: oneprovider-{{ .name }}-base-rel
+            {{ end }}
             - mountPath: {{ $.Values.hostPathPrefix }}/{{ default .hostPath .mountPath }}/_build/default/rel/{{ .name | replace "-" "_"  }}
               name: oneprovider-{{ .name }}-rel
           {{- end }}
+          {{ if eq .name "op-panel" }}
+            {{- if .hostPath }}
+            - mountPath: {{ $.Values.hostPathPrefix }}/{{ default .hostPath .mountPath }}/_build/default/rel/{{ .name | replace "-" "_"  }}/etc/overlay.config
+              name: onepanel-config-file
+            {{ else }}
+            - mountPath: /etc/{{ .name | replace "-" "_"  }}/overlay.config
+              name: onepanel-config-file
+            {{ end }}
+          {{ end }}
         {{- end }}
       {{- if (index $.Values "generate-certificates" "enabled") }}
           - mountPath: /etc/op_panel/certs/key.pem
@@ -245,11 +253,11 @@ spec:
       {{ if eq $.Values.suffix "" }}
           - name: onepanel-config-file
             hostPath:
-              path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider/{{ print "oneprovider_" $node.name "_env.config" }}
+              path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider/overlay.config
       {{ else }}
           - name: onepanel-config-file
             hostPath:
-              path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider-{{- $.Values.suffix -}}/{{ print "/oneprovider-" $.Values.suffix  "_" $node.name "_env.config" }}
+              path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider-{{- $.Values.suffix -}}/overlay.config
       {{ end }}
     {{- end }}
     {{- range $node.binaries }}
