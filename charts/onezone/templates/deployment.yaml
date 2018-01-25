@@ -142,13 +142,9 @@ spec:
         env:
           {{ range $node.binaries }}
             # assuming here that oz-panel will always have such name
-            {{ if eq .name "oz-panel" }}
-#          - name: ONEPANEL_CONFIG_FILE
-#            value: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}/onezone/{{ print "onezone_" $node.name "_env.config" }}
-#              {{ if .hostPath }}
+            {{ if and (eq .name "oz-panel") (.hostPath) }}
           - name: ONEPANEL_PATH
             value: {{ $.Values.hostPathPrefix }}/{{ .hostPath }}
-              {{ end }}
             {{ end }}
           {{ end }}
         {{- end }}
@@ -207,10 +203,11 @@ spec:
     {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "saml-idp" "enabled") ($node.binaries) }}
       volumes:
     {{- end }}
-    {{ if ($node.binaries) }}
+    {{ if $node.binaries }}
             - name: onepanel-config-file
               hostPath:
-                path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/onezone/overlay.config
+                path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/onezone/{{ $node.name }}-overlay.config
+                path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/onezone/{{ $node.name }}-overlay.config
     {{ end }}
     {{- range $node.binaries }}
       {{- if .hostPath }}

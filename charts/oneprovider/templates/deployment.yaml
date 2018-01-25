@@ -170,18 +170,9 @@ spec:
         env:
           {{ range $node.binaries }}
             # assuming here that op-panel will always have such name
-            {{ if eq .name "op-panel" }}
-#              {{ if eq $.Values.suffix "" }}
-#          - name: ONEPANEL_CONFIG_FILE
-#            value: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider/{{ print "oneprovider_" $node.name "_env.config" }}
-#              {{ else }}
-#          - name: ONEPANEL_CONFIG_FILE
-#            value: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider-{{- $.Values.suffix -}}/{{ print "oneprovider-" $.Values.suffix  "_" $node.name "_env.config" }}
-#              {{ end }}
-              {{ if .hostPath }}
+            {{ if and (eq .name "op-panel") (.hostPath) }}
           - name: ONEPANEL_PATH
             value: {{ $.Values.hostPathPrefix }}/{{ .hostPath }}
-              {{ end }}
             {{ end }}
           {{ end }}
         {{- end }}
@@ -193,9 +184,6 @@ spec:
         {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "volume-nfs" "enabled") ($node.binaries) }}
         volumeMounts:
         {{- end }}
-        {{ if ($node.binaries) }}
-
-        {{ end }}
         {{- range $node.binaries }}
           {{- if .hostPath }}
             - mountPath: {{ $.Values.hostPathPrefix }}/{{ default .hostPath .mountPath }}
@@ -249,17 +237,17 @@ spec:
     {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "volume-nfs" "enabled") ($node.binaries) }}
       volumes:
     {{- end }}
-    {{ if ($node.binaries) }}
+    {{ if $node.binaries }}
       {{ if eq $.Values.suffix "" }}
           - name: onepanel-config-file
             hostPath:
-              path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider/overlay.config
+              path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider/{{ $node.name }}-overlay.config
       {{ else }}
           - name: onepanel-config-file
             hostPath:
-              path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider-{{- $.Values.suffix -}}/overlay.config
+              path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider-{{- $.Values.suffix -}}/{{ $node.name }}-overlay.config
       {{ end }}
-    {{- end }}
+    {{ end }}
     {{- range $node.binaries }}
       {{- if .hostPath }}
           - name: {{ .name }}

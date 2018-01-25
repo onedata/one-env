@@ -8,4 +8,4 @@ dependencies:
   repository: file://../../charts/onedata-1p
   condition: onedata-1p.enabled
   tags:
-    - bin-vals
+    - scenario-key

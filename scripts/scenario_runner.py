@@ -6,6 +6,7 @@ from time import gmtime, strftime, time
 import user_config
 import config_generator
 from config import readers, writers
+import console
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -16,37 +17,6 @@ parser.add_argument(
     action='store_true',
     help='',
     dest='binaries')
-
-parser.add_argument(
-    '-s', '--scenario',
-    action='store',
-    help='',
-    required=False,
-    default='../scenarios/scenario-1oz-1op',
-    dest='scenario')
-
-parser.add_argument(
-    '-r', '--release',
-    action='store',
-    help='',
-    required=False,
-    default='develop',
-    dest='release_name'
-)
-
-parser.add_argument(
-    '-d', '--debug',
-    action='store_true',
-    help='',
-    dest='debug'
-)
-
-parser.add_argument(
-    '-c', '--config',
-    action='store',
-    help='',
-    dest='config'
-)
 
 
 def providers_mapping(name):
@@ -70,7 +40,7 @@ def modify_config(scenario_key, env_cfg, env_config_scenario_path, bin_cfg):
             'Always' if force_image_pull else 'IfNotPresent'
 
         if env_cfg.get(service):
-            new_env_cfg[scenario_key][service] = {**new_env_cfg[scenario_key][service],  **env_cfg[service]}
+            new_env_cfg[scenario_key][service] = {**new_env_cfg[scenario_key][service], **env_cfg[service]}
 
     writer = writers.ConfigWriter(new_env_cfg, 'yaml')
     with open(os.path.join(env_config_scenario_path, 'env_config.yaml'), "w") as f:
@@ -86,21 +56,24 @@ def get_scenario_key(env_config_scenario_path):
 
     for req in requirements.get('dependencies'):
         for tag in req.get('tags', []):
-            if 'bin-vals' in tag:
+            if 'scenario-key' in tag:
                 scenario_key = req.get('name')
 
     return scenario_key
 
 
-def update_charts_dependencies(env_config_charts_path, env_config_scenario_path):
+def update_charts_dependencies(env_config_charts_path, env_config_scenario_path,
+                               log_directory):
     helm_dep_update_cmd = ['helm', 'dependency', 'update']
+    console.info('updating charts dependencies')
 
-    for chart in os.listdir(env_config_charts_path):
-        subprocess.check_call(helm_dep_update_cmd +
-                              [os.path.join(env_config_charts_path, chart)],
-                              stderr=subprocess.STDOUT)
-    subprocess.check_call(helm_dep_update_cmd + [env_config_scenario_path],
-                          stderr=subprocess.STDOUT)
+    with open(os.path.join(log_directory, 'helm_dep_update.log'), 'w') as f:
+        for chart in os.listdir(env_config_charts_path):
+            subprocess.check_call(helm_dep_update_cmd +
+                                  [os.path.join(env_config_charts_path, chart)],
+                                  stdout=f, stderr=subprocess.STDOUT)
+        subprocess.check_call(helm_dep_update_cmd + [env_config_scenario_path],
+                              stdout=f, stderr=subprocess.STDOUT)
 
 
 def parse_custom_binaries_config(custom_binaries_cfg, base_binaries_cfg,
@@ -123,16 +96,19 @@ def run_scenario(env_config_dir_path):
                                    'env_config.yaml')).load()
     original_scenario_path = os.path.join('scenarios', env_cfg.get('scenario'))
     env_config_charts_path = os.path.join(env_config_dir_path, 'charts')
+    log_dir = os.path.join(env_config_dir_path, 'logs')
     env_config_scenario_path = os.path.join(env_config_dir_path,
                                             original_scenario_path)
 
     shutil.copytree('charts', env_config_charts_path)
     shutil.copytree(original_scenario_path, env_config_scenario_path)
+    os.mkdir(log_dir)
 
     bin_cfg = readers.ConfigReader(os.path.join(env_config_scenario_path,
                                                 'BinVal.yaml')).load()
     scenario_key = get_scenario_key(env_config_scenario_path)
-    update_charts_dependencies(env_config_charts_path, env_config_scenario_path)
+    update_charts_dependencies(env_config_charts_path, env_config_scenario_path,
+                               log_dir)
 
     # TODO: organize values files
     helm_install_cmd = ['helm', 'install', env_config_scenario_path, '-f',
@@ -145,11 +121,9 @@ def run_scenario(env_config_dir_path):
             parse_custom_binaries_config(env_cfg.get('binaries'), bin_cfg,
                                          scenario_key, env_config_scenario_path)
 
-        config_generator.generate_configs(env_config_scenario_path,
-                                          env_config_dir_path,
-                                          os.path.join(env_config_scenario_path,
-                                                       'BinVal.yaml'),
-                                          env_cfg, scenario_key)
+        config_generator.generate_configs(
+            bin_cfg, os.path.join(env_config_scenario_path, 'BinVal.yaml'),
+            env_config_dir_path, scenario_key)
 
         helm_install_cmd += ['-f', os.path.join(env_config_scenario_path,
                                                 'BinVal.yaml')]
@@ -158,9 +132,6 @@ def run_scenario(env_config_dir_path):
 
     helm_install_cmd += ['-f', os.path.join(env_config_scenario_path,
                                             'env_config.yaml')]
-
-    # if args.config:
-    #     helm_install_cmd += ['-f', args.config]
 
     subprocess.check_call(helm_install_cmd, stderr=subprocess.STDOUT)
 

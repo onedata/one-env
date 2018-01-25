@@ -18,8 +18,45 @@ def oneprovider_apps():
     return {'op-panel', 'cluster-manager', 'op-worker'}
 
 
-def generate_config_for_installation(bin_cfg, scenario_key, bin_cfg_path,
-                                     env_config_dir_path, env_cfg, scenario_path):
+def generate_new_nodes_config(scenario_cfg, service, host_home_dir,
+                              service_dir_path, env_config_dir_path):
+    new_nodes_config = []
+
+    if 'onezone' in service:
+        service_apps = onezone_apps()
+    else:
+        service_apps = oneprovider_apps()
+
+    for node_config in scenario_cfg[service]['nodes']:
+        node_apps = []
+        node_binaries_conf = []
+        for app_name in service_apps:
+            app_config = {'name': app_name}
+
+            if app_name in [a['name'] for a in node_config['binaries']]:
+                app_config['hostPath'] = os.path.relpath(
+                    os.path.abspath(binaries.locate(app_name)),
+                    host_home_dir)
+            else:
+                app_config['hostPath'] = ''
+
+            node_apps.append(application.Application(
+                app_name, node_config['name'], app_config['hostPath'],
+                None, service, service_dir_path, host_home_dir
+            ))
+
+            node_binaries_conf.append(app_config)
+
+        node.create_node_config_file(env_config_dir_path, service,
+                                     node_config['name'], node_apps)
+        new_nodes_config.append(
+            {'name': node_config['name'], 'binaries': node_binaries_conf})
+
+    return new_nodes_config
+
+
+def generate_config_for_installation(bin_cfg, bin_cfg_path, scenario_key,
+                                     env_config_dir_path):
     scenario_cfg = bin_cfg[scenario_key]
     host_home_dir = user_config.get('hostHomeDir')
     kube_host_home_dir = user_config.get('kubeHostHomeDir')
@@ -33,40 +70,9 @@ def generate_config_for_installation(bin_cfg, scenario_key, bin_cfg_path,
         service_dir_path = os.path.join(env_config_dir_path, service)
         os.mkdir(service_dir_path)
 
-        nodes_config = scenario_cfg[service]['nodes']
-
-        if 'onezone' in service:
-            service_apps = onezone_apps()
-        else:
-            service_apps = oneprovider_apps()
-
-        nodes = []
-        node_confs = []
-
-        for n in nodes_config:
-            apps = []
-            apps_confs = []
-            for app_name in service_apps:
-                app_config = {'name': app_name}
-
-                if app_name in [a['name'] for a in n['binaries']]:
-                    app_config['hostPath'] = os.path.relpath(
-                        os.path.abspath(binaries.locate(app_name)),
-                        host_home_dir)
-                else:
-                    app_config['hostPath'] = ''
-
-                apps.append(application.Application(
-                    app_name, n['name'], app_config['hostPath'],
-                    None, service, service_dir_path, host_home_dir
-                ))
-
-                apps_confs.append(app_config)
-
-            nodes.append(node.Node(n['name'], apps, service, env_config_dir_path))
-            node_confs.append({'name': n['name'], 'binaries': apps_confs})
-
-        bin_cfg[scenario_key][service]['nodes'] = node_confs
+        bin_cfg[scenario_key][service]['nodes'] = \
+            generate_new_nodes_config(scenario_cfg, service, host_home_dir,
+                                      service_dir_path, env_config_dir_path)
 
     writer = writers.ConfigWriter(bin_cfg, 'yaml')
     with open(bin_cfg_path, 'w') as f:
@@ -106,16 +112,11 @@ def generate_config_for_single_service(cfg):
         apps = []
 
 
-def generate_configs(scenario_path, env_config_dir_path, bin_cfg_path, env_cfg,
+def generate_configs(bin_cfg, bin_cfg_path, env_config_dir_path,
                      scenario_key):
-    # create yaml or json reader and read data
-    reader = readers.ConfigReader(bin_cfg_path)
-    bin_cfg = reader.load()
-
     if scenario_key:
-        generate_config_for_installation(bin_cfg, scenario_key,
-                                         bin_cfg_path, env_config_dir_path,
-                                         env_cfg, scenario_path)
+        generate_config_for_installation(bin_cfg, bin_cfg_path, scenario_key,
+                                         env_config_dir_path)
     else:
         generate_config_for_single_service(bin_cfg)
 

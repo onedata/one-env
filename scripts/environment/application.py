@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import os
@@ -36,14 +36,11 @@ def default_config(name):
     }
 
     apps = {
-        'cluster_manager': dict(env_file_arg.items() | files_args.items() |
-                                cmds.items()),
-        'oz_worker': dict(web_args.items() | files_args.items() |
-                          cmds.items()),
-        'op_worker': dict(web_args.items() | files_args.items() |
-                          protocol_args.items() | cmds.items()),
-        'oz_panel': dict(cmds.items() | files_args.items() | test_web_cert_domain.items()),
-        'op_panel': dict(cmds.items() | files_args.items() | test_web_cert_domain.items())
+        'cluster_manager': {**env_file_arg, **files_args, **cmds},
+        'oz_worker': {**web_args, **files_args, **cmds},
+        'op_worker': {**web_args, **files_args, **protocol_args, **cmds},
+        'oz_panel': {**cmds, **files_args, **test_web_cert_domain},
+        'op_panel': {**cmds, **files_args, **test_web_cert_domain}
     }
     return apps.get(name, dict())
 
@@ -61,8 +58,6 @@ class Application(object):
 
         release_path = '_build/default/rel/{}'.format(self.name)
         self.release_path = os.path.join(self.project_path, release_path)
-
-        self.node_path = os.path.join('/root/bin/node', self.name)
 
         self.config = dict()
 
