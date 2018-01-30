@@ -1,22 +1,18 @@
 
 onedata-1p:
   onezone:
-    vmPathPrefix: "/hosthome"
-    hostPathPrefix: "/home"
     mainNode: node-1
     nodes:
-      - name: node-1
-        binaries:
-          - name: oz-panel
-          - name: oz-worker
-          - name: cluster-manager
+      node-1:
+          binaries:
+            - name: oz-panel
+            - name: oz-worker
+            - name: cluster-manager
 
   oneprovider-krakow:
-    vmPathPrefix: "/hosthome"
-    hostPathPrefix: "/home"
     mainNode: node-1
     nodes:
-      - name: node-1
+      node-1:
         binaries:
           - name: op-panel
           - name: op-worker

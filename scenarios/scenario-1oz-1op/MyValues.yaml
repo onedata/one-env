@@ -19,6 +19,11 @@ spaces:
         storage_name: "posix"
         size: '1000000'
 
+oneclient:
+  enabled: false
+onedata-cli:
+  enabled: false
+
 # onedata-1p conf
 onedata-1p:
 
@@ -47,8 +52,8 @@ onedata-1p:
   # onezone configuration
   onezone:
     nodes:
-      - name: node-1
-    mainNode: node-1
+      node-1:
+          binaries: []
 
     memory: 0.5Gi
     cpu: 0.3
@@ -56,7 +61,8 @@ onedata-1p:
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
     log_level: *log_level
 
-    cluster_config:
+    clusterConfig:
+      mainNode: node-1
       managers: []
       workers: []
       databases: []
@@ -65,15 +71,15 @@ onedata-1p:
       enabled: &idp_enabled false
       generate-certificates:
         enabled: false
-    onezoneConfig:
+    onezoneEnv:
       ONEPANEL_DEBUG_MODE: "true"
       ONEPANEL_LOG_LEVEL: error
 
   # oneprovider configuration
   oneprovider-krakow:
     nodes:
-      - name: node-1
-    mainNode: node-1
+      node-1: {}
+
 
     memory: 0.5Gi
     cpu: 0.3
@@ -81,7 +87,8 @@ onedata-1p:
     geoLatitude: 50.0647
     geoLongitude: 19.9450
 
-    cluster_config:
+    clusterConfig:
+      mainNode: node-1
       managers: []
       workers: []
       databases: []

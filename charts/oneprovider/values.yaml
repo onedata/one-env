@@ -61,7 +61,7 @@ oneprovider_nodes_count: 1
 # by default the node with the highest index (oneprovider_nodes_count-1)
 # is configured as a mainNode
 # If a service list is empty, all available nodes are assigned that service. 
-cluster_config:
+clusterConfig:
   managers: [ ]
   workers: [ ]
   databases: [ ]

@@ -20,20 +20,20 @@ def oneprovider_apps():
 
 def generate_new_nodes_config(scenario_cfg, service, host_home_dir,
                               service_dir_path, env_config_dir_path):
-    new_nodes_config = []
+    new_nodes_config = {}
 
     if 'onezone' in service:
         service_apps = onezone_apps()
     else:
         service_apps = oneprovider_apps()
 
-    for node_config in scenario_cfg[service]['nodes']:
+    for node_name, node_config in scenario_cfg[service]['nodes'].items():
         node_apps = []
         node_binaries_conf = []
         for app_name in service_apps:
             app_config = {'name': app_name}
 
-            if app_name in [a['name'] for a in node_config['binaries']]:
+            if app_name in [a['name'] for a in node_config.get('binaries', [])]:
                 app_config['hostPath'] = os.path.relpath(
                     os.path.abspath(binaries.locate(app_name)),
                     host_home_dir)
@@ -41,16 +41,15 @@ def generate_new_nodes_config(scenario_cfg, service, host_home_dir,
                 app_config['hostPath'] = ''
 
             node_apps.append(application.Application(
-                app_name, node_config['name'], app_config['hostPath'],
+                app_name, node_name, app_config['hostPath'],
                 None, service, service_dir_path, host_home_dir
             ))
 
             node_binaries_conf.append(app_config)
 
         node.create_node_config_file(env_config_dir_path, service,
-                                     node_config['name'], node_apps)
-        new_nodes_config.append(
-            {'name': node_config['name'], 'binaries': node_binaries_conf})
+                                     node_name, node_apps)
+        new_nodes_config[node_name] = {'binaries': node_binaries_conf}
 
     return new_nodes_config
 
@@ -79,46 +78,11 @@ def generate_config_for_installation(bin_cfg, bin_cfg_path, scenario_key,
         f.write(writer.dump())
 
 
-def generate_config_for_single_service(cfg):
-    config_nodes = cfg['nodes']
-    # TODO: After merge prefix will not be in this place
-    prefix = cfg['hostPathPrefix']
-    apps = []
-    nodes = []
-
-    # FIXME:
-    for n in config_nodes:
-        service = ''
-        for app in n['binaries']:
-            if app['name'] == 'oz-panel':
-                service = 'onezone'
-                break
-            if app['name'] == 'op-panel':
-                service = 'oneprovider'
-                break
-
-        for app in n['binaries']:
-            project_path = app.get('hostPath', None)
-            project_path = os.path.join(prefix, project_path) \
-                if project_path else None
-            apps.append(application.Application(
-                app['name'], n['name'], project_path,
-                app.get('additionalArgs', None),
-                service
-            ))
-
-        nodes.append(
-            node.Node(n['name'], apps, args, service))
-        apps = []
-
-
 def generate_configs(bin_cfg, bin_cfg_path, env_config_dir_path,
                      scenario_key):
     if scenario_key:
         generate_config_for_installation(bin_cfg, bin_cfg_path, scenario_key,
                                          env_config_dir_path)
-    else:
-        generate_config_for_single_service(bin_cfg)
 
 
 parser = argparse.ArgumentParser(

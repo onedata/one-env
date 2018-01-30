@@ -18,66 +18,84 @@ data:
   ONEPANEL_AUTOGENERATE_CERT: "true"
   ONEZONE_CONFIG: |
       cluster:
-        autoDeploy: true
+        autoDeploy: {{ default $.Values.batchConfig.autoDeploy true }}
+
+        # TODO: Find way to hold this with default
+        {{ if $.Values.batchConfig.domainName }}
+        domainName: {{ $.Values.batchConfig.domainName }}
+        {{ else }}
         domainName: {{ template "service_url" $ }}
+        {{ end }}
+
+        # This part is covered by nodes configuration
         nodes:
-          {{- range $node := $nodes }}
-          {{ $node.name }}:
-            hostname: {{ template "fullname" $ }}-{{ $node.name }}-0
+          {{- range $nodeName := (keys $nodes) }}
+          {{ $nodeName }}:
+            hostname: {{ template "fullname" $ }}-{{ $nodeName }}-0
           {{- end }}
         managers:
-          mainNode: {{ $.Values.mainNode }}
+          mainNode: {{ $.Values.clusterConfig.mainNode }}
           nodes:
-      {{- with $.Values.cluster_config.managers }}
+      {{- with $.Values.clusterConfig.managers }}
           {{- range $node := . }}
             - {{ $node }}
           {{- end }}
       {{- else }}
-          {{- range $node := $nodes }}
-            - {{ $node.name }}
+          {{- range $nodeName := (keys $nodes) }}
+            - {{ $nodeName }}
           {{- end }}
       {{- end }}
         workers:
           nodes:
-      {{- with $.Values.cluster_config.workers }}
+      {{- with $.Values.clusterConfig.workers }}
           {{- range $node := . }}
             - {{ $node }}
           {{- end }}
       {{- else }}
-          {{- range $node := $nodes }}
-            - {{ $node.name }}
+          {{- range $nodeName := (keys $nodes) }}
+            - {{ $nodeName }}
           {{- end }}
       {{- end }}
         databases:
           nodes:
-      {{- with $.Values.cluster_config.databases }}
+      {{- with $.Values.clusterConfig.databases }}
           {{- range $node := . }}
             - {{ $node }}
           {{- end }}
       {{- else }}
-          {{- range $node :=  $nodes }}
-            - {{ $node.name }}
+          {{- range $nodeName :=  (keys $nodes) }}
+            - {{ $nodeName }}
           {{- end }}
       {{- end }}
+
       onezone:
-        {{ if $.Values.name -}}
-        name: {{ $.Values.name }}
+        {{ if $.Values.batchConfig.name -}}
+        name: {{ $.Values.batchConfig.name }}
         {{- else -}}
         name: {{ template "fullname" $ }}
         {{- end }}
+
+        # TODO: Find way to hold this with default
+        {{ if $.Values.batchConfig.domainName }}
+        domainName: {{ $.Values.batchConfig.domainName }}
+        {{ else }}
         domainName: {{ template "service_url" $ }}
-        {{- if or $.Values.onepanel_admin_users $.Values.onepanel_users }}
+        {{ end }}
+
+        {{- if or $.Values.batchConfig.onepanelAdminUsers $.Values.batchConfig.onepanelUsers }}
+      {{ if $.Values.createUsers }}
       onepanel:
         users:
-          {{- range $.Values.onepanel_admin_users }}
+          {{- range $.Values.batchConfig.onepanelAdminUsers }}
           {{ .login }}:
             password: {{ .password }}
             userRole: admin
           {{- end }}
-          {{- range $.Values.onepanel_users }}
+          {{- range $.Values.batchConfig.onepanelUsers }}
           {{ .login }}:
             password: {{ .password }}
             userRole: regular
           {{- end }}
+      {{ end }}
       {{- end }}
-{{ toYaml $.Values.onezoneConfig | indent 2 }}
+{{ toYaml $.Values.onezoneEnv | indent 2 }}

@@ -19,45 +19,49 @@ data:
   ONEPROVIDER_CONFIG: |
               cluster:
                 domainName: "{{ template "service_url" $ }}"
+
+                # Part covered by nodes configuration
                 nodes:
-                  {{- range $node := $nodes }}
-                  {{ $node.name }}:
-                    hostname: {{ template "fullname" $ }}-{{ $node.name }}-0
+                  {{- range $nodeName := (keys $nodes) }}
+                  {{ $nodeName }}:
+                    hostname: {{ template "fullname" $ }}-{{ $nodeName }}-0
                   {{- end }}
                 managers:
-                  mainNode: {{ .Values.mainNode }}
+                  mainNode: {{ .Values.clusterConfig.mainNode }}
                   nodes:
-              {{- with .Values.cluster_config.managers }}
+              {{- with .Values.clusterConfig.managers }}
                   {{- range $node := . }}
                     - {{ $node }}
                   {{- end }}
               {{- else }}
-                  {{- range $node := $nodes }}
-                    - {{ $node.name }}
+                  {{- range $nodeName := (keys $nodes) }}
+                    - {{ $nodeName }}
                   {{- end }}
               {{- end }}
                 workers:
                   nodes:
-              {{- with .Values.cluster_config.workers }}
+              {{- with .Values.clusterConfig.workers }}
                   {{- range $node := . }}
                     - {{ $node }}
                   {{- end }}
               {{- else }}
-                  {{- range $node := $nodes }}
-                    - {{ $node.name }}
+                  {{- range $nodeName := (keys $nodes) }}
+                    - {{ $nodeName }}
                   {{- end }}
               {{- end }}
                 databases:
                   nodes:
-              {{- with $.Values.cluster_config.databases }}
+              {{- with $.Values.clusterConfig.databases }}
                   {{- range $node := . }}
                     - {{ $node }}
                   {{- end }}
               {{- else }}
-                  {{- range $node :=  $nodes }}
-                    - {{ $node.name }}
+                  {{- range $nodeName := (keys $nodes) }}
+                    - {{ $nodeName }}
                   {{- end }}
               {{- end }}
+
+
                 {{- if or (eq (len $nodes) 1) (or (index $.Values "volume-s3" "enabled")) (or (index $.Values "volume-ceph" "enabled") (or (index $.Values "volume-gluster" "enabled") (index $.Values "volume-swift" "enabled"))) }}
                 storages:
                 {{- end }}
@@ -146,6 +150,7 @@ data:
                     lumaApiKey: {{ $.Values.luma.lumaApiKey }}
                   {{- end }}
                 {{- end }}
+
               oneprovider:
                 register: true
                 {{ if $.Values.name -}}
@@ -162,6 +167,7 @@ data:
               # instead of FQDN
               onezone:
                 domainName: {{ template "onezone_service_url" $ }}
+              {{ if $.Values.createUsers }}
               {{- if or $.Values.onepanel_admin_users $.Values.onepanel_users }}
               onepanel:
                 users:
@@ -176,4 +182,5 @@ data:
                     userRole: regular
                   {{- end }}
               {{- end }}
+              {{ end }}
 {{ toYaml .Values.oneproviderEnv | indent 2 }}

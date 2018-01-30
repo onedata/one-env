@@ -1,9 +1,9 @@
-{{- range $node := .Values.nodes }}
+{{- range $nodeName, $nodeConfig := .Values.nodes }}
 ---
 apiVersion: apps/v1beta1
 kind: StatefulSet
 metadata:
-  name: {{ template "fullname" $ }}-{{ $node.name }}
+  name: {{ template "fullname" $ }}-{{ $nodeName }}
   labels:
     app: {{ template "fullname" $ }}
     chart: {{ $.Chart.Name }}
@@ -26,7 +26,7 @@ spec:
       annotations:
         version: "{{ $.Chart.Version }}"
     spec:
-      subdomain: {{ template "fullname" $ }}-{{ $node.name }}
+      subdomain: {{ template "fullname" $ }}-{{ $nodeName }}
       terminationGracePeriodSeconds: 0
       {{- if $.Values.onedata_anti_affinity_enabled }}
       affinity:
@@ -105,7 +105,7 @@ spec:
           - "/bin/bash"
           - "-c"
           - >
-            if [[ {{ quote $node.name }} != {{ quote $.Values.mainNode }} ]]; then export ONEPANEL_BATCH_MODE="false" ; fi ;
+            if [[ {{ quote $nodeName }} != {{ quote $.Values.clusterConfig.mainNode }} ]]; then export ONEPANEL_BATCH_MODE="false" ; fi ;
             env ;
             /root/onezone.sh ;
             cat /var/log/oz_panel/info.log ;
@@ -133,14 +133,14 @@ spec:
               - "-c"
               - >
                 onepanel_ready() { sleep 5 ; exit 0 ; } ;
-                if [[ {{ quote $node.name }} == {{ quote $.Values.mainNode }} ]]; then exit 0 ; else onepanel_ready ; fi ;
+                if [[ {{ quote $nodeName }} == {{ quote $.Values.clusterConfig.mainNode }} ]]; then exit 0 ; else onepanel_ready ; fi ;
         envFrom:
         - configMapRef:
             name: {{ template "fullname" $ }}-onezone-config
 
-        {{- if $node.binaries }}
+        {{- if $nodeConfig.binaries }}
         env:
-          {{ range $node.binaries }}
+          {{ range $nodeConfig.binaries }}
             # assuming here that oz-panel will always have such name
             {{ if and (eq .name "oz-panel") (.hostPath) }}
           - name: ONEPANEL_PATH
@@ -149,15 +149,15 @@ spec:
           {{ end }}
         {{- end }}
 
-        {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "saml-idp" "enabled") ($node.binaries) }}
+        {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "saml-idp" "enabled") ($nodeConfig.binaries) }}
         volumeMounts:
         {{- end }}
-        {{- range $node.binaries }}
+        {{- range $nodeConfig.binaries }}
           {{- if .hostPath }}
               # mountPath is path in the pod, we want that path to be exactly the same as the path on the host machine
               - mountPath: {{ $.Values.hostPathPrefix }}/{{ default .hostPath .mountPath }}
                 name: {{ .name }}
-              - mountPath: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}/onezone/onezone-{{ $node.name }}-{{ .name }}-base-rel
+              - mountPath: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}/onezone/onezone-{{ $nodeName }}-{{ .name }}-base-rel
                 name: onezone-{{ .name }}-base-rel
               - mountPath: {{ $.Values.hostPathPrefix }}/{{ default .hostPath .mountPath }}/_build/default/rel/{{ .name | replace "-" "_"  }}
                 name: onezone-{{ .name }}-rel
@@ -200,16 +200,15 @@ spec:
             name: saml-config
             readOnly: false
     {{- end }}
-    {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "saml-idp" "enabled") ($node.binaries) }}
+    {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "saml-idp" "enabled") ($nodeConfig.binaries) }}
       volumes:
     {{- end }}
-    {{ if $node.binaries }}
+    {{ if $nodeConfig.binaries }}
             - name: onepanel-config-file
               hostPath:
-                path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/onezone/{{ $node.name }}-overlay.config
-                path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/onezone/{{ $node.name }}-overlay.config
+                path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/onezone/{{ $nodeName }}-overlay.config
     {{ end }}
-    {{- range $node.binaries }}
+    {{- range $nodeConfig.binaries }}
       {{- if .hostPath }}
             - name: {{ .name }}
               # hostPath is the path in minikube
@@ -221,7 +220,7 @@ spec:
                 type: DirectoryOrCreate
             - name: onezone-{{ .name }}-rel
               hostPath:
-                path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/onezone/onezone-{{ $node.name }}-{{ .name }}-rel
+                path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/onezone/onezone-{{ $nodeName }}-{{ .name }}-rel
                 type: DirectoryOrCreate
       {{- end }}
     {{- end }}

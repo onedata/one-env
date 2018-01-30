@@ -97,7 +97,7 @@ onezone:
   onezone_nodes_count: 1
   generate-certificates: 
     enabled: false
-  cluster_config:
+  clusterConfig:
     managers: [ ]
     workers: [ ]
     databases: [ ]
@@ -120,7 +120,7 @@ oneprovider-krakow:
   nameOverride: oneprovider
 
   oneprovider_nodes_count: *oneproviders_nodes_count
-  cluster_config: *oneprovider_cluster_configs
+  clusterConfig: *oneprovider_cluster_configs
 
   onezone_service_url:
     type: auto-generate
@@ -182,7 +182,7 @@ oneprovider-paris:
   nameOverride: oneprovider
 
   oneprovider_nodes_count: *oneproviders_nodes_count
-  cluster_config: *oneprovider_cluster_configs
+  clusterConfig: *oneprovider_cluster_configs
 
   onezone_service_url:
     type: auto-generate

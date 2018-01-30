@@ -19,31 +19,14 @@ spaces:
         storage_name: "posix"
         size: '1000000'
 
-# ???
-saml-idp:
-  enabled: *idp_enabled
-luma:
-  enabled: *luma_enabled
-oneclient:
-  enabled: *oneclients_enabled
-onedata-cli:
-  enabled: *onedata_cli_enabled
-volume-s3:
-  enabled: *s3_enabled
-volume-ceph:
-  enabled: *ceph_enabled
-volume-nfs:
-  enabled: *nfs_enabled
-volume-gluster:
-  enabled: *gluster_enabled
-volume-swift:
-  enabled: *swift_enabled
 
-# onedata-2p conf
 
-onedata-2p:
-  onezoneImage: &oz_image docker.onedata.org/onezone-dev:minikube
-  oneproviderImage: &op_image docker.onedata.org/oneprovider-dev:minikube
+# onedata-1p conf
+onedata-1p:
+
+  # services images
+  oz_image: &oz_image docker.onedata.org/onezone-dev:minikube
+  op_image: &op_image docker.onedata.org/oneprovider-dev:minikube
   oc_image: &oc_image onedata/oneclient:17.06.0-rc6
   cli_image: &cli_image onedata/rest-cli:17.06.0-rc6
 
@@ -51,11 +34,6 @@ onedata-2p:
   onepanel_batch_mode_enabled: &onepanel_batch_mode_enabled true
   oneclients_debug_mode_enabled: &oneclients_debug_mode_enabled true
   onedata_anti_affinity_enabled: &onedata_anti_affinity_enabled true
-
-  oneproviders_generate_certificates: &oneproviders_generate_certificates false
-
-  oneclients_enabled: &oneclients_enabled false
-  onedata_cli_enabled: &onedata_cli_enabled false
 
   luma_enabled: &luma_enabled false
 
@@ -68,45 +46,11 @@ onedata-2p:
 
   wait-for-onezone-enabled: &wait-for-onezone-enabled true
 
-
-  luma: &luma_global
-    enabled: *luma_enabled
-    lumaCacheTimeout: 5
-    lumaApiKey: example_api_key
-
-    posix:
-      enabled: &luma_enabled_posix false
-      lowest_uid: 1000
-      highest_uid: 65536
-
-    s3:
-      enabled: &luma_enabled_s3 false
-      access_key: accessKey
-      secret_key: verySecretKey
-
-    ceph:
-      enabled: &luma_enabled_ceph false
-      pool_name: test
-      username: client.k8s
-      key: AQC1oSZZZfucFxAA34MekwoWBm7qpGd0A8u
-
-    swift:
-      enabled: &luma_enabled_swift false
-      username: swift
-      password: swift
-
-    gluster:
-      enabled: &luma_enabled_gluster false
-
-    nfs:
-      enabled: &luma_enabled_nfs false
-      lowest_uid: 1000
-      highest_uid: 65536
-
+  # onezone configuration
   onezone:
     nodes:
-      - name: node1
-    mainNode: node1
+      - name: node-1
+    mainNode: node-1
 
     memory: 0.5Gi
     cpu: 0.3
@@ -114,25 +58,24 @@ onedata-2p:
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
     log_level: *log_level
 
-    cluster_config:
+    clusterConfig:
       managers: []
       workers: []
       databases: []
 
-    generate-certificates:
-      enabled: false
     saml-idp:
       enabled: &idp_enabled false
       generate-certificates:
         enabled: false
-    onezoneConfig:
+    onezoneEnv:
       ONEPANEL_DEBUG_MODE: "true"
       ONEPANEL_LOG_LEVEL: error
 
+  # oneprovider configuration
   oneprovider-krakow:
     nodes:
-      - name: node1
-    mainNode: node1
+      - name: node-1
+    mainNode: node-1
 
     memory: 0.5Gi
     cpu: 0.3
@@ -140,11 +83,10 @@ onedata-2p:
     geoLatitude: 50.0647
     geoLongitude: 19.9450
 
-    cluster_config:
+    clusterConfig:
       managers: []
       workers: []
       databases: []
-
 
     oneproviderEnv:
       ONEPANEL_LOG_LEVEL: error
@@ -160,53 +102,11 @@ onedata-2p:
       type: auto-generate
       disableSuffix: true
 
-    generate-certificates:
-      enabled: *oneproviders_generate_certificates
-
-    luma:
-      suffix: *op1s
-      << : *luma_global
-
-    oneclient:
-      image: *oc_image
-      debug_mode: *oneclients_debug_mode_enabled
-      enabled: *oneclients_enabled
-      suffix: *op1s
-      onedata_cli:
-        image: *cli_image
-    onedata-cli:
-      image: *cli_image
-      enabled: *onedata_cli_enabled
-      suffix: *op1s
-    posix:
-      enabled: *posix_enabled
-      luma-enabled: *luma_enabled_posix
-    volume-s3:
-      enabled: *s3_enabled
-      suffix: *op1s
-      luma-enabled: *luma_enabled_s3
-    volume-ceph:
-      enabled: *ceph_enabled
-      suffix: *op1s
-      luma-enabled: *luma_enabled_ceph
-    volume-nfs:
-      enabled: *nfs_enabled
-      suffix: *op1s
-      luma-enabled: *luma_enabled_nfs
-    volume-gluster:
-      enabled: *gluster_enabled
-      suffix: *op1s
-      luma-enabled: *luma_enabled_gluster
-    volume-swift:
-      enabled: *swift_enabled
-      suffix: *op1s
-      luma-enabled: *luma_enabled_swift
-
-
+  # second provider configuration
   oneprovider-paris:
     nodes:
-      - name: node1
-    mainNode: node1
+      - name: node-1
+    mainNode: node-1
 
     memory: 0.5Gi
     cpu: 0.3
@@ -214,11 +114,10 @@ onedata-2p:
     geoLatitude: 50.0647
     geoLongitude: 19.9450
 
-    cluster_config:
+    clusterConfig:
       managers: []
       workers: []
       databases: []
-
 
     oneproviderEnv:
       ONEPANEL_LOG_LEVEL: error
@@ -233,45 +132,3 @@ onedata-2p:
     onezone_service_url:
       type: auto-generate
       disableSuffix: true
-
-    generate-certificates:
-      enabled: *oneproviders_generate_certificates
-
-    luma:
-      suffix: *op1s
-      << : *luma_global
-
-    oneclient:
-      image: *oc_image
-      debug_mode: *oneclients_debug_mode_enabled
-      enabled: *oneclients_enabled
-      suffix: *op1s
-      onedata_cli:
-        image: *cli_image
-    onedata-cli:
-      image: *cli_image
-      enabled: *onedata_cli_enabled
-      suffix: *op1s
-    posix:
-      enabled: *posix_enabled
-      luma-enabled: *luma_enabled_posix
-    volume-s3:
-      enabled: *s3_enabled
-      suffix: *op1s
-      luma-enabled: *luma_enabled_s3
-    volume-ceph:
-      enabled: *ceph_enabled
-      suffix: *op1s
-      luma-enabled: *luma_enabled_ceph
-    volume-nfs:
-      enabled: *nfs_enabled
-      suffix: *op1s
-      luma-enabled: *luma_enabled_nfs
-    volume-gluster:
-      enabled: *gluster_enabled
-      suffix: *op1s
-      luma-enabled: *luma_enabled_gluster
-    volume-swift:
-      enabled: *swift_enabled
-      suffix: *op1s
-      luma-enabled: *luma_enabled_swift
