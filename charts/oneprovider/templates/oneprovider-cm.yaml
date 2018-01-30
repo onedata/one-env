@@ -167,8 +167,7 @@ data:
               # instead of FQDN
               onezone:
                 domainName: {{ template "onezone_service_url" $ }}
-              {{ if $.Values.createUsers }}
-              {{- if or $.Values.onepanel_admin_users $.Values.onepanel_users }}
+              {{- if and $.Values.createUsers (or $.Values.onepanel_admin_users $.Values.onepanel_users) }}
               onepanel:
                 users:
                   {{- range $.Values.onepanel_admin_users }}
@@ -182,5 +181,4 @@ data:
                     userRole: regular
                   {{- end }}
               {{- end }}
-              {{ end }}
 {{ toYaml .Values.oneproviderEnv | indent 2 }}

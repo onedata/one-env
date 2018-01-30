@@ -6,7 +6,6 @@ import user_config
 import config_generator
 from config import readers, writers
 import console
-import collections
 
 
 parser = argparse.ArgumentParser(
@@ -53,11 +52,6 @@ def modify_config(scenario_key, env_cfg, env_config_scenario_path, bin_cfg,
 
         new_env_cfg[scenario_key][service]['imagePullPolicy'] = \
             'Always' if force_image_pull else 'IfNotPresent'
-        #
-        # if not env_cfg[providers_mapping(service)].get('createUsers', True):
-        #     new_env_cfg[scenario_key][service]['batchConfig']['onepanelAdminUsers'] = {}
-        #     new_env_cfg[scenario_key][service]['batchConfig'][
-        #         'onepanelUsers'] = {}
 
         if env_cfg.get(providers_mapping(service)):
             if not binaries and env_cfg[service].get('clusterConfig'):

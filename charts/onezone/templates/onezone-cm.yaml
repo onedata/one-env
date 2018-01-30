@@ -82,8 +82,7 @@ data:
         domainName: {{ template "service_url" $ }}
         {{ end }}
 
-        {{- if or $.Values.batchConfig.onepanelAdminUsers $.Values.batchConfig.onepanelUsers }}
-      {{ if $.Values.createUsers }}
+        {{- if and $.Values.createUsers (or $.Values.batchConfig.onepanelAdminUsers $.Values.batchConfig.onepanelUsers) }}
       onepanel:
         users:
           {{- range $.Values.batchConfig.onepanelAdminUsers }}
@@ -96,6 +95,5 @@ data:
             password: {{ .password }}
             userRole: regular
           {{- end }}
-      {{ end }}
-      {{- end }}
+        {{- end }}
 {{ toYaml $.Values.onezoneEnv | indent 2 }}
