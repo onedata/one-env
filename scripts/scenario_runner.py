@@ -24,7 +24,7 @@ def providers_mapping(name):
             'oneprovider-paris': 'oneprovider-p2'}.get(name, name)
 
 
-def parse_nodes(env_cfg, service):
+def get_nodes_list(env_cfg, service):
     nodes = set(env_cfg[service]['clusterConfig']['managers'] +
                 env_cfg[service]['clusterConfig']['workers'] +
                 env_cfg[service]['clusterConfig']['databases'])
@@ -33,18 +33,20 @@ def parse_nodes(env_cfg, service):
     return nodes
 
 
-def modify_config(scenario_key, env_cfg, env_config_scenario_path, bin_cfg,
-                  binaries):
+def create_new_env_config(scenario_key, env_cfg, env_config_scenario_path,
+                          bin_cfg, binaries):
     new_env_cfg = {scenario_key: dict()}
 
     # get global variables
     force_image_pull = env_cfg.get('forceImagePull')
     oneprovider_image = env_cfg.get('oneproviderImage')
     onezone_image = env_cfg.get('onezoneImage')
-    create_spaces = env_cfg.get('createSpaces', True)
+    spaces = env_cfg.get('createSpaces', True)
 
-    if not create_spaces:
-        new_env_cfg['spaces'] = []
+    if isinstance(spaces, bool) and not spaces:
+        new_env_cfg['spaces'] = {}
+    elif isinstance(spaces, list):
+        new_env_cfg['spaces'] = spaces
 
     for service in bin_cfg[scenario_key].keys():
         new_env_cfg[scenario_key][service] = \
@@ -56,7 +58,7 @@ def modify_config(scenario_key, env_cfg, env_config_scenario_path, bin_cfg,
         if env_cfg.get(providers_mapping(service)):
             if not binaries and env_cfg[service].get('clusterConfig'):
                 new_env_cfg[scenario_key][service]['nodes'] = \
-                    parse_nodes(env_cfg, providers_mapping(service))
+                    get_nodes_list(env_cfg, providers_mapping(service))
             new_env_cfg[scenario_key][service] = {**new_env_cfg[scenario_key][service], **env_cfg[providers_mapping(service)]}
 
     writer = writers.ConfigWriter(new_env_cfg, 'yaml')
@@ -82,7 +84,7 @@ def get_scenario_key(env_config_scenario_path):
 def update_charts_dependencies(env_config_charts_path, env_config_scenario_path,
                                log_directory):
     helm_dep_update_cmd = ['helm', 'dependency', 'update']
-    console.info('updating charts dependencies')
+    console.info('Updating charts dependencies')
 
     with open(os.path.join(log_directory, 'helm_dep_update.log'), 'w') as f:
         for chart in os.listdir(env_config_charts_path):
@@ -100,7 +102,7 @@ def parse_custom_binaries_config(custom_binaries_cfg, base_binaries_cfg,
         nodes = {}
 
         if env_cfg[providers_mapping(service)].get('clusterConfig'):
-            nodes = parse_nodes(env_cfg, service)
+            nodes = get_nodes_list(env_cfg, service)
 
         for node_name, node_binaries in custom_binaries_cfg[providers_mapping(service)].items():
             node = {'binaries': [{'name': binary} for binary in node_binaries]}
@@ -148,8 +150,8 @@ def run_scenario(env_config_dir_path):
 
         helm_install_cmd += ['-f', os.path.join(bin_cfg_path)]
 
-    modify_config(scenario_key, env_cfg, env_config_scenario_path, bin_cfg,
-                  env_cfg.get('binaries'))
+    create_new_env_config(scenario_key, env_cfg, env_config_scenario_path, bin_cfg,
+                          env_cfg.get('binaries'))
 
     helm_install_cmd += ['-f', os.path.join(env_config_scenario_path,
                                             'env_config.yaml')]
