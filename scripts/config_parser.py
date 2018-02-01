@@ -1,3 +1,13 @@
+"""
+Creates values files based on custom user env config.
+"""
+
+__author__ = "Michal Cwiertnia"
+__copyright__ = "Copyright (C) 2018 ACK CYFRONET AGH"
+__license__ = "This software is released under the MIT license cited in " \
+              "LICENSE.txt"
+
+
 import config.writers as writers
 import os
 import config_generator
@@ -12,7 +22,9 @@ def get_nodes_list(env_cfg, service):
 
 def providers_mapping(name):
     return {'oneprovider-krakow': 'oneprovider-p1',
-            'oneprovider-paris': 'oneprovider-p2'}.get(name, name)
+            'oneprovider-paris': 'oneprovider-p2',
+            'oneprovider-p1': 'oneprovider-krakow',
+            'oneprovider-p2': 'oneprovider-paris'}.get(name, name)
 
 
 def parse_env_config(env_cfg, bin_cfg, scenario_key, scenario_path):
@@ -23,7 +35,7 @@ def parse_env_config(env_cfg, bin_cfg, scenario_key, scenario_path):
     onezone_image = env_cfg.get('onezoneImage')
 
     spaces_cfg = env_cfg.get('createSpaces')
-    if isinstance(spaces_cfg, dict):
+    if isinstance(spaces_cfg, list):
         new_env_cfg['spaces'] = parse_spaces_cfg(spaces_cfg)
     if isinstance(spaces_cfg, bool) and not spaces_cfg:
         new_env_cfg['spaces'] = []
@@ -51,8 +63,7 @@ def parse_node_binaries(bin_cfg, custom_bin_cfg, scenario_key, service):
 def parse_spaces_cfg(spaces_cfg):
     for space in spaces_cfg:
         for support in space.get('supports'):
-            support['provider'] = providers_mapping('oneprovider-{}'.
-                                                    format(support['provider']))
+            support['provider'] = providers_mapping(support['provider'])
     return spaces_cfg
 
 

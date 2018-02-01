@@ -1,5 +1,12 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+"""
+Generates overlay configs based on given binaries configuration.
+"""
+
+__author__ = "Michal Cwiertnia"
+__copyright__ = "Copyright (C) 2018 ACK CYFRONET AGH"
+__license__ = "This software is released under the MIT license cited in " \
+              "LICENSE.txt"
+
 
 from config import readers, writers
 from environment import application, node
