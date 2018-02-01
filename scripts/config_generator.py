@@ -90,5 +90,3 @@ def generate_configs(bin_cfg, bin_cfg_path, scenario_key, env_config_dir_path):
     writer = writers.ConfigWriter(bin_cfg, 'yaml')
     with open(bin_cfg_path, 'w') as f:
         f.write(writer.dump())
-
-

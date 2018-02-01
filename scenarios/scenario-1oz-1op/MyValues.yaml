@@ -75,6 +75,9 @@ onedata-1p:
       ONEPANEL_DEBUG_MODE: "true"
       ONEPANEL_LOG_LEVEL: error
 
+    batchConfig:
+      createUsers: True
+
   # oneprovider configuration
   oneprovider-krakow:
     nodes:
@@ -106,3 +109,6 @@ onedata-1p:
     onezone_service_url:
       type: auto-generate
       disableSuffix: true
+
+    batchConfig:
+      createUsers: True
