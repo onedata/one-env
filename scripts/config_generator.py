@@ -18,6 +18,26 @@ def oneprovider_apps():
     return {'op-panel', 'cluster-manager', 'op-worker'}
 
 
+def generate_app_config(app_name, node_name, node_config, service,
+                        service_dir_path, host_home_dir, node_apps,
+                        node_binaries_conf):
+    app_config = {'name': app_name}
+
+    if app_name in [a['name'] for a in node_config.get('binaries', [])]:
+        app_config['hostPath'] = os.path.relpath(
+            os.path.abspath(binaries.locate(app_name)),
+            host_home_dir)
+    else:
+        app_config['hostPath'] = ''
+
+    node_apps.append(application.Application(
+        app_name, node_name, app_config['hostPath'],
+        None, service, service_dir_path, host_home_dir
+    ))
+
+    node_binaries_conf.append(app_config)
+
+
 def generate_new_nodes_config(scenario_cfg, service, host_home_dir,
                               service_dir_path, env_config_dir_path):
     new_nodes_config = {}
@@ -31,21 +51,9 @@ def generate_new_nodes_config(scenario_cfg, service, host_home_dir,
         node_apps = []
         node_binaries_conf = []
         for app_name in service_apps:
-            app_config = {'name': app_name}
-
-            if app_name in [a['name'] for a in node_config.get('binaries', [])]:
-                app_config['hostPath'] = os.path.relpath(
-                    os.path.abspath(binaries.locate(app_name)),
-                    host_home_dir)
-            else:
-                app_config['hostPath'] = ''
-
-            node_apps.append(application.Application(
-                app_name, node_name, app_config['hostPath'],
-                None, service, service_dir_path, host_home_dir
-            ))
-
-            node_binaries_conf.append(app_config)
+            generate_app_config(app_name, node_name, node_config, service,
+                                service_dir_path, host_home_dir, node_apps,
+                                node_binaries_conf)
 
         node.create_node_config_file(env_config_dir_path, service,
                                      node_name, node_apps)
@@ -54,8 +62,7 @@ def generate_new_nodes_config(scenario_cfg, service, host_home_dir,
     return new_nodes_config
 
 
-def generate_config_for_installation(bin_cfg, bin_cfg_path, scenario_key,
-                                     env_config_dir_path):
+def generate_configs(bin_cfg, bin_cfg_path, scenario_key, env_config_dir_path):
     scenario_cfg = bin_cfg[scenario_key]
     host_home_dir = user_config.get('hostHomeDir')
     kube_host_home_dir = user_config.get('kubeHostHomeDir')
@@ -76,44 +83,5 @@ def generate_config_for_installation(bin_cfg, bin_cfg_path, scenario_key,
     writer = writers.ConfigWriter(bin_cfg, 'yaml')
     with open(bin_cfg_path, 'w') as f:
         f.write(writer.dump())
-
-
-def generate_configs(bin_cfg, bin_cfg_path, env_config_dir_path,
-                     scenario_key):
-    if scenario_key:
-        generate_config_for_installation(bin_cfg, bin_cfg_path, scenario_key,
-                                         env_config_dir_path)
-
-
-parser = argparse.ArgumentParser(
-    formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    description='Bring up onedata environment.')
-
-
-parser.add_argument(
-    '-c', '--cfg_path',
-    action='store',
-    help='path to environment configuration file',
-    dest='cfg_path')
-
-parser.add_argument(
-    '-o', '--out_dir',
-    action='store',
-    help='path to dir where configs should be written',
-    default=os.getcwd(),
-    dest='out_dir')
-
-parser.add_argument(
-    '-s', '--scenario',
-    action='store',
-    help='',
-    default='',
-    dest='scenario')
-
-
-if __name__ == '__main__':
-    args = parser.parse_args()
-
-    generate_configs(args.scenario, args.out_dir, args.cfg_path)
 
 

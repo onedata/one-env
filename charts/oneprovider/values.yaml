@@ -77,12 +77,12 @@ generate-certificates:
 onedata_anti_affinity_enabled: false
 
 # List of oneprovider onepanel users with administrative privileges
-onepanel_admin_users:
+onepanelAdminUsers:
   - login: admin
     password: password
 
 # List of oneprovider onepanel regular users
-onepanel_users:
+onepanelUsers:
   - login: user
     password: password
 

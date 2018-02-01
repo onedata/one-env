@@ -167,15 +167,15 @@ data:
               # instead of FQDN
               onezone:
                 domainName: {{ template "onezone_service_url" $ }}
-              {{- if and $.Values.createUsers (or $.Values.onepanel_admin_users $.Values.onepanel_users) }}
+              {{- if and $.Values.batchConfig.createUsers (or $.Values.onepanelAdminUsers $.Values.onepanelUsers) }}
               onepanel:
                 users:
-                  {{- range $.Values.onepanel_admin_users }}
+                  {{- range $.Values.onepanelAdminUsers }}
                   {{ .login }}:
                     password: {{ .password }}
                     userRole: admin
                   {{- end }}
-                  {{- range $.Values.onepanel_users }}
+                  {{- range $.Values.onepanelUsers }}
                   {{ .login }}:
                     password: {{ .password }}
                     userRole: regular
