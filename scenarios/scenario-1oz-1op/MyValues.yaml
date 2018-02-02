@@ -87,8 +87,6 @@ onedata-1p:
     memory: 0.5Gi
     cpu: 0.3
     suffix: &op1s krakow
-    geoLatitude: 50.0647
-    geoLongitude: 19.9450
 
     clusterConfig:
       mainNode: node-1
@@ -112,3 +110,6 @@ onedata-1p:
 
     batchConfig:
       createUsers: True
+
+      geoLatitude: 50.0647
+      geoLongitude: 19.9450

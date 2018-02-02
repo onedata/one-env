@@ -34,16 +34,10 @@ onezone_service_url: &onezone_service_url
   # service_name: rc14-onezone
   # namespace: default
 
-# oneprovider name, if empty defaults to a chart name
-name: ''
-
 # Resources requested by oneprovider
 cpu: 0.3
 memory: 0.5Gi
 
-# Coordinates of a Oneprovider on a onezone map
-geoLatitude: 55.333
-geoLongitude: 55.333
 
 # Log level of the processes in the container
 log_level: "info"
@@ -76,15 +70,25 @@ generate-certificates:
 # or onezones that are part of this deployment
 onedata_anti_affinity_enabled: false
 
-# List of oneprovider onepanel users with administrative privileges
-onepanelAdminUsers:
-  - login: admin
-    password: password
+batchConfig:
+  # oneprovider name, if empty defaults to a chart name
+  name: ''
 
-# List of oneprovider onepanel regular users
-onepanelUsers:
-  - login: user
-    password: password
+  # Coordinates of a Oneprovider on a onezone map
+  geoLatitude: 55.333
+  geoLongitude: 55.333
+
+  createUsers: true
+
+  # List of oneprovider onepanel users with administrative privileges
+  onepanelAdminUsers:
+    - login: admin
+      password: password
+
+  # List of oneprovider onepanel regular users
+  onepanelUsers:
+    - login: user
+      password: password
 
 # Create oneclient instance that will connect to this oneprovider
 oneclient:

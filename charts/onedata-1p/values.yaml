@@ -110,8 +110,10 @@ onezone:
 # krakow
 oneprovider-krakow:
   suffix: &op1s krakow
-  geoLatitude: 50.0647
-  geoLongitude: 19.9450
+
+  batchConfig:
+    geoLatitude: 50.0647
+    geoLongitude: 19.9450
 
   image: *oneproviderImage
   onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
