@@ -17,12 +17,6 @@ import binaries
 import time
 
 
-def providers_mapping(name):
-    return {'oneprovider-krakow': 'oneprovider-p1',
-            'oneprovider-paris': 'oneprovider-p2',
-            'oneprovider-p1': 'oneprovider-krakow',
-            'oneprovider-p2': 'oneprovider-paris'}.get(name, name)
-
 def onezone_apps():
     return {'oz-panel', 'cluster-manager', 'oz-worker'}
 
@@ -33,10 +27,10 @@ def oneprovider_apps():
 
 def generate_app_config(app_name, node_name, node_config, service,
                         service_dir_path, host_home_dir, node_apps,
-                        node_binaries_conf, custom_node_bin_cfg):
+                        node_binaries_conf):
     app_config = {'name': app_name}
 
-    if app_name in [a for a in custom_node_bin_cfg]:
+    if app_name in [a['name'] for a in node_config.get('binaries', [])]:
         app_config['hostPath'] = os.path.relpath(
             os.path.abspath(binaries.locate(app_name)),
             host_home_dir)
@@ -52,8 +46,7 @@ def generate_app_config(app_name, node_name, node_config, service,
 
 
 def generate_new_nodes_config(scenario_cfg, service, host_home_dir,
-                              service_dir_path, env_config_dir_path,
-                              custom_service_bin_cfg):
+                              service_dir_path, env_config_dir_path):
     new_nodes_config = {}
 
     if 'onezone' in service:
@@ -67,7 +60,7 @@ def generate_new_nodes_config(scenario_cfg, service, host_home_dir,
         for app_name in service_apps:
             generate_app_config(app_name, node_name, node_config, service,
                                 service_dir_path, host_home_dir, node_apps,
-                                node_binaries_conf, custom_service_bin_cfg.get(node_name))
+                                node_binaries_conf)
 
         node.create_node_config_file(env_config_dir_path, service,
                                      node_name, node_apps)
@@ -76,12 +69,10 @@ def generate_new_nodes_config(scenario_cfg, service, host_home_dir,
     return new_nodes_config
 
 
-def generate_configs(bin_cfg, bin_cfg_path, scenario_key, env_config_dir_path,
-                     env_cfg):
+def generate_configs(bin_cfg, bin_cfg_path, scenario_key, env_config_dir_path):
     scenario_cfg = bin_cfg[scenario_key]
     host_home_dir = user_config.get('hostHomeDir')
     kube_host_home_dir = user_config.get('kubeHostHomeDir')
-    custom_bin_cfg = env_cfg.get('binaries')
 
     for service in scenario_cfg:
         scenario_cfg[service]['hostPathPrefix'] = host_home_dir
@@ -94,8 +85,7 @@ def generate_configs(bin_cfg, bin_cfg_path, scenario_key, env_config_dir_path,
 
         bin_cfg[scenario_key][service]['nodes'] = \
             generate_new_nodes_config(scenario_cfg, service, host_home_dir,
-                                      service_dir_path, env_config_dir_path,
-                                      custom_bin_cfg.get(providers_mapping(service)))
+                                      service_dir_path, env_config_dir_path)
 
     writer = writers.ConfigWriter(bin_cfg, 'yaml')
     with open(bin_cfg_path, 'w') as f:

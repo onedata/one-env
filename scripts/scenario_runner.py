@@ -77,7 +77,7 @@ def run_scenario(env_config_dir_path):
 
     if env_cfg.get('binaries'):
         config_generator.generate_configs(bin_cfg, bin_cfg_path, scenario_key,
-                                          env_config_dir_path, env_cfg)
+                                          env_config_dir_path)
 
         helm_install_cmd += ['-f', os.path.join(bin_cfg_path)]
 

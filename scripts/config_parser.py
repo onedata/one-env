@@ -86,9 +86,9 @@ def parse_service_cfg(new_env_cfg, env_cfg, service, scenario_key,
         if isinstance(batch_cfg, bool) and not batch_cfg:
             new_env_cfg[scenario_key][service]['onepanel_batch_mode_enabled'] = False
 
-        if custom_bin_cfg.get(providers_mapping(service)):
-            parse_node_binaries(bin_cfg, custom_bin_cfg, scenario_key, service)
-
         new_env_cfg[scenario_key][service] = \
             {**new_env_cfg[scenario_key][service],
              **env_cfg[providers_mapping(service)]}
+
+    if custom_bin_cfg.get(providers_mapping(service)):
+        parse_node_binaries(bin_cfg, custom_bin_cfg, scenario_key, service)
