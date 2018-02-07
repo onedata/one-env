@@ -84,4 +84,4 @@ def run_scenario(env_config_dir_path):
     helm_install_cmd += ['-f', os.path.join(env_config_scenario_path,
                                             'CustomConfig.yaml')]
 
-    subprocess.check_call(helm_install_cmd, stderr=subprocess.STDOUT)
+    # subprocess.check_call(helm_install_cmd, stderr=subprocess.STDOUT)

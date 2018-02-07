@@ -79,6 +79,7 @@ def parse_service_cfg(new_env_cfg, env_cfg, service, scenario_key,
     custom_bin_cfg = env_cfg.get('binaries')
     service_cfg = env_cfg.get(providers_mapping(service))
     if service_cfg:
+        # Get all nodes specified in clusterConfig part
         new_env_cfg[scenario_key][service]['nodes'] = \
             get_nodes_list(env_cfg, providers_mapping(service))
 
@@ -90,5 +91,10 @@ def parse_service_cfg(new_env_cfg, env_cfg, service, scenario_key,
             {**new_env_cfg[scenario_key][service],
              **env_cfg[providers_mapping(service)]}
 
-    if isinstance(custom_bin_cfg.get(providers_mapping(service)), dict):
+    # Parse custom binaries. If some node wasn't specified in clusterConfig part
+    # it should be automatically added
+    if isinstance(custom_bin_cfg, dict) and custom_bin_cfg.get(providers_mapping(service)):
         parse_node_binaries(bin_cfg, custom_bin_cfg, scenario_key, service)
+
+    # # Handle case where user want more than one node and uses binaries true option
+    # if isinstance(custom_bin_cfg, bool) and custom_bin_cfg:
