@@ -75,13 +75,13 @@ def run_scenario(env_config_dir_path):
                         os.path.join(env_config_scenario_path, 'MyValues.yaml'),
                         '--name', user_config.get('helmDeploymentName')]
 
+    helm_install_cmd += ['-f', os.path.join(env_config_scenario_path,
+                                            'CustomConfig.yaml')]
+
     if env_cfg.get('binaries'):
         config_generator.generate_configs(bin_cfg, bin_cfg_path, scenario_key,
                                           env_config_dir_path)
 
         helm_install_cmd += ['-f', os.path.join(bin_cfg_path)]
 
-    helm_install_cmd += ['-f', os.path.join(env_config_scenario_path,
-                                            'CustomConfig.yaml')]
-
-    # subprocess.check_call(helm_install_cmd, stderr=subprocess.STDOUT)
+    subprocess.check_call(helm_install_cmd, stderr=subprocess.STDOUT)
