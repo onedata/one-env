@@ -2,7 +2,7 @@ onedata-2p:
   onezone:
     mainNode: node-1
     nodes:
-      - name: node-1
+      node-1:
         binaries:
           - name: oz-panel
           - name: oz-worker
@@ -11,7 +11,7 @@ onedata-2p:
   oneprovider-krakow:
     mainNode: node-1
     nodes:
-      - name: node-1
+      node-1:
         binaries:
           - name: op-panel
           - name: op-worker
@@ -20,7 +20,7 @@ onedata-2p:
   oneprovider-paris:
     mainNode: node-1
     nodes:
-      - name: node-1
+      node-1:
         binaries:
           - name: op-panel
           - name: op-worker

@@ -10,6 +10,7 @@ image: onedata/rest-cli:17.06.0-rc6
 # providers list
 oneprovider:
   - oneprovider-krakow
+  - oneprovider-paris
 
 # spaces list
 spaces:
@@ -19,10 +20,13 @@ spaces:
         storage_name: "posix"
         size: '1000000'
 
-
+oneclient:
+  enabled: false
+onedata-cli:
+  enabled: false
 
 # onedata-1p conf
-onedata-1p:
+onedata-2p:
 
   # services images
   oz_image: &oz_image docker.onedata.org/onezone-dev:minikube
@@ -49,8 +53,8 @@ onedata-1p:
   # onezone configuration
   onezone:
     nodes:
-      - name: node-1
-    mainNode: node-1
+      node-1:
+          binaries: []
 
     memory: 0.5Gi
     cpu: 0.3
@@ -59,6 +63,7 @@ onedata-1p:
     log_level: *log_level
 
     clusterConfig:
+      mainNode: node-1
       managers: []
       workers: []
       databases: []
@@ -71,19 +76,21 @@ onedata-1p:
       ONEPANEL_DEBUG_MODE: "true"
       ONEPANEL_LOG_LEVEL: error
 
+    batchConfig:
+      createUsers: True
+
   # oneprovider configuration
   oneprovider-krakow:
     nodes:
-      - name: node-1
-    mainNode: node-1
+      node-1: {}
+
 
     memory: 0.5Gi
     cpu: 0.3
     suffix: &op1s krakow
-    geoLatitude: 50.0647
-    geoLongitude: 19.9450
 
     clusterConfig:
+      mainNode: node-1
       managers: []
       workers: []
       databases: []
@@ -101,20 +108,26 @@ onedata-1p:
     onezone_service_url:
       type: auto-generate
       disableSuffix: true
+
+    batchConfig:
+      createUsers: True
+
+      geoLatitude: 50.0647
+      geoLongitude: 19.9450
 
   # second provider configuration
   oneprovider-paris:
     nodes:
-      - name: node-1
-    mainNode: node-1
+      node-1: {}
 
     memory: 0.5Gi
     cpu: 0.3
     suffix: &op1s paris
-    geoLatitude: 50.0647
-    geoLongitude: 19.9450
+    geoLatitude: 48.8566
+    geoLongitude: 2.3522
 
     clusterConfig:
+      mainNode: node-1
       managers: []
       workers: []
       databases: []
@@ -132,3 +145,9 @@ onedata-1p:
     onezone_service_url:
       type: auto-generate
       disableSuffix: true
+
+    batchConfig:
+      createUsers: True
+
+      geoLatitude: 48.8566
+      geoLongitude: 2.3522
