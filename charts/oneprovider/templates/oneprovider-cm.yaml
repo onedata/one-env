@@ -167,11 +167,13 @@ data:
                 {{- end }}
                 subdomainDelegation: false
 
+                adminEmail: admin@onedata.org
+
                 # TODO: Find way to hold this with default
                 {{ if $.Values.batchConfig.domainName }}
-                domainName: {{ $.Values.batchConfig.domainName }}
+                domain: {{ $.Values.batchConfig.domainName }}
                 {{ else }}
-                domainName: {{ template "service_url" $ }}
+                domain: {{ template "service_url" $ }}
                 {{ end }}
 
                 geoLatitude: {{ $.Values.batchConfig.geoLatitude }}
