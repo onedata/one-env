@@ -55,6 +55,11 @@ def parse_env_config(env_cfg, bin_cfg, scenario_key, scenario_path):
 
 
 def parse_node_binaries(bin_cfg, custom_bin_cfg, scenario_key, service):
+    # clean default configuration
+    for node_name in bin_cfg.get(service).keys():
+        bin_cfg[scenario_key][service]['nodes'][node_name] = {}
+
+    # parse custom configuration
     for node_name, node_binaries in custom_bin_cfg[providers_mapping(service)].items():
         node = {'binaries': [{'name': binary} for binary in node_binaries]}
         bin_cfg[scenario_key][service]['nodes'][node_name] = node
@@ -95,6 +100,3 @@ def parse_service_cfg(new_env_cfg, env_cfg, service, scenario_key,
     # it should be automatically added
     if isinstance(custom_bin_cfg, dict) and custom_bin_cfg.get(providers_mapping(service)):
         parse_node_binaries(bin_cfg, custom_bin_cfg, scenario_key, service)
-
-    # # Handle case where user want more than one node and uses binaries true option
-    # if isinstance(custom_bin_cfg, bool) and custom_bin_cfg:
