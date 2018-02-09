@@ -66,6 +66,12 @@ def parse_node_binaries(bin_cfg, custom_bin_cfg, scenario_key, service):
             bin_cfg[scenario_key][service]['nodes'][node_name] = node
 
 
+def add_binaries_for_nodes(nodes_list, bin_cfg, scenario_key, service):
+    for node_name in nodes_list:
+        bin_cfg[scenario_key][service]['nodes'][node_name] = \
+            bin_cfg[scenario_key][service]['nodes']['node-1']
+
+
 def parse_spaces_cfg(spaces_cfg):
     for space in spaces_cfg:
         for support in space.get('supports'):
@@ -88,6 +94,11 @@ def parse_service_cfg(new_env_cfg, env_cfg, service, scenario_key,
         # Get all nodes specified in clusterConfig part
         new_env_cfg[scenario_key][service]['nodes'] = \
             get_nodes_list(env_cfg, providers_mapping(service))
+
+        # Handle additional nodes
+        if isinstance(custom_bin_cfg, bool) and custom_bin_cfg:
+            add_binaries_for_nodes(new_env_cfg[scenario_key][service]['nodes'],
+                                   bin_cfg, scenario_key, service)
 
         batch_cfg = service_cfg.get('batchConfig')
         if isinstance(batch_cfg, bool) and not batch_cfg:
