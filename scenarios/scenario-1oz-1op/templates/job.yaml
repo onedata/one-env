@@ -23,6 +23,7 @@ metadata:
   annotations:
     version: "{{ $r.Chart.Version }}"
 spec:
+  backoffLimit: 1
   template:
     metadata:
       name: "{{ $r.Release.Name}}"
@@ -32,7 +33,7 @@ spec:
         release: "{{ $r.Release.Name }}"
         heritage: "{{ $r.Release.Service }}"
       annotations:
-        version: {{ $r.Chart.Version }}
+        version: "{{ $r.Chart.Version }}"
     spec:
       initContainers:
         - name: wait-for-release
@@ -50,7 +51,7 @@ spec:
         imagePullPolicy: {{ $r.Values.imagePullPolicy }}
         env:
           - name: ONEZONE_HOST
-            value: "https://{{ template "releaseName" $r }}-onezone.{{ template "service_namespace_domain" $r }}:8443"
+            value: "https://{{ template "releaseName" $r }}-onezone.{{ template "service_namespace_domain" $r }}"
           - name: ONEPANEL_BASIC_AUTH
             value: "admin:password"
           - name: ONEZONE_API_KEY
@@ -59,15 +60,17 @@ spec:
           - "-c"
           - >
             echo "-k" > ~/.curlrc ;
-            echo "Getting first token for debug:"
-            curl -v -k -u $ONEPANEL_BASIC_AUTH -X POST -d '' -H 'content-type: application/json' $ONEZONE_HOST/api/v3/onezone/user/client_tokens ;
-            export ONEZONE_API_KEY="$(curl -k -u $ONEPANEL_BASIC_AUTH -X POST -d '' -H 'content-type: application/json' $ONEZONE_HOST/api/v3/onezone/user/client_tokens | jq -r .token)" ;
+            echo "Getting token:" ;
+            export ONEZONE_API_KEY="$(curl -k -u $ONEPANEL_BASIC_AUTH -X POST -d '' -H 'content-type: application/json' $ONEZONE_HOST/api/v3/onezone/user/client_tokens)" ;
+            echo "Curl output:" ;
+            echo "$ONEZONE_API_KEY" ;
+            export ONEZONE_API_KEY="$(echo "$ONEZONE_API_KEY" | jq -r .token)" ;
             echo "ONEZONE_HOST=$ONEZONE_HOST" ;
             echo "ONEPANEL_BASIC_AUTH=$ONEPANEL_BASIC_AUTH" ;
             echo "ONEZONE_API_KEY=$ONEZONE_API_KEY" ;
             echo "Create space and request support" ;
             echo "Creating space {{ $space.name }}" ;
-            export SPACE_ID="$(onezone-rest-cli -vvv  createSpace name=='{{ $space.name }}' 2>&1 | grep 'location:' | sed -nr 's#.*/spaces/(.*)#\1#p' | tr -d ' \r')" ;
+            export SPACE_ID="$(onezone-rest-cli -vvv  createSpace name=='{{ $space.name }}' 2>&1 | grep -i 'location:' | sed -nr 's#.*/spaces/(.*)#\1#p' | tr -d ' \r')" ;
             echo "Space $SPACE_ID created" ;
             {{- range $space.supports }}
             export ONEPROVIDER_HOST='https://{{ template "releaseName" $r }}-{{ template "providerName" .provider }}.{{ template "service_namespace_domain" $r }}:8443' ;
