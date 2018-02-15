@@ -1,0 +1,36 @@
+onedata-3p:
+  onezone:
+    mainNode: node-1
+    nodes:
+      node-1:
+        binaries:
+          - name: oz-panel
+          - name: oz-worker
+          - name: cluster-manager
+
+  oneprovider-krakow:
+    mainNode: node-1
+    nodes:
+      node-1:
+        binaries:
+          - name: op-panel
+          - name: op-worker
+          - name: cluster-manager
+
+  oneprovider-paris:
+    mainNode: node-1
+    nodes:
+      node-1:
+        binaries:
+          - name: op-panel
+          - name: op-worker
+          - name: cluster-manager
+
+  oneprovider-lisbon:
+    mainNode: node-1
+    nodes:
+      node-1:
+        binaries:
+          - name: op-panel
+          - name: op-worker
+          - name: cluster-manager

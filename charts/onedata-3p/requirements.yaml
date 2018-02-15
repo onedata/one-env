@@ -1,0 +1,19 @@
+dependencies:
+- name: onezone
+  version: 0.2.9
+  repository: file://../../charts/onezone
+
+- name: oneprovider
+  alias: oneprovider-krakow
+  version: 0.3.0
+  repository: file://../../charts/oneprovider
+
+- name: oneprovider
+  alias: oneprovider-paris
+  version: 0.3.0
+  repository: file://../../charts/oneprovider
+
+- name: oneprovider
+  alias: oneprovider-lisbon
+  version: 0.3.0
+  repository: file://../../charts/oneprovider

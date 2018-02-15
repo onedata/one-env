@@ -21,10 +21,12 @@ def get_nodes_list(env_cfg, service):
 
 
 def providers_mapping(name):
-    return {'oneprovider-krakow': 'oneprovider-p1',
-            'oneprovider-paris': 'oneprovider-p2',
-            'oneprovider-p1': 'oneprovider-krakow',
-            'oneprovider-p2': 'oneprovider-paris'}.get(name, name)
+    return {'oneprovider-krakow': 'oneprovider-1',
+            'oneprovider-paris': 'oneprovider-2',
+            'oneprovider-lisbon': 'oneprovider-3',
+            'oneprovider-1': 'oneprovider-krakow',
+            'oneprovider-2': 'oneprovider-paris',
+            'oneprovider-3': 'oneprovider-lisbon'}.get(name, name)
 
 
 def parse_env_config(env_cfg, bin_cfg, scenario_key, scenario_path):
