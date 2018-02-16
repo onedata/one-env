@@ -140,6 +140,8 @@ spec:
 
         {{- if $nodeConfig.sources }}
         env:
+          - name: HOSTNAME
+            value: {{ template "fullname" $ }}-{{ $nodeName }}-0
           - name: SERVICE_DOMAIN
             value: {{ template "service_url" $ }}
           {{ range $nodeConfig.sources }}
