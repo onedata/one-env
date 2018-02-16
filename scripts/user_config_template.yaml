@@ -15,3 +15,5 @@ maxPersistentHistory: 50
 # supported by the one-env tool.
 helmDeploymentName: dev
 
+# Kubernetes namespace in which all pods will be run.
+namespace: default

@@ -71,7 +71,8 @@ def run_scenario(env_config_dir_path):
     config_parser.parse_env_config(env_cfg, bin_cfg, scenario_key,
                                    env_config_scenario_path)
 
-    helm_install_cmd = ['helm', 'install', env_config_scenario_path, '-f',
+    helm_install_cmd = ['helm', 'install', '--namespace', user_config.get('namespace'),
+                        env_config_scenario_path, '-f',
                         os.path.join(env_config_scenario_path, 'MyValues.yaml'),
                         '--name', user_config.get('helmDeploymentName')]
 

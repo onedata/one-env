@@ -136,10 +136,14 @@ spec:
                 if [[ {{ quote $nodeName }} == {{ quote $.Values.clusterConfig.mainNode }} ]]; then exit 0 ; else onepanel_ready ; fi ;
         envFrom:
         - configMapRef:
-            name: {{ template "fullname" $ }}-onezone-config
+            name: {{ template "fullname" $ }}-config
 
         {{- if $nodeConfig.binaries }}
         env:
+          - name: SERVICE_DOMAIN
+            value: {{ template "service_url" $ }}
+          - name: NODE_HOSTNAME
+            value: {{ template "fullname" $ }}-{{ $nodeName }}-0
           {{ range $nodeConfig.binaries }}
             # assuming here that oz-panel will always have such name
             {{ if and (eq .name "oz-panel") (.hostPath) }}
