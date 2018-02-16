@@ -1,17 +1,17 @@
 # Name of the scenario to run
 scenario: "scenario-1oz-1op"
 
-# Determines if onedata components should be started from pre-compiled binaries
-# or pre-installed packages inside dockers. When enabled, binaries are expected
+# Determines if onedata components should be started from pre-compiled sources
+# or pre-installed packages inside dockers. When enabled, sources are expected
 # to be found in CWD (from where the 'up' script was run) or one dir above.
-binaries: false
+sources: false
 
-# Onezone image to use. Note that if 'binaries' option is enabled, it must
+# Onezone image to use. Note that if 'sources' option is enabled, it must
 # be based off onedata/worker image (it contains all the machinery to run the
 # application from sources).
 onezoneImage: "docker.onedata.org/onezone-dev:minikube"
 
-# Oneprovider image to use. Note that if 'binaries' option is enabled, it must
+# Oneprovider image to use. Note that if 'sources' option is enabled, it must
 # be based off onedata/worker image.
 oneproviderImage: "docker.onedata.org/oneprovider-dev:minikube"
 

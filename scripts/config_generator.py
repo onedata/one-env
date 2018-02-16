@@ -1,5 +1,5 @@
 """
-Generates overlay configs based on given binaries configuration.
+Generates overlay configs based on given sources configuration.
 """
 
 __author__ = "Michal Cwiertnia"
@@ -27,10 +27,10 @@ def oneprovider_apps():
 
 def generate_app_config(app_name, node_name, node_config, service,
                         service_dir_path, host_home_dir, node_apps,
-                        node_binaries_conf):
+                        node_sources_conf):
     app_config = {'name': app_name}
 
-    if app_name in [a['name'] for a in node_config.get('binaries', [])]:
+    if app_name in [a['name'] for a in node_config.get('sources', [])]:
         app_config['hostPath'] = os.path.relpath(
             os.path.abspath(binaries.locate(app_name)),
             host_home_dir)
@@ -42,7 +42,7 @@ def generate_app_config(app_name, node_name, node_config, service,
         None, service, service_dir_path, host_home_dir
     ))
 
-    node_binaries_conf.append(app_config)
+    node_sources_conf.append(app_config)
 
 
 def generate_new_nodes_config(scenario_cfg, service, host_home_dir,
@@ -56,21 +56,21 @@ def generate_new_nodes_config(scenario_cfg, service, host_home_dir,
 
     for node_name, node_config in scenario_cfg[service]['nodes'].items():
         node_apps = []
-        node_binaries_conf = []
+        node_sources_conf = []
         for app_name in service_apps:
             generate_app_config(app_name, node_name, node_config, service,
                                 service_dir_path, host_home_dir, node_apps,
-                                node_binaries_conf)
+                                node_sources_conf)
 
         node.create_node_config_file(env_config_dir_path, service,
                                      node_name, node_apps)
-        new_nodes_config[node_name] = {'binaries': node_binaries_conf}
+        new_nodes_config[node_name] = {'sources': node_sources_conf}
 
     return new_nodes_config
 
 
-def generate_configs(bin_cfg, bin_cfg_path, scenario_key, env_config_dir_path):
-    scenario_cfg = bin_cfg[scenario_key]
+def generate_configs(sources_cfg, sources_cfg_path, scenario_key, env_config_dir_path):
+    scenario_cfg = sources_cfg[scenario_key]
     host_home_dir = user_config.get('hostHomeDir')
     kube_host_home_dir = user_config.get('kubeHostHomeDir')
 
@@ -83,10 +83,10 @@ def generate_configs(bin_cfg, bin_cfg_path, scenario_key, env_config_dir_path):
         service_dir_path = os.path.join(env_config_dir_path, service)
         os.mkdir(service_dir_path)
 
-        bin_cfg[scenario_key][service]['nodes'] = \
+        sources_cfg[scenario_key][service]['nodes'] = \
             generate_new_nodes_config(scenario_cfg, service, host_home_dir,
                                       service_dir_path, env_config_dir_path)
 
-    writer = writers.ConfigWriter(bin_cfg, 'yaml')
-    with open(bin_cfg_path, 'w') as f:
+    writer = writers.ConfigWriter(sources_cfg, 'yaml')
+    with open(sources_cfg_path, 'w') as f:
         f.write(writer.dump())

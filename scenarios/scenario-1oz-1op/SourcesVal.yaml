@@ -4,16 +4,16 @@ onedata-1p:
     mainNode: node-1
     nodes:
       node-1:
-          binaries:
-            - name: oz-panel
-            - name: oz-worker
-            - name: cluster-manager
+        sources:
+          - name: oz-panel
+          - name: oz-worker
+          - name: cluster-manager
 
   oneprovider-krakow:
     mainNode: node-1
     nodes:
       node-1:
-        binaries:
+        sources:
           - name: op-panel
           - name: op-worker
           - name: cluster-manager

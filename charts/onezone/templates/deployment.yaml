@@ -138,13 +138,11 @@ spec:
         - configMapRef:
             name: {{ template "fullname" $ }}-config
 
-        {{- if $nodeConfig.binaries }}
+        {{- if $nodeConfig.sources }}
         env:
           - name: SERVICE_DOMAIN
             value: {{ template "service_url" $ }}
-          - name: NODE_HOSTNAME
-            value: {{ template "fullname" $ }}-{{ $nodeName }}-0
-          {{ range $nodeConfig.binaries }}
+          {{ range $nodeConfig.sources }}
             # assuming here that oz-panel will always have such name
             {{ if and (eq .name "oz-panel") (.hostPath) }}
           - name: ONEPANEL_PATH
@@ -153,10 +151,10 @@ spec:
           {{ end }}
         {{- end }}
 
-        {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "saml-idp" "enabled") ($nodeConfig.binaries) }}
+        {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "saml-idp" "enabled") ($nodeConfig.sources) }}
         volumeMounts:
         {{- end }}
-        {{- range $nodeConfig.binaries }}
+        {{- range $nodeConfig.sources }}
           {{- if .hostPath }}
               # mountPath is path in the pod, we want that path to be exactly the same as the path on the host machine
               - mountPath: {{ $.Values.hostPathPrefix }}/{{ default .hostPath .mountPath }}
@@ -204,15 +202,15 @@ spec:
             name: saml-config
             readOnly: false
     {{- end }}
-    {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "saml-idp" "enabled") ($nodeConfig.binaries) }}
+    {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "saml-idp" "enabled") ($nodeConfig.sources) }}
       volumes:
     {{- end }}
-    {{ if $nodeConfig.binaries }}
+    {{ if $nodeConfig.sources }}
             - name: onepanel-config-file
               hostPath:
                 path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/onezone/{{ $nodeName }}-overlay.config
     {{ end }}
-    {{- range $nodeConfig.binaries }}
+    {{- range $nodeConfig.sources }}
       {{- if .hostPath }}
             - name: {{ .name }}
               # hostPath is the path in minikube

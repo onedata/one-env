@@ -1,9 +1,9 @@
-onedata-2p:
+onedata-3p:
   onezone:
     mainNode: node-1
     nodes:
       node-1:
-        binaries:
+        sources:
           - name: oz-panel
           - name: oz-worker
           - name: cluster-manager
@@ -12,7 +12,7 @@ onedata-2p:
     mainNode: node-1
     nodes:
       node-1:
-        binaries:
+        sources:
           - name: op-panel
           - name: op-worker
           - name: cluster-manager
@@ -21,7 +21,16 @@ onedata-2p:
     mainNode: node-1
     nodes:
       node-1:
-        binaries:
+        sources:
+          - name: op-panel
+          - name: op-worker
+          - name: cluster-manager
+
+  oneprovider-lisbon:
+    mainNode: node-1
+    nodes:
+      node-1:
+        sources:
           - name: op-panel
           - name: op-worker
           - name: cluster-manager

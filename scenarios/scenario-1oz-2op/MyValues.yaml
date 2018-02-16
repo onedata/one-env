@@ -54,7 +54,7 @@ onedata-2p:
   onezone:
     nodes:
       node-1:
-          binaries: []
+          sources: []
 
     memory: 0.5Gi
     cpu: 0.3

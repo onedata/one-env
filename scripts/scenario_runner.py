@@ -57,18 +57,18 @@ def run_scenario(env_config_dir_path):
                                             original_scenario_path)
 
     # TODO: Change values files after charts integration
-    bin_cfg_path = os.path.join(env_config_scenario_path, 'BinVal.yaml')
+    sources_cfg_path = os.path.join(env_config_scenario_path, 'SourcesVal.yaml')
 
     shutil.copytree('charts', env_config_charts_path)
     shutil.copytree(original_scenario_path, env_config_scenario_path)
     os.mkdir(log_dir)
 
-    bin_cfg = readers.ConfigReader(bin_cfg_path).load()
+    sources_cfg = readers.ConfigReader(sources_cfg_path).load()
     scenario_key = get_scenario_key(env_config_scenario_path)
     update_charts_dependencies(env_config_charts_path, env_config_scenario_path,
                                log_dir)
 
-    config_parser.parse_env_config(env_cfg, bin_cfg, scenario_key,
+    config_parser.parse_env_config(env_cfg, sources_cfg, scenario_key,
                                    env_config_scenario_path)
 
     helm_install_cmd = ['helm', 'install', '--namespace', user_config.get('namespace'),
@@ -79,10 +79,10 @@ def run_scenario(env_config_dir_path):
     helm_install_cmd += ['-f', os.path.join(env_config_scenario_path,
                                             'CustomConfig.yaml')]
 
-    if env_cfg.get('binaries'):
-        config_generator.generate_configs(bin_cfg, bin_cfg_path, scenario_key,
+    if env_cfg.get('sources'):
+        config_generator.generate_configs(sources_cfg, sources_cfg_path, scenario_key,
                                           env_config_dir_path)
 
-        helm_install_cmd += ['-f', os.path.join(bin_cfg_path)]
+        helm_install_cmd += ['-f', os.path.join(sources_cfg_path)]
 
     subprocess.check_call(helm_install_cmd, stderr=subprocess.STDOUT)
