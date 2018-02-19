@@ -26,8 +26,8 @@ parser = argparse.ArgumentParser(
 )
 
 parser.add_argument(
-    '-e', '--env-config',
     type=str,
+    nargs='?',
     action='store',
     default=argparse.SUPPRESS,
     help='path to environment description YAML file. It allows to override '
@@ -37,7 +37,7 @@ parser.add_argument(
     dest='env_config')
 
 parser.add_argument(
-    '-s', '--scenario',
+    '-sc', '--scenario',
     type=str,
     action='store',
     default=argparse.SUPPRESS,
@@ -45,12 +45,12 @@ parser.add_argument(
     dest='scenario')
 
 parser.add_argument(
-    '-b', '--binaries',
+    '-s', '--sources',
     action='store_true',
     default=argparse.SUPPRESS,
     help='force onedata components to be started from '
-         'pre-compiled binaries on the host',
-    dest='binaries')
+         'pre-compiled sources on the host',
+    dest='sources')
 
 parser.add_argument(
     '-p', '--packages',
@@ -96,7 +96,7 @@ user_config.ensure_exists()
 
 if 'force' in args:
     if helm.deployment_exists():
-        console.warning('Removing an old deployment (forced)')
+        console.warning('Removing the existing deployment (forced)')
         helm.clean_deployment()
         pods.clean_jobs()
         pods.clean_pods()
@@ -107,8 +107,8 @@ if 'env_config' not in args:
     args.env_config = None
 if 'scenario' not in args:
     args.scenario = None
-if 'binaries' not in args:
-    args.binaries = None
+if 'sources' not in args:
+    args.sources = None
 if 'packages' not in args:
     args.packages = None
 if 'onezone_image' not in args:
@@ -118,14 +118,14 @@ if 'oneprovider_image' not in args:
 if 'no_pull' not in args:
     args.no_pull = None
 
-if args.binaries and args.packages:
+if args.sources and args.packages:
     console.error('-b and -p options cannot be used together')
     sys.exit(1)
 
 env_config_output_dir = deployments_dir.new()
 
 env_config.coalesce(env_config_output_dir, args.env_config, args.scenario,
-                    args.binaries, args.packages, args.onezone_image,
+                    args.sources, args.packages, args.onezone_image,
                     args.oneprovider_image, args.no_pull)
 
 scenario_runner.run_scenario(env_config_output_dir)

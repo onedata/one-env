@@ -10,7 +10,7 @@ usage_and_exit() {
     echo "      logs   - displays logs of chosen pod"
     echo "      exec   - execs to chosen pod with an interactive shell"
     echo "      attach - attaches directly to erlang VM in chosen pod"
-    echo "      open   - opens the GUI hosted on given pod in default browser"
+    echo "      gui    - opens the GUI hosted on given pod in default browser"
     echo "      export - gathers all logs and data from current deployment and"
     echo "               places them in desired location"
     echo "      clean  - removes current onedata deployment and cleans up"
@@ -48,8 +48,8 @@ case "${1}" in
         SCRIPT="onenv_attach.py"
         ;;
 
-    open)
-        SCRIPT="onenv_open.py"
+    gui)
+        SCRIPT="onenv_gui.py"
         ;;
 
     export)

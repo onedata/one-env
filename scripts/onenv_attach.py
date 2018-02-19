@@ -10,6 +10,7 @@ __license__ = "This software is released under the MIT license cited in " \
 
 import argparse
 import pods
+from names_and_paths import *
 import helm
 import console
 import user_config
@@ -29,7 +30,7 @@ parser.add_argument(
     nargs='?',
     action='store',
     default=argparse.SUPPRESS,
-    help='pod name (or any matching, unambiguous substring)',
+    help='pod name (or matching pattern, use "-" for wildcard)',
     dest='pod')
 
 parser.add_argument(
@@ -37,14 +38,14 @@ parser.add_argument(
     action='store_true',
     default=argparse.SUPPRESS,
     help='attach to onepanel\'s console in given pod',
-    dest='panel')
+    dest=APP_TYPE_PANEL)
 
 parser.add_argument(
     '-c', '--cluster-manager',
     action='store_true',
     default=argparse.SUPPRESS,
     help='attach to cluster-manager\'s console in given pod',
-    dest='cluster_manager')
+    dest=APP_TYPE_CLUSTER_MANAGER)
 
 user_config.ensure_exists()
 helm.ensure_deployment(exists=True, fail_with_error=True)
@@ -57,11 +58,11 @@ if 'panel' in args and 'cluster_manager' in args:
     console.error('-p and -c options cannot be used together')
 else:
     try:
-        app_type = 'worker'
+        app_type = APP_TYPE_WORKER
         if 'panel' in args:
-            app_type = 'panel'
+            app_type = APP_TYPE_PANEL
         elif 'cluster_manager' in args:
-            app_type = 'cluster-manager'
+            app_type = APP_TYPE_CLUSTER_MANAGER
 
         def attach_fun(pod):
             pods.attach(pod, app_type)

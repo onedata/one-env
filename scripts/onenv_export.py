@@ -73,13 +73,13 @@ except FileExistsError:
     pass
 
 for pod in pods.list_pods():
-    this_pod_logs_dir = os.path.join(pod_logs_dir, pod)
+    this_pod_logs_dir = os.path.join(pod_logs_dir, pods.get_name(pod))
     try:
         os.mkdir(this_pod_logs_dir)
     except FileExistsError:
         pass
     with open(os.path.join(this_pod_logs_dir, 'entrypoint.log'), 'w+') as f:
-        f.write(pods.logs(pod))
+        f.write(pods.pod_logs(pod))
 
 # If requested, copy it to an output location
 if 'path' in args:

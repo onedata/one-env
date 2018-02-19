@@ -13,16 +13,18 @@ from environment import application, node
 import os
 import argparse
 import user_config
-import binaries
+import sources
 import time
+import sys
+from names_and_paths import *
 
 
 def onezone_apps():
-    return {'oz-panel', 'cluster-manager', 'oz-worker'}
+    return {APP_OZ_PANEL, APP_CLUSTER_MANAGER, APP_ONEZONE}
 
 
 def oneprovider_apps():
-    return {'op-panel', 'cluster-manager', 'op-worker'}
+    return {APP_OP_PANEL, APP_CLUSTER_MANAGER, APP_ONEPROVIDER}
 
 
 def generate_app_config(app_name, node_name, node_config, service,
@@ -32,7 +34,7 @@ def generate_app_config(app_name, node_name, node_config, service,
 
     if app_name in [a['name'] for a in node_config.get('sources', [])]:
         app_config['hostPath'] = os.path.relpath(
-            os.path.abspath(binaries.locate(app_name)),
+            os.path.abspath(sources.locate(app_name, service, node_name)),
             host_home_dir)
     else:
         app_config['hostPath'] = ''
