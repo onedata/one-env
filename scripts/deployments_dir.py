@@ -40,6 +40,7 @@ def prune_deployments_history():
 
 def current_deployment_dir():
     all_deployments = os.listdir(deployments_directory())
+    all_deployments.sort()
     if len(all_deployments) == 0:
         console.error('There are no deployments')
         sys.exit(1)

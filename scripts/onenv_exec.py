@@ -25,7 +25,7 @@ parser.add_argument(
     nargs='?',
     action='store',
     default=argparse.SUPPRESS,
-    help='pod name (or any matching, unambiguous substring)',
+    help='pod name (or matching pattern, use "-" for wildcard)',
     dest='pod')
 
 user_config.ensure_exists()
@@ -36,6 +36,6 @@ if 'pod' not in args:
     args.pod = None
 
 try:
-    pods.match_pod_and_run(args.pod, pods.exec)
+    pods.match_pod_and_run(args.pod, pods.pod_exec)
 except KeyboardInterrupt:
     pass

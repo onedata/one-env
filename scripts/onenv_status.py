@@ -8,8 +8,12 @@ __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
 import argparse
+import pyperclip
+from io import StringIO
+import sys
 import pods
 import helm
+import console
 import user_config
 
 SCRIPT_DESCRIPTION = 'Displays the status of current onedata deployment.'
@@ -25,7 +29,7 @@ parser.add_argument(
     nargs='?',
     action='store',
     default=argparse.SUPPRESS,
-    help='pod name (or any matching, unambiguous substring) - '
+    help='pod name (or matching pattern, use "-" for wildcard) - '
          'display detailed status of given pod.',
     dest='pod')
 
@@ -33,27 +37,39 @@ parser.add_argument(
     '-i', '--ip',
     action='store_true',
     default=argparse.SUPPRESS,
-    help='display only pod\'s IP (pod must be specified)',
+    help='display only pod\'s IP',
     dest='ip')
 
 parser.add_argument(
     '-hn', '--hostname',
     action='store_true',
     default=argparse.SUPPRESS,
-    help='display only pod\'s hostname (pod must be specified)',
+    help='display only pod\'s hostname',
     dest='hostname')
+
+parser.add_argument(
+    '-d', '--domain',
+    action='store_true',
+    default=argparse.SUPPRESS,
+    help='display only pod\'s domain',
+    dest='domain')
+
+parser.add_argument(
+    '-x', '--clipboard',
+    action='store_true',
+    default=argparse.SUPPRESS,
+    help='copy the output to clipboard',
+    dest='clipboard')
 
 user_config.ensure_exists()
 helm.ensure_deployment(exists=True, fail_with_error=False)
 
 args = parser.parse_args()
-if 'pod' not in args:
-    args.pod = None
 
 
 def deployment_status():
     pods_list = pods.list_pods()
-    print('ready: {}'.format(pods.are_all_pods_ready(pods_list)))
+    print('ready: {}'.format(pods.all_jobs_succeeded()))
     print('pods:')
     for pod in pods_list:
         pod_status(pod, multiple=True, indent='    ')
@@ -61,22 +77,20 @@ def deployment_status():
 
 def pod_status(pod, multiple=False, indent=''):
     if multiple:
-        print('{}{}:'.format(indent, pod))
+        print('{}{}:'.format(indent, pods.get_name(pod)))
         indent = indent + '    '
+    else:
+        print('{}name: {}'.format(indent, pods.get_name(pod)))
 
-    hostname = pods.get_hostname(pod)
-    if not multiple:
-        print('{}name: {}'.format(indent, pod))
-    print('{}ready: {}'.format(indent, pods.is_pod_ready(pod)))
     print('{}hostname: {}'.format(indent, pods.get_hostname(pod)))
-    print('{}domain: {}'.format(indent, pods.parse_domain(hostname)))
+    print('{}domain: {}'.format(indent, pods.get_domain(pod)))
     print('{}ip: {}'.format(indent, pods.get_ip(pod)))
 
 
 def pod_ip(pod, multiple=False):
     ip = pods.get_ip(pod)
     if multiple:
-        print('{}: {}'.format(pod, ip))
+        print('{}: {}'.format(pods.get_name(pod), ip))
     else:
         print(ip)
 
@@ -84,18 +98,54 @@ def pod_ip(pod, multiple=False):
 def pod_hostname(pod, multiple=False):
     hostname = pods.get_hostname(pod)
     if multiple:
-        print('{}: {}'.format(pod, hostname))
+        print('{}: {}'.format(pods.get_name(pod), hostname))
     else:
         print(hostname)
 
 
-if args.pod:
-    if 'ip' in args:
-        fun = pod_ip
-    elif 'hostname' in args:
-        fun = pod_hostname
+def pod_domain(pod, multiple=False):
+    domain = pods.get_domain(pod)
+    if multiple:
+        print('{}: {}'.format(pods.get_name(pod), domain))
     else:
-        fun = pod_status
-    pods.match_pod_and_run(args.pod, fun, allow_multiple=True)
-else:
-    deployment_status()
+        print(domain)
+
+
+def main():
+    if 'pod' not in args:
+        args.pod = None
+
+    string_stdout = None
+    if 'clipboard' in args:
+        sys.stdout = string_stdout = StringIO()
+
+    if 'ip' in args:
+        pod = args.pod if args.pod else '-'
+        pods.match_pod_and_run(pod, pod_ip, allow_multiple=True)
+    elif 'hostname' in args:
+        pod = args.pod if args.pod else '-'
+        pods.match_pod_and_run(pod, pod_hostname, allow_multiple=True)
+    elif 'domain' in args:
+        pod = args.pod if args.pod else '-'
+        pods.match_pod_and_run(pod, pod_domain, allow_multiple=True)
+    else:
+        if args.pod:
+            pods.match_pod_and_run(args.pod, pod_status, allow_multiple=True)
+        else:
+            deployment_status()
+
+    if 'clipboard' in args:
+        sys.stdout = sys.__stdout__
+        output = string_stdout.getvalue()
+        pyperclip.copy(output)
+        output_sample = output.rstrip()
+        if '\n' in output_sample:
+            output_sample = '<multiline>'
+        console.info('Output copied to clipboard ({})'.format(output_sample))
+
+
+if __name__ == "__main__":
+    main()
+
+
+

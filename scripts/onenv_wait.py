@@ -40,8 +40,10 @@ start_time = time.time()
 
 try:
     while int(time.time() - start_time) <= int(args.timeout):
-        if pods.are_all_pods_ready(pods.list_pods()):
+        if pods.all_jobs_succeeded():
             sys.exit(0)
+        else:
+            time.sleep(0.5)
 
     console.error('Deployment failed to initialize within {} seconds'.format(
         args.timeout

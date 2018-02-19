@@ -12,7 +12,7 @@ import os
 
 
 def call(tokens):
-    subprocess.call(tokens)
+    return subprocess.call(tokens)
 
 
 def check_return_code(tokens):
