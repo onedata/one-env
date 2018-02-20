@@ -167,6 +167,12 @@ spec:
                 if [[ {{ quote $nodeName }} == {{ quote $.Values.clusterConfig.mainNode }} ]]; then exit 0 ; else onepanel_ready ; fi ;
 
         env:
+          - name: SERVICE_NAME
+            {{ if $.Values.batchConfig.name -}}
+            value: {{ $.Values.batchConfig.name }}
+            {{- else -}}
+            value: {{ template "fullname" $ }}
+            {{- end }}
           - name: HOSTNAME
             value: {{ template "fullname" $ }}-{{ $nodeName }}-0
           - name: SERVICE_DOMAIN

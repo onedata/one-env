@@ -54,8 +54,7 @@ def get_name(pod):
 
 
 def get_service_name(pod):
-    return 'TODO'
-    # return get_env_variable(pod, 'SERVICE_DOMAIN')
+    return get_env_variable(pod, 'SERVICE_NAME')
 
 
 def get_service_type(pod):

@@ -139,6 +139,12 @@ spec:
             name: {{ template "fullname" $ }}-config
 
         env:
+          - name: SERVICE_NAME
+            {{ if $.Values.batchConfig.name -}}
+            value: {{ $.Values.batchConfig.name }}
+            {{- else -}}
+            value: {{ template "fullname" $ }}
+            {{- end }}
           - name: HOSTNAME
             value: {{ template "fullname" $ }}-{{ $nodeName }}-0
           - name: SERVICE_DOMAIN
