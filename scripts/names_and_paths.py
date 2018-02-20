@@ -18,7 +18,7 @@ APP_CLUSTER_MANAGER = 'cluster-manager'
 
 APP_TYPE_WORKER = 'worker'
 APP_TYPE_PANEL = 'panel'
-APP_TYPE_CLUSTER_MANAGER = 'panel'
+APP_TYPE_CLUSTER_MANAGER = 'cluster_manager'
 
 SERVICE_ONEZONE = 'onezone'
 SERVICE_ONEPROVIDER = 'oneprovider'
