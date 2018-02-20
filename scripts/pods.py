@@ -53,6 +53,11 @@ def get_name(pod):
     return pod.metadata.name
 
 
+def get_service_name(pod):
+    return 'TODO'
+    # return get_env_variable(pod, 'SERVICE_DOMAIN')
+
+
 def get_service_type(pod):
     # returns SERVICE_ONEZONE | SERVICE_ONEPROVIDER
     return pod.metadata.labels.get('onedata-service')
