@@ -12,6 +12,7 @@ from kubernetes import client, config
 import re
 import signal
 import time
+import sys
 
 import cmd
 import console
@@ -166,7 +167,7 @@ def logs_follow(pod, infinite=False):
         if signum == signal.SIGINT:
             print('')
             console.warning("Interrupted, exiting")
-            return
+            sys.exit(0)
 
     pod_name = get_name(pod)
     signal.signal(signal.SIGINT, handler)
@@ -215,7 +216,7 @@ def app_logs_follow(pod, log_file, infinite=False):
         if signum == signal.SIGINT:
             print('')
             console.warning("Interrupted, exiting")
-            return
+            sys.exit(0)
 
     pod_name = get_name(pod)
     signal.signal(signal.SIGINT, handler)
