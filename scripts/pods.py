@@ -112,7 +112,7 @@ def list_jobs():
 
 def all_jobs_succeeded():
     for job in list_jobs():
-        if is_job_finished(job):
+        if not is_job_finished(job):
             return False
     return True
 
