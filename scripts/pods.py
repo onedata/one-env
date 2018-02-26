@@ -12,6 +12,7 @@ from kubernetes import client, config
 import re
 import signal
 import time
+import sys
 
 import cmd
 import console
@@ -50,6 +51,10 @@ def cmd_desc_stateful_set():
 
 def get_name(pod):
     return pod.metadata.name
+
+
+def get_service_name(pod):
+    return get_env_variable(pod, 'SERVICE_NAME')
 
 
 def get_service_type(pod):
@@ -112,7 +117,7 @@ def list_jobs():
 
 def all_jobs_succeeded():
     for job in list_jobs():
-        if is_job_finished(job):
+        if not is_job_finished(job):
             return False
     return True
 
@@ -166,7 +171,7 @@ def logs_follow(pod, infinite=False):
         if signum == signal.SIGINT:
             print('')
             console.warning("Interrupted, exiting")
-            return
+            sys.exit(0)
 
     pod_name = get_name(pod)
     signal.signal(signal.SIGINT, handler)
@@ -215,7 +220,7 @@ def app_logs_follow(pod, log_file, infinite=False):
         if signum == signal.SIGINT:
             print('')
             console.warning("Interrupted, exiting")
-            return
+            sys.exit(0)
 
     pod_name = get_name(pod)
     signal.signal(signal.SIGINT, handler)

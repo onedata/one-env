@@ -54,14 +54,14 @@ args = parser.parse_args()
 if 'pod' not in args:
     args.pod = None
 
-if 'panel' in args and 'cluster_manager' in args:
+if APP_TYPE_PANEL in args and APP_TYPE_CLUSTER_MANAGER in args:
     console.error('-p and -c options cannot be used together')
 else:
     try:
         app_type = APP_TYPE_WORKER
-        if 'panel' in args:
+        if APP_TYPE_PANEL in args:
             app_type = APP_TYPE_PANEL
-        elif 'cluster_manager' in args:
+        elif APP_TYPE_CLUSTER_MANAGER in args:
             app_type = APP_TYPE_CLUSTER_MANAGER
 
         def attach_fun(pod):
