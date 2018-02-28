@@ -140,8 +140,10 @@ spec:
 
         env:
           - name: SERVICE_NAME
-            {{ if $.Values.batchConfig.name -}}
+            {{ if $.Values.batchConfig -}}
+              {{ if $.Values.batchConfig.name }}
             value: {{ $.Values.batchConfig.name }}
+            {{ end }}
             {{- else -}}
             value: {{ template "fullname" $ }}
             {{- end }}
