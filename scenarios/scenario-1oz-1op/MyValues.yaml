@@ -19,11 +19,6 @@ spaces:
         storage_name: "posix"
         size: '1000000000'
 
-oneclient:
-  enabled: false
-onedata-cli:
-  enabled: false
-
 # onedata-1p conf
 onedata-1p:
 
@@ -97,6 +92,12 @@ onedata-1p:
     oneproviderEnv:
       ONEPANEL_LOG_LEVEL: error
       ONEPANEL_DEBUG_MODE: "true"
+
+    oneclient:
+      enabled: false
+
+    onedata-cli:
+      enabled: false
 
     image: *op_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled

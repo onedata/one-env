@@ -20,10 +20,6 @@ spaces:
         storage_name: "posix"
         size: '1000000000'
 
-oneclient:
-  enabled: false
-onedata-cli:
-  enabled: false
 
 # onedata-1p conf
 onedata-3p:
@@ -115,6 +111,12 @@ onedata-3p:
       geoLatitude: 50.0647
       geoLongitude: 19.9450
 
+    oneclient:
+      enabled: false
+
+    onedata-cli:
+      enabled: false
+
   # second provider configuration
   oneprovider-paris:
     nodes:
@@ -152,6 +154,12 @@ onedata-3p:
       geoLatitude: 48.8566
       geoLongitude: 2.3522
 
+    oneclient:
+      enabled: false
+
+    onedata-cli:
+      enabled: false
+
   # second provider configuration
   oneprovider-lisbon:
     nodes:
@@ -188,3 +196,9 @@ onedata-3p:
 
       geoLatitude: 38.7223
       geoLongitude: -9.1393
+
+    oneclient:
+      enabled: false
+
+    onedata-cli:
+      enabled: false
