@@ -143,7 +143,9 @@ spec:
             {{ if $.Values.batchConfig -}}
               {{ if $.Values.batchConfig.name }}
             value: {{ $.Values.batchConfig.name }}
-            {{ end }}
+              {{- else -}}
+            value: {{ template "fullname" $ }}
+              {{- end }}
             {{- else -}}
             value: {{ template "fullname" $ }}
             {{- end }}
