@@ -42,6 +42,14 @@ def parse_env_config(env_cfg, sources_cfg, scenario_key, scenario_path):
     if isinstance(spaces_cfg, bool) and not spaces_cfg:
         new_env_cfg['spaces'] = []
 
+    oneclients_cfg = env_cfg.get('oneclients')
+    if oneclients_cfg:
+        new_env_cfg['oneclient'] = {'enabled': True}
+
+    onedata_cli_cfg = env_cfg.get('onedata-cli')
+    if onedata_cli_cfg:
+        new_env_cfg['onedata-cli'] = {'enabled': True}
+
     for service in sources_cfg[scenario_key].keys():
         parse_service_cfg(new_env_cfg, env_cfg, service, scenario_key,
                           onezone_image, oneprovider_image, force_image_pull,

@@ -20,6 +20,10 @@ spaces:
         storage_name: "posix"
         size: '1000000000'
 
+oneclient:
+  enabled: false
+onedata-cli:
+  enabled: false
 
 # onedata-1p conf
 onedata-3p:

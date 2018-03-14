@@ -20,6 +20,11 @@ spaces:
         storage_name: "posix"
         size: '1000000000'
 
+oneclient:
+  enabled: true
+onedata-cli:
+  enabled: false
+
 # onedata-1p conf
 onedata-2p:
 
@@ -153,8 +158,8 @@ onedata-2p:
       geoLatitude: 48.8566
       geoLongitude: 2.3522
 
-      oneclient:
-      enabled: false
+    oneclient:
+      enabled: true
 
     onedata-cli:
       enabled: false
