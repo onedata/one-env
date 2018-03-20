@@ -76,9 +76,7 @@ data:
                 {{- if and (index $.Values "posix" "enabled") (eq (len $nodes) 1) }}
                   posix:
                     type: posix
-                    # TODO: why this path is hardcoeded and why i don't have it during installation -> /volumes/storage
-                    # I  deleted job check.... mby that's why should investigate this
-                    mountPoint: /volumes
+                    mountPoint: /volumes/storage
                   {{- if (index $.Values "posix" "luma-enabled") }}
                     lumaEnabled: {{ $.Values.luma.enabled }}
                     lumaUrl: {{ template "luma_name" $ }}:5000

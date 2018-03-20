@@ -19,6 +19,13 @@ spaces:
       - provider: "krakow"
         storage_name: "posix"
         size: '1000000000'
+      - provider: "paris"
+        storage_name: "posix"
+        size: '1000000000'
+      - provider: "lisbon"
+        storage_name: "posix"
+        size: '1000000000'
+
 
 oneclient:
   enabled: false

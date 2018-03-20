@@ -29,16 +29,12 @@ def default_config(name):
         'status_cmd': "service {} ping".format(name)
     }
 
-    test_web_cert_domain = {
-        'test_web_cert_domain': 'onedata.org'
-    }
-
     apps = {
         'cluster_manager': {**env_file_arg, **files_args, **cmds},
         'oz_worker': {**web_args, **files_args, **cmds},
         'op_worker': {**web_args, **files_args, **protocol_args, **cmds},
-        'oz_panel': {**cmds, **files_args, **test_web_cert_domain},
-        'op_panel': {**cmds, **files_args, **test_web_cert_domain}
+        'oz_panel': {**cmds, **files_args},
+        'op_panel': {**cmds, **files_args}
     }
     return apps.get(name, dict())
 
