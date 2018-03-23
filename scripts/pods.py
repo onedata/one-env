@@ -62,6 +62,12 @@ def get_service_type(pod):
     return pod.metadata.labels.get('onedata-service')
 
 
+def get_container_id(pod):
+    container_id = pod.status.container_statuses[0].container_id
+    container_id = container_id.split('/')[-1]
+    return container_id
+
+
 def get_env_variables(pod):
     return pod.spec.containers[0].env
 
