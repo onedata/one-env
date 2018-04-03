@@ -140,10 +140,10 @@ spec:
           - "/bin/bash"
           - "-c"
           - >
+            if [[ {{ quote $nodeName }} != {{ quote $.Values.clusterConfig.mainNode }} ]]; then export ONEPANEL_BATCH_MODE="false" ; fi ;
             {{ if $.Values.addTestDomain  }}
               echo $POD_IP {{ template "service_url" $ }}.test >> /etc/hosts
             {{ end }}
-            if [[ {{ quote $nodeName }} != {{ quote $.Values.clusterConfig.mainNode }} ]]; then export ONEPANEL_BATCH_MODE="false" ; fi ;
             env ;
             /root/oneprovider.sh ;
             cat /var/log/op_panel/info.log ;
