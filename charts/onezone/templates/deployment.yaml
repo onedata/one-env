@@ -157,7 +157,7 @@ spec:
           {{ range $nodeConfig.sources }}
             # assuming here that oz-panel will always have such name
             {{ if and (eq .name "oz-panel") (.hostPath) }}
-          - name: ONEPANEL_PATH
+          - name: ONEPANEL_OVERRIDE
             value: {{ $.Values.hostPathPrefix }}/{{ .hostPath }}
             {{ end }}
           {{ end }}
