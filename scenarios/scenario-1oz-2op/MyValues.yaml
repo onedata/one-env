@@ -146,6 +146,9 @@ onedata-2p:
 
       geoLatitude: 50.0647
       geoLongitude: 19.9450
+    
+    external-storages:
+      << : *external-storages
 
   # second provider configuration
   oneprovider-paris:
@@ -189,3 +192,6 @@ onedata-2p:
 
     onedata-cli:
       enabled: false
+
+    external-storages:
+      << : *external-storages
