@@ -154,6 +154,9 @@ spec:
           - "-c"
           - >
             if [[ {{ quote $nodeName }} != {{ quote $.Values.clusterConfig.mainNode }} ]]; then export ONEPANEL_BATCH_MODE="false" ; fi ;
+            {{ if $.Values.addTestDomain  }}
+              echo $POD_IP {{ template "service_url" $ }}.test >> /etc/hosts
+            {{ end }}
             env ;
             /root/oneprovider.sh ;
             cat /var/log/op_panel/info.log ;
@@ -190,6 +193,10 @@ spec:
             {{- else -}}
             value: {{ template "fullname" $ }}
             {{- end }}
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
           - name: HOSTNAME
             value: {{ template "fullname" $ }}-{{ $nodeName }}-0
           - name: SERVICE_DOMAIN
