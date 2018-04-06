@@ -28,8 +28,9 @@ spec:
     spec:
       subdomain: {{ template "fullname" $ }}-{{ $nodeName }}
       terminationGracePeriodSeconds: 0
-      {{- if $.Values.onedata_anti_affinity_enabled }}
+      {{- if or $.Values.affinity $.Values.onedata_anti_affinity_enabled }}
       affinity:
+      {{- if $.Values.onedata_anti_affinity_enabled }}
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
           - labelSelector:
@@ -44,6 +45,18 @@ spec:
                 values:
                 - {{ $.Release.Name }}
             topologyKey: kubernetes.io/hostname
+      {{- end }}
+      {{- if $.Values.affinity }}
+{{ toYaml $.Values.affinity | indent 8 }}
+      {{- end }}
+      {{- end }}
+      {{- if $.Values.tolerations }}
+      tolerations:
+{{ toYaml $.Values.tolerations | indent 8 }}
+      {{- end }}
+      {{- if $.Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml $.Values.nodeSelector | indent 8 }}
       {{- end }}
 {{ include "imagePullSecrets" $ | indent 6 }}
       {{- if (index $.Values "generate-certificates" "enabled") }}
@@ -187,19 +200,20 @@ spec:
           {{ end }}
         {{- end }}
       {{- if (index $.Values "generate-certificates" "enabled") }}
-          - mountPath: /etc/oz_panel/certs/key.pem
+          - mountPath: /etc/oz_panel/certs/web_key.pem
             subPath: tls.key
             name: tls
             readOnly: true
-          - mountPath: /etc/oz_panel/certs/cert.pem
+          - mountPath: /etc/oz_panel/certs/web_cert.pem
             subPath: tls.crt
             name: tls
             readOnly: true
-          - mountPath: /etc/oz_panel/cacerts/cacert.pem
+          - mountPath: /etc/oz_panel/certs/web_chain.pem
             subPath: k8s.crt
             name: tls
             readOnly: true
-          - mountPath: /etc/oz_worker/cacerts/cacert.pem
+          # Make onepanel trust k8s cert
+          - mountPath: /etc/oz_panel/cacerts/kubernetes.crt
             subPath: k8s.crt
             name: tls
             readOnly: true
@@ -209,7 +223,7 @@ spec:
             readOnly: true
     {{- end }}
     {{- if (index $.Values "saml-idp" "enabled") }}
-          - mountPath: /var/lib/oz_worker/saml.config
+          - mountPath: /etc/oz_worker/saml.config
             subPath: saml.config
             name: saml-config
             readOnly: false
@@ -243,9 +257,9 @@ spec:
         secret:
           secretName: {{ template "fullname" $ }}-secret-tls
     {{- end }}
-    {{- if (index $.Values "saml-idp" "enabled") }}
-      - name: saml-config
-        configMap:
-          name: {{ template "fullname" $ }}-saml-config
-    {{- end }}
+#    {{- if (index $.Values "saml-idp" "enabled") }}
+#      - name: saml-config
+#        configMap:
+#          name: {{ template "fullname" $ }}-saml-config
+#    {{- end }}
 {{- end }}

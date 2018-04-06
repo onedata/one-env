@@ -20,25 +20,98 @@ onedata-3p:
 
 oneprovider:
   - oneprovider-krakow
+  - oneprovider-paris
+  - oneprovider-lisbon
 
 spaces:
-  - name: "krk-c"
+  - name: "krk-3"
     supports:
       - provider: "krakow"
         storage_name: "ceph"
         size: '1000000000'
-  - name: "krk-n"
+  - name: "par-n"
+    supports:
+      - provider: "paris"
+        storage_name: "nfs"
+        size: '1000000000'
+  - name: "lis-3"
+    supports:
+      - provider: "lisbon"
+        storage_name: "s3"
+        size: '1000000000'
+  - name: "krk-n-par-3"
     supports:
       - provider: "krakow"
         storage_name: "nfs"
         size: '1000000000'
-  - name: "krk-3"
+      - provider: "paris"
+        storage_name: "s3"
+        size: '1000000000'
+  - name: "krk-3-lis-c"
     supports:
       - provider: "krakow"
         storage_name: "s3"
+        size: '1000000000'
+      - provider: "lisbon"
+        storage_name: "ceph"
+        size: '1000000000'
+  - name: "par-n-lis-c"
+    supports:
+      - provider: "paris"
+        storage_name: "nfs"
+        size: '1000000000'
+      - provider: "lisbon"
+        storage_name: "ceph"
+        size: '1000000000'
+  - name: "krk-3-par-c-lis-n"
+    supports:
+      - provider: "krakow"
+        storage_name: "s3"
+        size: '1000000000'
+      - provider: "paris"
+        storage_name: "ceph"
+        size: '1000000000'
+      - provider: "lisbon"
+        storage_name: "nfs"
+        size: '1000000000'
+  - name: "krk-3-par-c-lis-n"
+    supports:
+      - provider: "krakow"
+        storage_name: "s3"
+        size: '1000000000'
+      - provider: "paris"
+        storage_name: "ceph"
+        size: '1000000000'
+      - provider: "lisbon"
+        storage_name: "nfs"
         size: '1000000000'
   - name: "krk-g"
     supports:
       - provider: "krakow"
         storage_name: "gluster"
         size: '1000000000'
+  - name: "krk-g-par-3"
+    supports:
+      - provider: "krakow"
+        storage_name: "gluster"
+        size: '1000000000'
+      - provider: "paris"
+        storage_name: "ceph"
+        size: '1000000000'
+
+# The gneralization of nodeSelector.
+# Allows for moe fine grained controll over which
+# nodes are selected by a kubernetes scheduler
+# https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+affinity: {}
+
+# List of taints which are tolerated by the pods
+# when nodes are selected by a kubernetes scheduler
+# https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+tolerations: {}
+
+# Specify a map of key-value pairs. For the pod
+# to be eligible to run on a node, the node
+# must have each of the indicated key-value pairs as labels
+# https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+nodeSelector: {}

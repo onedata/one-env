@@ -12,11 +12,19 @@ metadata:
   annotations:
     version: "{{ $.Chart.Version }}"
 data:
+  panel-overlay.config: {{ toYaml .Values.panelOverlayConfig }}
+  worker-overlay.config: {{ toYaml .Values.panelOverlayConfig }}
+
   ONEPANEL_LOG_LEVEL: {{ default $.Values.log_level "info" | quote }}
   ONEPANEL_BATCH_MODE: {{ $.Values.onepanel_batch_mode_enabled | quote }}
-  ONEPANEL_GENERATE_TEST_WEB_CERT: "true"
+  ONEPANEL_GENERATE_TEST_WEB_CERT: {{ default .Values.onepanel_generate_test_web_cert "true" | quote  }}
+  ONEPANEL_TRUST_TEST_CA: {{ default .Values.onepanel_trust_test_ca "true" | quote }}
+  {{ if $.Values.onepanel_generated_cert_domain }}
+  ONEPANEL_GENERATED_CERT_DOMAIN: {{ $.Values.onepanel_generated_cert_domain | quote }}
+  {{ else }}
   ONEPANEL_GENERATED_CERT_DOMAIN: "{{ template "service_url" $ }}"
-  ONEPANEL_TRUST_TEST_CA: "true"
+  {{ end }}
+
 
   {{ if $.Values.batchConfig }}
   ONEZONE_CONFIG: |

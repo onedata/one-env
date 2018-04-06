@@ -28,8 +28,9 @@ spec:
     spec:
       subdomain: {{ template "fullname" $ }}-{{ $nodeName }}
       terminationGracePeriodSeconds: 0
-      {{- if $.Values.onedata_anti_affinity_enabled }}
+      {{- if or $.Values.affinity $.Values.onedata_anti_affinity_enabled }}
       affinity:
+      {{- if $.Values.onedata_anti_affinity_enabled }}
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
           - labelSelector:
@@ -45,8 +46,20 @@ spec:
                 - {{ $.Release.Name }}
             topologyKey: kubernetes.io/hostname
       {{- end }}
+      {{- if $.Values.affinity }}
+{{ toYaml $.Values.affinity | indent 8 }}
+      {{- end }}
+      {{- end }}
+      {{- if $.Values.tolerations }}
+      tolerations:
+{{ toYaml $.Values.tolerations | indent 8 }}
+      {{- end }}
+      {{- if $.Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml $.Values.nodeSelector | indent 8 }}
+      {{- end }}
 {{ include "imagePullSecrets" $ | indent 6 }}
-      {{- if or (eq (len $.Values.nodes) 1) (or (index $.Values "volume-s3" "enabled")) (or (index $.Values "volume-ceph" "enabled") (or (index $.Values "volume-gluster" "enabled") (or (index $.Values "volume-swift" "enabled") (index $.Values "generate-certificates" "enabled")))) }}
+      {{- if or (or (index $.Values "volume-s3" "enabled")) (or (index $.Values "volume-ceph" "enabled") (or (index $.Values "volume-gluster" "enabled") (or (index $.Values "volume-swift" "enabled") (index $.Values "generate-certificates" "enabled")))) }}
       initContainers:
       {{- end }}
       {{- if (index $.Values "generate-certificates" "enabled") }}
@@ -111,7 +124,7 @@ spec:
       {{- end }}
       containers:
       - name: {{ $.Chart.Name }}
-        image: {{ default $.Values.image }}
+        image: {{  $.Values.image }}
         imagePullPolicy: {{ default $.Values.imagePullPolicy $.Values.global.imagePullPolicy | default "IfNotPresent" }}
         {{- if or $.Values.cpu $.Values.memory }}
         resources:
@@ -185,7 +198,7 @@ spec:
           {{ range $nodeConfig.sources }}
             # assuming here that op-panel will always have such name
             {{ if and (eq .name "op-panel") (.hostPath) }}
-          - name: ONEPANEL_PATH
+          - name: ONEPANEL_OVERRIDE
             value: {{ $.Values.hostPathPrefix }}/{{ .hostPath }}
             {{ end }}
           {{ end }}
@@ -223,22 +236,24 @@ spec:
           {{ end }}
         {{- end }}
       {{- if (index $.Values "generate-certificates" "enabled") }}
-          - mountPath: /etc/op_panel/certs/key.pem
+          - mountPath: /etc/op_panel/certs/web_key.pem
             subPath: tls.key
             name: tls
             readOnly: true
-          - mountPath: /etc/op_panel/certs/cert.pem
+          - mountPath: /etc/op_panel/certs/web_cert.pem
             subPath: tls.crt
             name: tls
             readOnly: true
-          - mountPath: /etc/op_panel/cacerts/cacert.pem
+          - mountPath: /etc/op_panel/certs/web_chain.pem
             subPath: k8s.crt
             name: tls
             readOnly: true
-          - mountPath: /etc/op_worker/cacerts/cacert.pem
+          # Make onepanel trust k8s cert
+          - mountPath: /etc/op_panel/cacerts/kubernetes.crt
             subPath: k8s.crt
             name: tls
             readOnly: true
+          # Make system trust k8s cert
           - mountPath: /etc/ssl/certs/kubernetes.crt
             subPath: k8s.crt
             name: tls
@@ -247,6 +262,12 @@ spec:
       {{- if (index $.Values "volume-nfs" "enabled") }}
           - mountPath: {{ index $.Values "volume-nfs" "container_mount_path" }}
             name: nfs
+      {{- end }}
+      {{- if and (index $.Values "volume-data-sync" "enabled") (eq (len $.Values.nodes) 1)  }}
+        {{- range $key, $val := (omit (index $.Values "volume-data-sync") "enabled") }}
+          - mountPath: /volumes/{{ $key }}:shared
+            name: {{ $key }}
+        {{- end }}
       {{- end }}
     {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "volume-nfs" "enabled") ($nodeConfig.sources) }}
       volumes:
@@ -277,8 +298,32 @@ spec:
               {{ else }}
                 path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider-{{- $.Values.suffix -}}/oneprovider-{{ $.Values.suffix }}-{{ $nodeName }}-{{ .name }}-rel
               {{ end }}
+      {{ end }}
+    {{ end }}
+      {{- if and (index $.Values "volume-data-sync" "enabled") (eq (len $.Values.nodes) 1)  }}
+        {{- range $key, $val := (omit (index $.Values "volume-data-sync") "enabled") }}
+      - name: {{ $key }}
+        image: {{ $val.image }}
+        imagePullPolicy: {{ default $val.imagePullPolicy $.Values.global.imagePullPolicy | default "IfNotPresent" }}
+        command:
+          - "/bin/sh"
+          - "-c"
+          - >
+            mount -o bind {{ $val.dataPath }} /{{ $key }} ;
+            {{- if $val.readOnly }}
+            mount -o remount,ro /{{ $key }} ;
+            {{- end }}
+            sleep 3600000 ;
+        volumeMounts:
+          - mountPath: /{{ $key }}:shared
+            name: {{ $key }}
+        securityContext:
+          privileged: true
+          capabilities:
+            add:
+              - SYS_ADMIN
+        {{- end }}
       {{- end }}
-    {{- end }}
     {{- if (index $.Values "generate-certificates" "enabled") }}
       - name: tls
         secret:
@@ -289,4 +334,10 @@ spec:
         persistentVolumeClaim:
           claimName: {{ template "fullname" $ }}-nfs-pvc
     {{- end }}
-{{ end }}
+    {{- if and (index $.Values "volume-data-sync" "enabled") (eq (len $.Values.nodes) 1)  }}
+      {{- range $key, $val := (omit (index $.Values "volume-data-sync") "enabled") }}
+      - name: {{ $key }}
+        emptyDir: {}
+      {{- end }}
+    {{- end }}
+{{- end }}

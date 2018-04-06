@@ -31,6 +31,29 @@ onedata-cli:
 # onedata-1p conf
 onedata-2p:
 
+  external-storages: &external-storages
+    IdealNullStorage:
+      type: nulldevice
+      latencyMin: 0
+      latencyMax: 0
+      #timeoutProbability: !!float 0.0
+      insecure: true
+      readonly: true
+    SlowNullStorage:
+      type: nulldevice
+      latencyMin: 2
+      latencyMax: 15
+      #timeoutProbability: !!float 0.0
+      insecure: true
+      readonly: true
+    BusyNullStorage:
+      type: nulldevice
+      latencyMin: 1
+      latencyMax: 10
+      timeoutProbability: !!float 0.3
+      insecure: true
+      readonly: true
+
   # services images
   oz_image: &oz_image docker.onedata.org/onezone-dev:minikube
   op_image: &op_image docker.onedata.org/oneprovider-dev:minikube

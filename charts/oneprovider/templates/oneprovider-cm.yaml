@@ -12,11 +12,18 @@ metadata:
   annotations:
     version: "{{ .Chart.Version }}"
 data:
+  panel-overlay.config: {{ toYaml .Values.panelOverlayConfig }}
+  worker-overlay.config: {{ toYaml .Values.panelOverlayConfig }}
+  
   ONEPANEL_LOG_LEVEL: {{ default .Values.log_level "info" | quote }}
   ONEPANEL_BATCH_MODE: {{ .Values.onepanel_batch_mode_enabled | quote }}
-  ONEPANEL_GENERATE_TEST_WEB_CERT: "true"
+  ONEPANEL_GENERATE_TEST_WEB_CERT: {{ default .Values.onepanel_generate_test_web_cert "true" | quote  }}
+  ONEPANEL_TRUST_TEST_CA: {{ default .Values.onepanel_trust_test_ca "true" | quote }}
+  {{ if $.Values.onepanel_generated_cert_domain }}
+  ONEPANEL_GENERATED_CERT_DOMAIN: {{ $.Values.onepanel_generated_cert_domain | quote }}
+  {{ else }}
   ONEPANEL_GENERATED_CERT_DOMAIN: "{{ template "service_url" $ }}"
-  ONEPANEL_TRUST_TEST_CA: "true"
+  {{ end }}
 
   {{ if $.Values.batchConfig }}
   ONEPROVIDER_CONFIG: |
@@ -73,89 +80,112 @@ data:
                 {{- if or (eq (len $nodes) 1) (or (index $.Values "volume-s3" "enabled")) (or (index $.Values "volume-ceph" "enabled") (or (index $.Values "volume-gluster" "enabled") (index $.Values "volume-swift" "enabled"))) }}
                 storages:
                 {{- end }}
-                {{- if and (index $.Values "posix" "enabled") (eq (len $nodes) 1) }}
-                  posix:
-                    type: posix
-                    mountPoint: /volumes/storage
-                  {{- if (index $.Values "posix" "luma-enabled") }}
-                    lumaEnabled: {{ $.Values.luma.enabled }}
-                    lumaUrl: {{ template "luma_name" $ }}:5000
-                    lumaCacheTimeout: {{ $.Values.luma.lumaCacheTimeout }}
-                    lumaApiKey: {{ $.Values.luma.lumaApiKey }}
+                  {{- if and (index .Values "posix" "enabled") (eq (int .Values.oneprovider_nodes_count) 1) }}
+                    posix:
+                      type: posix
+                      mountPoint: /volumes/storage
+                      readonly: {{ index $.Values "posix" "readOnly" }}
+                    {{- if (index $.Values "posix" "luma-enabled") }}
+                      lumaEnabled: {{ $.Values.luma.enabled }}
+                      lumaUrl: {{ template "luma_name" . }}:5000
+                      lumaCacheTimeout: {{ $.Values.luma.lumaCacheTimeout }}
+                      lumaApiKey: {{ $.Values.luma.lumaApiKey }}
+                    {{- end }}
                   {{- end }}
-                {{- end }}
-                {{- if (index $.Values "volume-nfs" "enabled") }}
-                  nfs:
-                    type: posix
-                    mountPoint: {{ index $.Values "volume-nfs" "container_mount_path" }}
-                  {{- if (index $.Values "volume-nfs" "luma-enabled") }}
-                    lumaEnabled: {{ $.Values.luma.enabled }}
-                    lumaUrl: {{ template "luma_name" $ }}:5000
-                    lumaCacheTimeout: {{ $.Values.luma.lumaCacheTimeout }}
-                    lumaApiKey: {{ $.Values.luma.lumaApiKey }}
+                  {{- if (index $.Values "volume-nfs" "enabled") }}
+                    nfs:
+                      type: posix
+                      mountPoint: {{ index $.Values "volume-nfs" "container_mount_path" }}
+                      readonly: {{ index $.Values "volume-nfs" "readOnly" }}
+                    {{- if (index $.Values "volume-nfs" "luma-enabled") }}
+                      lumaEnabled: {{ $.Values.luma.enabled }}
+                      lumaUrl: {{ template "luma_name" . }}:5000
+                      lumaCacheTimeout: {{ $.Values.luma.lumaCacheTimeout }}
+                      lumaApiKey: {{ $.Values.luma.lumaApiKey }}
+                    {{- end }}
                   {{- end }}
-                {{- end }}
-                {{- if (index $.Values "volume-s3" "enabled") }}
-                  s3:
-                    type: s3
-                    hostname: {{ template "volume-s3_name" $ }}:8000
-                    bucketName: {{ index $.Values "volume-s3" "bucketName" }}
-                    accessKey: {{ index $.Values "volume-s3" "key_id" }}
-                    secretKey: {{ index $.Values "volume-s3" "access_key" }}
-                    insecure: {{ index $.Values "volume-s3" "insecure" }}
-                  {{- if (index $.Values "volume-s3" "luma-enabled") }}
-                    lumaEnabled: {{ $.Values.luma.enabled }}
-                    lumaUrl: {{ template "luma_name" $ }}:5000
-                    lumaCacheTimeout: {{ $.Values.luma.lumaCacheTimeout }}
-                    lumaApiKey: {{ $.Values.luma.lumaApiKey }}
+                  {{- if (index $.Values "volume-s3" "enabled") }}
+                    s3:
+                      type: s3
+                      hostname: {{ template "volume-s3_name" . }}:8000
+                      bucketName: {{ index $.Values "volume-s3" "bucketName" }}
+                      accessKey: {{ index $.Values "volume-s3" "key_id" }}
+                      secretKey: {{ index $.Values "volume-s3" "access_key" }}
+                      readonly: {{ index $.Values "volume-s3" "readOnly" }}
+                      insecure: {{ index $.Values "volume-s3" "insecure" }}
+                    {{- if (index $.Values "volume-s3" "luma-enabled") }}
+                      lumaEnabled: {{ $.Values.luma.enabled }}
+                      lumaUrl: {{ template "luma_name" . }}:5000
+                      lumaCacheTimeout: {{ $.Values.luma.lumaCacheTimeout }}
+                      lumaApiKey: {{ $.Values.luma.lumaApiKey }}
+                    {{- end }}
                   {{- end }}
-                {{- end }}
-                {{- if (index $.Values "volume-ceph" "enabled") }}
-                  ceph:
-                    type: ceph
-                    username: {{ index $.Values "volume-ceph" "username" }}
-                    key: {{ index $.Values "volume-ceph" "key" }}
-                    monitorHostname: {{ template "volume-ceph_name" $ }}
-                    clusterName: {{ index $.Values "volume-ceph" "cluster_name" }}
-                    poolName: {{ index $.Values "volume-ceph" "pool_name" }}
-                    insecure: {{ index $.Values "volume-ceph" "insecure" }}
-                  {{- if (index $.Values "volume-ceph" "luma-enabled") }}
-                    lumaEnabled: {{ $.Values.luma.enabled }}
-                    lumaUrl: {{ template "luma_name" $ }}:5000
-                    lumaCacheTimeout: {{ $.Values.luma.lumaCacheTimeout }}
-                    lumaApiKey: {{ $.Values.luma.lumaApiKey }}
+                  {{- if (index $.Values "volume-ceph" "enabled") }}
+                    ceph:
+                      type: ceph
+                      username: {{ index $.Values "volume-ceph" "username" }}
+                      key: {{ index $.Values "volume-ceph" "key" }}
+                      monitorHostname: {{ template "volume-ceph_name" . }}
+                      clusterName: {{ index $.Values "volume-ceph" "cluster_name" }}
+                      poolName: {{ index $.Values "volume-ceph" "pool_name" }}
+                      readonly: {{ index $.Values "volume-ceph" "readOnly" }}
+                      insecure: {{ index $.Values "volume-ceph" "insecure" }}
+                    {{- if (index $.Values "volume-ceph" "luma-enabled") }}
+                      lumaEnabled: {{ $.Values.luma.enabled }}
+                      lumaUrl: {{ template "luma_name" . }}:5000
+                      lumaCacheTimeout: {{ $.Values.luma.lumaCacheTimeout }}
+                      lumaApiKey: {{ $.Values.luma.lumaApiKey }}
+                    {{- end }}
                   {{- end }}
-                {{- end }}
-                {{- if (index $.Values "volume-gluster" "enabled") }}
-                  gluster:
-                    type: glusterfs
-                    hostname: {{ template "volume-gluster_name" $ }}
-                    volume: {{ index $.Values "volume-gluster" "volumeName" }}
-                    transport: tcp
-                    insecure: {{ index $.Values "volume-gluster" "insecure" }}
-                  {{- if (index $.Values "volume-gluster" "luma-enabled") }}
-                    lumaEnabled: {{ $.Values.luma.enabled }}
-                    lumaUrl: {{ template "luma_name" $ }}:5000
-                    lumaCacheTimeout: {{ $.Values.luma.lumaCacheTimeout }}
-                    lumaApiKey: {{ $.Values.luma.lumaApiKey }}
+                  {{- if (index $.Values "volume-gluster" "enabled") }}
+                    gluster:
+                      type: glusterfs
+                      hostname: {{ template "volume-gluster_name" . }}
+                      volume: {{ index $.Values "volume-gluster" "volumeName" }}
+                      transport: tcp
+                      readonly: {{ index $.Values "volume-gluster" "readOnly" }}
+                      insecure: {{ index $.Values "volume-gluster" "insecure" }}
+                    {{- if (index $.Values "volume-gluster" "luma-enabled") }}
+                      lumaEnabled: {{ $.Values.luma.enabled }}
+                      lumaUrl: {{ template "luma_name" . }}:5000
+                      lumaCacheTimeout: {{ $.Values.luma.lumaCacheTimeout }}
+                      lumaApiKey: {{ $.Values.luma.lumaApiKey }}
+                    {{- end }}
                   {{- end }}
-                {{- end }}
-                {{- if (index $.Values "volume-swift" "enabled") }}
-                  swift:
-                    type: swift
-                    authUrl: http://{{ template "volume-swift_name" $ }}:5000/v2.0/tokens
-                    tenantName: {{ index $.Values "volume-swift" "tenantName" }}
-                    containerName: {{ index $.Values "volume-swift" "containerName" }}
-                    username: {{ index $.Values "volume-swift" "username" }}
-                    password: {{ index $.Values "volume-swift" "password" }}
-                    insecure: {{ index $.Values "volume-swift" "insecure" }}
-                  {{- if (index $.Values "volume-swift" "luma-enabled") }}
-                    lumaEnabled: {{ $.Values.luma.enabled }}
-                    lumaUrl: {{ template "luma_name" $ }}:5000
-                    lumaCacheTimeout: {{ $.Values.luma.lumaCacheTimeout }}
-                    lumaApiKey: {{ $.Values.luma.lumaApiKey }}
+                  {{- if (index $.Values "volume-swift" "enabled") }}
+                    swift:
+                      type: swift
+                      authUrl: http://{{ template "volume-swift_name" . }}:5000/v2.0/tokens
+                      tenantName: {{ index $.Values "volume-swift" "tenantName" }}
+                      containerName: {{ index $.Values "volume-swift" "containerName" }}
+                      username: {{ index $.Values "volume-swift" "username" }}
+                      password: {{ index $.Values "volume-swift" "password" }}
+                      readonly: {{ index $.Values "volume-swift" "readOnly" }}
+                      insecure: {{ index $.Values "volume-swift" "insecure" }}
+                    {{- if (index $.Values "volume-swift" "luma-enabled") }}
+                      lumaEnabled: {{ $.Values.luma.enabled }}
+                      lumaUrl: {{ template "luma_name" . }}:5000
+                      lumaCacheTimeout: {{ $.Values.luma.lumaCacheTimeout }}
+                      lumaApiKey: {{ $.Values.luma.lumaApiKey }}
+                    {{- end }}
                   {{- end }}
-                {{- end }}
+                  {{- if and (index $.Values "volume-data-sync" "enabled") (eq (int $.Values.oneprovider_nodes_count) 1) }}
+                    {{- range $key, $val := (omit (index $.Values "volume-data-sync") "enabled") }}
+                    {{ $key }}:
+                      type: posix
+                      mountPoint: /volumes/{{ $key }}
+                      readonly: {{ $val.readOnly }}
+                    {{- if (index . "luma-enabled") }}
+                      lumaEnabled: {{ $.Values.luma.enabled }}
+                      lumaUrl: {{ template "luma_name" $ }}:5000
+                      lumaCacheTimeout: {{ $.Values.luma.lumaCacheTimeout }}
+                      lumaApiKey: {{ $.Values.luma.lumaApiKey }}
+                    {{- end }}
+                    {{- end -}}
+                  {{- end }}
+                  {{- if (index $.Values "external-storages") }}
+{{ toYaml (index $.Values "external-storages") | indent 20 }}
+                  {{- end }}
 
               oneprovider:
                 register: true

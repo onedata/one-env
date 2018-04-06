@@ -15,8 +15,8 @@ data:
     #{
         sp_config => #{
             entity_id => "https://{{ template "service_url" . }}/sp",
-            cert_file => "/etc/oz_panel/certs/cert.pem",
-            key_file => "/etc/oz_panel/certs/key.pem",
+            cert_file => "/etc/oz_panel/certs/web_cert.pem",
+            key_file => "/etc/oz_panel/certs/web_key.pem",
             organization_name => "Onedata",
             organization_display_name => "Onedata",
             tech_contact_name => "Lukasz Opiola",

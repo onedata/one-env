@@ -45,6 +45,20 @@ log_level: "info"
 # Enable loading oneprovider configuration from ONEPROVIDER_CONFIG env variable
 onepanel_batch_mode_enabled: true
 
+# If enabled, a new web cert will be generated with CN matching the
+#   ONEPANEL_GENERATED_CERT_DOMAIN and signed by OnedataTestWebServerCa
+# NOTE: The generation will be performed upon every startup, any
+#   existing certs will be backed up and placed in the same directory.
+# WARNING: This functionality is devised for test purposes and must not
+#   be used in production.
+onepanel_generate_test_web_cert: true
+
+# If enabled, onepanel will trust any server that has a cert signed by
+#   the OnedataTestWebServerCa.
+# WARNING: This functionality is devised for test purposes and must not
+#   be used in production.
+onepanel_trust_test_ca: true
+
 # Number of nodes (pod replicas) for of this provider
 # their indexes will be assigned FROM 0 (ZERO!)
 # up to, but not including the count value
@@ -59,6 +73,34 @@ clusterConfig:
   managers: [ ]
   workers: [ ]
   databases: [ ]
+
+# Erlang configuration file, which values will overide
+# respected default values in the app.conf of Onepanel
+# The idea is to overite as needed small parts when needed
+# the app.conf evolve on it's own.
+panelOverlayConfig: |-
+  [].
+
+# Same stroy as above, just for worker service.
+workerOverlayConfig: |-
+  [].
+
+# The gneralization of nodeSelector.
+# Allows for moe fine grained controll over which
+# nodes are selected by a kubernetes scheduler
+# https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+affinity: {}
+
+# List of taints which are tolerated by the pods
+# when nodes are selected by a kubernetes scheduler
+# https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+tolerations: {}
+
+# Specify a map of key-value pairs. For the pod
+# to be eligible to run on a node, the node
+# must have each of the indicated key-value pairs as labels
+# https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+nodeSelector: {}
 
 # Generate certificates to access this onezone having trusted https connection
 # You need to add cluster root certificate to your system for this to work
@@ -144,10 +186,31 @@ luma:
     lowest_uid: 1000
     highest_uid: 65536
 
+# Create a extra containers in the same pod as Oneprovider with a dataset
+# that can be imported using data sync space support option.
+# Will be added to the Oneprovider as POSIX storage
+# the mount points are created in /volumes/<storage_name>
+# eg. /volumes/volume-data-sync-rw
+volume-data-sync:
+  enabled: false
+  volume-data-sync-rw:
+    luma-enabled: *luma_enabled_posix
+    image: onedata/eo-data-mock:Landsat-5-sample-latest
+    imagePullPolicy: IfNotPresent
+    dataPath: /data
+    readOnly: false
+  volume-data-sync-ro:
+    luma-enabled: *luma_enabled_posix
+    image: onedata/eo-data-mock:Landsat-5-sample-latest
+    imagePullPolicy: IfNotPresent
+    dataPath: /data
+    readOnly: true
+
 # Posix local storage, it will be automatically disable if you deploy multi-node oneprovider installation
 posix:
   enabled: true
   luma-enabled: *luma_enabled_posix
+  readOnly: false
 
 # Create S3 storage server and connect with oneprovider
 volume-s3:
@@ -155,11 +218,13 @@ volume-s3:
   suffix: *providerSuffix
   insecure: true
   luma-enabled: *luma_enabled_s3
+  readOnly: false
 
 # Create CEPH storage server and connect with oneprovider
 volume-ceph:
   enabled: false
   suffix: *providerSuffix
+  readOnly: false
   insecure: true
   luma-enabled: *luma_enabled_ceph
 
@@ -171,11 +236,13 @@ volume-nfs:
   storage_claim: 1T
   mount_options: "soft,intr,timeo=10"
   luma-enabled: *luma_enabled_nfs
+  readOnly: false
 
 # Create gluster storage server and connect with oneprovider with tested default values
 volume-gluster:
   enabled: false
   suffix: *providerSuffix
+  readOnly: false
   insecure: true
   luma-enabled: *luma_enabled_gluster
 
@@ -186,5 +253,11 @@ volume-swift:
   username: tester
   password: testing
   containerName: test
+  readOnly: false
   insecure: true
   luma-enabled: *luma_enabled_swift
+
+# This section will be added the end of 'storages' section in oneprovider
+# cluster configuration
+# avoid sotrage names: posix, nfs, ceph, s3, gluster, swift
+external-storages: {}

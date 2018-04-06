@@ -35,6 +35,18 @@ spec:
       annotations:
         version: "{{ $r.Chart.Version }}"
     spec:
+      {{- if $r.Values.affinity }}
+      affinity:
+{{ toYaml $r.Values.affinity | indent 8 }}
+      {{- end }}
+      {{- if $r.Values.tolerations }}
+      tolerations:
+{{ toYaml $r.Values.tolerations | indent 8 }}
+      {{- end }}
+      {{- if $r.Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml $r.Values.nodeSelector | indent 8 }}
+      {{- end }}
       initContainers:
         - name: wait-for-release
           image: {{ $r.Values.wait_for.image }}
@@ -81,7 +93,37 @@ spec:
             onepanel-rest-cli getStorages | jq -r '.ids[]' | xargs -I{} onepanel-rest-cli getStorageDetails id={} |  jq -rj '.name,":",.id,"\n"'  ;
             export STORAGE_ID=$(onepanel-rest-cli getStorages | jq -r '.ids[]' | xargs -I{} onepanel-rest-cli getStorageDetails id={} |  jq -rj '.name,":",.id,"\n"' | grep "{{ .storage_name }}"  | cut -d ':' -f2) ;
             echo "Using space support token $SPACE_TOKEN with storage name={{ .storage_name }} id=$STORAGE_ID " ;
-            onepanel-rest-cli supportSpace size:='{{ .size }}' storageId=="$STORAGE_ID" token==$SPACE_TOKEN | jq -r '.' ;
+            storage_support_json=$(cat <<EEOF
+
+            {
+              "token": "$SPACE_TOKEN",
+              "size": {{ .size | quote }},
+              "storageId": "$STORAGE_ID"
+              {{ if .mountInRoot -}} ,"mountInRoot": {{ .mountInRoot | quote }} {{- end }}
+              {{ if .import -}}
+                ,"storageImport": {
+                  {{ if .import.strategy -}} "strategy": {{ .import.strategy | quote }} {{- end }}
+                  {{- if .import.maxDepth -}} ,"maxDepth": {{ .import.maxDepth | quote }} {{- end }}
+                  {{- if .import.syncAcl -}} ,"syncAcl": {{ .import.syncAcl | quote }} {{- end }}
+              }
+              {{- end }}
+              {{- if .update -}}
+                ,"storageUpdate": {
+                  {{ if .update.strategy -}} "strategy": {{ .update.strategy | quote }} {{- end }}
+                  {{- if .update.maxDepth -}} ,"maxDepth": {{ .update.maxDepth | quote }} {{- end }}
+                  {{- if .update.scanInterval -}} ,"scanInterval": {{ .update.scanInterval | quote }} {{- end }}
+                  {{- if .update.writeOnce -}} ,"writeOnce": {{ .update.writeOnce | quote }} {{- end }}
+                  {{- if .update.deleteEnable -}} ,"deleteEnable": {{ .update.deleteEnable | quote }} {{- end }}
+                  {{- if .update.syncAcl -}} ,"syncAcl": {{ .update.syncAcl | quote }} {{- end }}
+              }
+              {{- end }}
+            }
+
+            EEOF
+
+            ) ;
+            echo "$storage_support_json" ;
+            echo "$storage_support_json" | onepanel-rest-cli supportSpace - | jq -r '.' ;
             echo "$output" ; 
             echo "$output" | grep -iv "error" > /dev/null ;
             {{- end -}}
