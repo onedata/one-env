@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: {{ .Chart.Name }}
+    release: {{ .Release.Name  }}
+    heritage: {{ .Release.Service }}
+  annotations:
+    version: "{{ .Chart.Version }}"
+data:
+  authsources.php: |-
+    <?php
+    $config = array(
+        'admin' => array(
+            'core:AdminPassword',
+        ),
+        'example-userpass' => array(
+            'exampleauth:UserPass',
+            {{- range .Values.users }}
+            '{{ .name }}:{{ .password }}' => array(
+                'uid' => array('{{ .uid }}'),
+                'eduPersonAffiliation' => array('{{ .group }}'),
+                'email' => '{{ .email }}',
+            ),
+            {{- end }}
+        ),
+    );

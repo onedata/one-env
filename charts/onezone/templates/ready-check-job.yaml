@@ -1,4 +1,4 @@
-{{ if $.Values.onepanel_batch_mode_enabled }}
+
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -41,5 +41,4 @@ spec:
           - "sh"
           - "-c"
           - >
-            echo 'all ok, exiting' ;
-{{ end }}
+            echo 'all ok, exiting' ;  

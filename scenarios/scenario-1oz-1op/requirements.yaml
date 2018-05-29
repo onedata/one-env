@@ -4,7 +4,7 @@ dependencies:
   repository: file://../../charts/onedata-chart-utils
 
 - name: onedata-1p
-  version: 0.2.6
+  version: 0.2.10
   repository: file://../../charts/onedata-1p
   condition: onedata-1p.enabled
   tags:

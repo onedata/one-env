@@ -47,6 +47,13 @@ parser.add_argument(
     help='attach to cluster-manager\'s console in given pod',
     dest=APP_TYPE_CLUSTER_MANAGER)
 
+parser.add_argument(
+    '-w', '--worker',
+    action='store_true',
+    default=argparse.SUPPRESS,
+    help='attach to (op|oz)-worker console in given pod',
+    dest=APP_TYPE_WORKER)
+
 user_config.ensure_exists()
 helm.ensure_deployment(exists=True, fail_with_error=True)
 
@@ -63,6 +70,8 @@ else:
             app_type = APP_TYPE_PANEL
         elif APP_TYPE_CLUSTER_MANAGER in args:
             app_type = APP_TYPE_CLUSTER_MANAGER
+        elif APP_TYPE_WORKER in args:
+            app_type = APP_TYPE_WORKER
 
         def attach_fun(pod):
             pods.attach(pod, app_type)

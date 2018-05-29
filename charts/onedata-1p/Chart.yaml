@@ -1,5 +1,5 @@
 name: onedata-1p
-version: 0.2.6
+version: 0.2.10
 description: Complex Onedata deployment with one Onezone, one Oneprovider and S3, CEPH, NFS, POSIX backends.
 keywords:
   - onedata

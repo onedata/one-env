@@ -49,6 +49,17 @@ def cmd_desc_stateful_set():
     return ['kubectl', 'describe', 'statefulset']
 
 
+def cmd_copy_to_pod(pod, source, destination):
+    return ['kubectl', 'cp', source,
+            '{}/{}:{}'.format(user_config.get('namespace'), pod, destination)]
+
+
+def cmd_copy_from_pod(pod, source, destination):
+    return ['kubectl', 'cp',
+            '{}/{}:{}'.format(user_config.get('namespace'), pod, source),
+            destination]
+
+
 def get_name(pod):
     return pod.metadata.name
 
@@ -101,7 +112,8 @@ def is_job(pod):
 
 
 def is_pod(pod):
-    return pod.metadata.owner_references[0].kind == 'StatefulSet'
+    if pod.metadata.owner_references:
+        return pod.metadata.owner_references[0].kind == 'StatefulSet'
 
 
 def is_job_finished(pod):

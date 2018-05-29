@@ -25,7 +25,8 @@ SERVICE_ONEPROVIDER = 'oneprovider'
 
 
 def gen_pod_name(service, node_name):
-    return '{}-{}-{}-0'.format(helm.deployment_name(), service, node_name)
+    node_num = node_name.replace('n', '')
+    return '{}-{}-{}'.format(helm.deployment_name(), service, node_num)
 
 
 def rel_sources_dir(app):

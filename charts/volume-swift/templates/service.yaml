@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  annotations:
+    version: "{{ .Chart.Version }}"
+spec:
+  type: {{ .Values.serviceType }}
+  ports:
+    - name: horizon
+      port: 80
+      protocol: TCP
+    - name: keystone
+      port: 5000
+      protocol: TCP
+    - name: swiftbrowser
+      port: 8000
+      protocol: TCP
+    - name: objectstorage
+      port: 8080
+      protocol: TCP
+    - name: keystoneadmin
+      port: 35357
+      protocol: TCP
+  selector:
+    app: {{ template "fullname" . }}

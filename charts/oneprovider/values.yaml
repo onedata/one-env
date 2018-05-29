@@ -1,6 +1,6 @@
 # Default values for oneprovider.
 # This is a YAML-formatted file.
-# Declare variables to be passed into your templates  .
+# Declare variables to be passed into your templates.
 
 image: onedata/oneprovider:17.06.0-rc1
 imagePullPolicy: IfNotPresent
@@ -34,10 +34,19 @@ onezone_service_url: &onezone_service_url
   # service_name: rc14-onezone
   # namespace: default
 
-# Resources requested by oneprovider
-cpu: 0.3
-memory: 0.5Gi
+# oneprovider name, if empty defaults to a chart name
+name: ''
 
+# Resources requested by oneprovider
+cpu: 1.5
+memory: 4Gi
+
+# Coordinates of a Oneprovider on a onezone map
+geoLatitude: 55.333
+geoLongitude: 55.333
+
+# TODO: add comment
+adminEmail: "getting-started@onedata.org"
 
 # Log level of the processes in the container
 log_level: "info"
@@ -51,13 +60,16 @@ onepanel_batch_mode_enabled: true
 #   existing certs will be backed up and placed in the same directory.
 # WARNING: This functionality is devised for test purposes and must not
 #   be used in production.
-onepanel_generate_test_web_cert: true
+onepanel_generate_test_web_cert: false
+
+# The generated test web cert will be issued for below domain.
+onepanel_generated_cert_domain: ""
 
 # If enabled, onepanel will trust any server that has a cert signed by
 #   the OnedataTestWebServerCa.
 # WARNING: This functionality is devised for test purposes and must not
 #   be used in production.
-onepanel_trust_test_ca: true
+onepanel_trust_test_ca: false
 
 # Number of nodes (pod replicas) for of this provider
 # their indexes will be assigned FROM 0 (ZERO!)
@@ -69,7 +81,7 @@ oneprovider_nodes_count: 1
 # by default the node with the highest index (oneprovider_nodes_count-1)
 # is configured as a mainNode
 # If a service list is empty, all available nodes are assigned that service. 
-clusterConfig:
+cluster_config:
   managers: [ ]
   workers: [ ]
   databases: [ ]
@@ -91,13 +103,13 @@ workerOverlayConfig: |-
 # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
 affinity: {}
 
-# List of taints which are tolerated by the pods
+# List of taints which are tolerated by the pods 
 # when nodes are selected by a kubernetes scheduler
 # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
 tolerations: {}
 
-# Specify a map of key-value pairs. For the pod
-# to be eligible to run on a node, the node
+# Specify a map of key-value pairs. For the pod 
+# to be eligible to run on a node, the node 
 # must have each of the indicated key-value pairs as labels
 # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
 nodeSelector: {}
@@ -112,25 +124,15 @@ generate-certificates:
 # or onezones that are part of this deployment
 onedata_anti_affinity_enabled: false
 
-batchConfig:
-  # oneprovider name, if empty defaults to a chart name
-  name: ''
+# List of oneprovider onepanel users with administrative privileges
+onepanel_admin_users:
+  - login: admin
+    password: password
 
-  # Coordinates of a Oneprovider on a onezone map
-  geoLatitude: 55.333
-  geoLongitude: 55.333
-
-  createUsers: true
-
-  # List of oneprovider onepanel users with administrative privileges
-  onepanelAdminUsers:
-    - login: admin
-      password: password
-
-  # List of oneprovider onepanel regular users
-  onepanelUsers:
-    - login: user
-      password: password
+# List of oneprovider onepanel regular users
+onepanel_users:
+  - login: user
+    password: password
 
 # Create oneclient instance that will connect to this oneprovider
 oneclient:

@@ -16,6 +16,9 @@ import helm
 import deployments_dir
 import console
 import user_config
+import sources
+import cmd
+from names_and_paths import *
 
 SCRIPT_DESCRIPTION = 'Gathers all logs and relevant data from current ' \
                      'deployment and places them in desired location.'
@@ -44,6 +47,14 @@ user_config.ensure_exists()
 helm.ensure_deployment(exists=True, fail_with_error=True)
 
 args = parser.parse_args()
+
+
+def onezone_apps():
+    return {APP_OZ_PANEL, APP_CLUSTER_MANAGER, APP_ONEZONE}
+
+
+def oneprovider_apps():
+    return {APP_OP_PANEL, APP_CLUSTER_MANAGER, APP_ONEPROVIDER}
 
 
 def copytree_no_overwrite(src, dst):
@@ -80,6 +91,28 @@ for pod in pods.list_pods():
         pass
     with open(os.path.join(this_pod_logs_dir, 'entrypoint.log'), 'w+') as f:
         f.write(pods.pod_logs(pod))
+
+    service_type = pods.get_service_type(pod).lower()
+
+    if 'onezone' in service_type:
+        service_apps = onezone_apps()
+    else:
+        service_apps = oneprovider_apps()
+
+    for app in service_apps:
+        app_dir = os.path.join(this_pod_logs_dir, app)
+        pod_name = pods.get_name(pod)
+        log_dir = cmd.check_output(
+            pods.cmd_exec(pod_name, ['bash', '-c', 'readlink -f {}'.format(
+                sources.logs_dir(app, pod))]))
+
+        if os.path.exists(app_dir):
+            console.warning('Path {} already exists, it will be '
+                            'deleted'.format(app_dir))
+            shutil.rmtree(app_dir)
+
+        cmd.call(pods.cmd_copy_from_pod(pod_name, log_dir, app_dir))
+
 
 # If requested, copy it to an output location
 if 'path' in args:

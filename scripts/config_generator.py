@@ -19,6 +19,9 @@ import sys
 from names_and_paths import *
 
 
+ROOT_PATH = '/'
+
+
 def onezone_apps():
     return {APP_OZ_PANEL, APP_CLUSTER_MANAGER, APP_ONEZONE}
 
@@ -29,13 +32,25 @@ def oneprovider_apps():
 
 def generate_app_config(app_name, node_name, node_config, service,
                         service_dir_path, host_home_dir, node_apps,
-                        node_sources_conf):
+                        node_sources_conf, scenario_sources_cfg):
+    override_prefix = False
     app_config = {'name': app_name}
 
     if app_name in [a['name'] for a in node_config.get('sources', [])]:
-        app_config['hostPath'] = os.path.relpath(
-            os.path.abspath(sources.locate(app_name, service, node_name)),
-            host_home_dir)
+        source_path = os.path.abspath(sources.locate(app_name,
+                                                     service, node_name))
+
+        if source_path.startswith('/home'):
+            app_config['hostPath'] = os.path.relpath(source_path, host_home_dir)
+        else:
+            override_prefix = True
+            host_home_dir = ROOT_PATH
+            app_config['hostPath'] = source_path
+
+        for app in scenario_sources_cfg[service]['sources']:
+            if 'hostPath' not in app and app['name'] == app_name:
+                app['hostPath'] = app_config['hostPath']
+
     else:
         app_config['hostPath'] = ''
 
@@ -46,48 +61,62 @@ def generate_app_config(app_name, node_name, node_config, service,
 
     node_sources_conf.append(app_config)
 
+    return override_prefix
 
-def generate_new_nodes_config(scenario_cfg, service, host_home_dir,
-                              service_dir_path, env_config_dir_path):
+
+def generate_nodes_config(scenario_sources_cfg, service, host_home_dir,
+                          service_dir_path, env_config_dir_path):
     new_nodes_config = {}
+    override_prefix = False
 
     if 'onezone' in service:
         service_apps = onezone_apps()
     else:
         service_apps = oneprovider_apps()
 
-    for node_name, node_config in scenario_cfg[service]['nodes'].items():
+    for node_name, node_config in scenario_sources_cfg[service]['nodes'].items():
         node_apps = []
         node_sources_conf = []
         for app_name in service_apps:
-            generate_app_config(app_name, node_name, node_config, service,
-                                service_dir_path, host_home_dir, node_apps,
-                                node_sources_conf)
+            if generate_app_config(app_name, node_name, node_config, service,
+                                   service_dir_path, host_home_dir, node_apps,
+                                   node_sources_conf, scenario_sources_cfg):
+                override_prefix = True
 
         node.create_node_config_file(env_config_dir_path, service,
                                      node_name, node_apps)
         new_nodes_config[node_name] = {'sources': node_sources_conf}
 
+    if override_prefix:
+        # not using ROOT_PATH here cause in charts we use '/' in path
+        # concatenation so it will be appended there
+        scenario_sources_cfg[service]['hostPathPrefix'] = ''
+        scenario_sources_cfg[service]['vmPathPrefix'] = ''
+        scenario_sources_cfg[service]['deploymentDir'] = os.path.relpath(
+            env_config_dir_path, ROOT_PATH)
+
     return new_nodes_config
 
 
-def generate_configs(sources_cfg, sources_cfg_path, scenario_key, env_config_dir_path):
-    scenario_cfg = sources_cfg[scenario_key]
+def generate_configs(sources_cfg, sources_cfg_path, scenario_key,
+                     deployment_dir):
+    scenario_sources_cfg = sources_cfg[scenario_key]
     host_home_dir = user_config.get('hostHomeDir')
     kube_host_home_dir = user_config.get('kubeHostHomeDir')
 
-    for service in scenario_cfg:
-        scenario_cfg[service]['hostPathPrefix'] = host_home_dir
-        scenario_cfg[service]['vmPathPrefix'] = kube_host_home_dir
-        scenario_cfg[service]['deploymentDir'] = os.path.relpath(
-            env_config_dir_path, host_home_dir)
+    for service in scenario_sources_cfg:
+        scenario_sources_cfg[service]['hostPathPrefix'] = host_home_dir
+        scenario_sources_cfg[service]['vmPathPrefix'] = kube_host_home_dir
+        scenario_sources_cfg[service]['deploymentDir'] = os.path.relpath(
+            deployment_dir, host_home_dir)
 
-        service_dir_path = os.path.join(env_config_dir_path, service)
+        service_dir_path = os.path.join(deployment_dir, service)
         os.mkdir(service_dir_path)
 
-        sources_cfg[scenario_key][service]['nodes'] = \
-            generate_new_nodes_config(scenario_cfg, service, host_home_dir,
-                                      service_dir_path, env_config_dir_path)
+        scenario_sources_cfg[service]['nodes'] = \
+            generate_nodes_config(scenario_sources_cfg, service,
+                                  host_home_dir, service_dir_path,
+                                  deployment_dir)
 
     writer = writers.ConfigWriter(sources_cfg, 'yaml')
     with open(sources_cfg_path, 'w') as f:

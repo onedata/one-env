@@ -1,36 +1,34 @@
-{{ range $nodeName, $nodeConfig := .Values.nodes }}
----
 apiVersion: apps/v1beta1
 kind: StatefulSet
 metadata:
-  name: {{ template "fullname" $ }}-{{ $nodeName }}
+  name: {{ template "fullname" . }}
   labels:
-    app: {{ template "fullname" $ }}
-    chart: {{ $.Chart.Name }}
-    release: {{ $.Release.Name }}
-    heritage: {{ $.Release.Service }}
+    app: {{ template "fullname" . }}
+    chart: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
     onedata-service: "oneprovider"
   annotations:
-    version: "{{ $.Chart.Version }}"
+    version: "{{ .Chart.Version }}"
 spec:
-  serviceName: {{ template "fullname" $ }}
-  replicas: 1
+  serviceName: {{ template "fullname" . }}
+  replicas: {{ .Values.oneprovider_nodes_count }}
   template:
     metadata:
       labels:
-        app: {{ template "fullname" $ }}
-        chart: {{ $.Chart.Name }}
-        release: {{ $.Release.Name }}
-        heritage: {{ $.Release.Service }}
+        app: {{ template "fullname" . }}
+        chart: {{ .Chart.Name }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
         onedata-service: "oneprovider"
       annotations:
-        version: "{{ $.Chart.Version }}"
+        version: "{{ .Chart.Version }}"
     spec:
-      subdomain: {{ template "fullname" $ }}-{{ $nodeName }}
+      subdomain: {{ template "fullname" . }}
       terminationGracePeriodSeconds: 0
-      {{- if or $.Values.affinity $.Values.onedata_anti_affinity_enabled }}
+      {{- if or .Values.affinity .Values.onedata_anti_affinity_enabled }}
       affinity:
-      {{- if $.Values.onedata_anti_affinity_enabled }}
+      {{- if .Values.onedata_anti_affinity_enabled }}
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
           - labelSelector:
@@ -43,29 +41,29 @@ spec:
               - key: release
                 operator: In
                 values:
-                - {{ $.Release.Name }}
+                - {{ .Release.Name }}
             topologyKey: kubernetes.io/hostname
       {{- end }}
-      {{- if $.Values.affinity }}
-{{ toYaml $.Values.affinity | indent 8 }}
+      {{- if .Values.affinity }}
+{{ toYaml .Values.affinity | indent 8 }}
       {{- end }}
       {{- end }}
-      {{- if $.Values.tolerations }}
+      {{- if .Values.tolerations }}
       tolerations:
-{{ toYaml $.Values.tolerations | indent 8 }}
+{{ toYaml .Values.tolerations | indent 8 }}
       {{- end }}
-      {{- if $.Values.nodeSelector }}
+      {{- if .Values.nodeSelector }}
       nodeSelector:
-{{ toYaml $.Values.nodeSelector | indent 8 }}
+{{ toYaml .Values.nodeSelector | indent 8 }}
       {{- end }}
-{{ include "imagePullSecrets" $ | indent 6 }}
-      {{- if or (or (index $.Values "volume-s3" "enabled")) (or (index $.Values "volume-ceph" "enabled") (or (index $.Values "volume-gluster" "enabled") (or (index $.Values "volume-swift" "enabled") (index $.Values "generate-certificates" "enabled")))) }}
+{{ include "imagePullSecrets" . | indent 6 }}
+      {{- if or (eq (int .Values.oneprovider_nodes_count) 1) (or (index .Values "volume-s3" "enabled")) (or (index .Values "volume-ceph" "enabled") (or (index .Values "volume-gluster" "enabled") (or (index .Values "volume-swift" "enabled") (index .Values "generate-certificates" "enabled")))) }}
       initContainers:
       {{- end }}
-      {{- if (index $.Values "generate-certificates" "enabled") }}
+      {{- if (index .Values "generate-certificates" "enabled") }}
         - name: certificate-init-container
-          image: {{ index $.Values "generate-certificates" "image" }}
-          imagePullPolicy: {{ default $.Values.imagePullPolicy $.Values.global.imagePullPolicy | default "IfNotPresent" }}
+          image: {{ index .Values "generate-certificates" "image" }}
+          imagePullPolicy: {{ default .Values.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
           env:
             - name: NAMESPACE
               valueFrom:
@@ -81,59 +79,58 @@ spec:
                   fieldPath: status.podIP
             - name: CERT_DIR
               value: /etc/tls
-          # TODO: POD_NAME
           command:
             - "/bin/sh"
             - "-c"
             - >
-              if [[ $POD_NAME != {{ template "fullname" $ }}-0 ]] ; then echo "Not generating certificates" ; exit 0 ; fi ;
+              if [[ $POD_NAME != {{ template "fullname" . }}-0 ]] ; then echo "Not generating certificates" ; exit 0 ; fi ;
               mkdir $(CERT_DIR) ;
-              /certificate-init-container -secret-name={{ template "fullname" $ }}-secret-tls -labels=app={{ template "fullname" $ }},chart={{ $.Chart.Name }},release={{ $.Release.Name }},heritage={{ $.Release.Service }} -additional-dnsnames={{ template "fullname" $ }},{{ template "fullname" $ }}.$(NAMESPACE),{{ template "fullname" $ }}.$(NAMESPACE).svc -cert-dir=$(CERT_DIR) -namespace=$(NAMESPACE) -pod-ip=$(POD_IP) -pod-name=$(POD_NAME) -service-names={{ template "fullname" $ }} -cluster-domain={{ template "cluster_domain" $ }} ;
+              /certificate-init-container -secret-name={{ template "fullname" . }}-secret-tls -labels=app={{ template "fullname" . }},chart={{ .Chart.Name }},release={{ .Release.Name }},heritage={{ .Release.Service }} -additional-dnsnames={{ template "fullname" . }},{{ template "fullname" . }}.$(NAMESPACE),{{ template "fullname" . }}.$(NAMESPACE).svc -cert-dir=$(CERT_DIR) -namespace=$(NAMESPACE) -pod-ip=$(POD_IP) -pod-name=$(POD_NAME) -service-names={{ template "fullname" . }} -cluster-domain={{ template "cluster_domain" . }} ;
       {{- end }}
-      {{- if (index $.Values "volume-s3" "enabled") }}
+      {{- if (index .Values "volume-s3" "enabled") }}
         - name: wait-for-volume-s3-init
-          image: {{ $.Values.wait_for.image }}
-          imagePullPolicy: {{ default $.Values.wait_for.imagePullPolicy $.Values.global.imagePullPolicy | default "IfNotPresent" }}
+          image: {{ .Values.wait_for.image }}
+          imagePullPolicy: {{ default .Values.wait_for.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
           args:
             - "job"
-            - "{{ template "volume-s3_name" $ }}-init"
+            - "{{ template "volume-s3_name" . }}-init"
       {{- end }}
-      {{- if (index $.Values "volume-ceph" "enabled") }}
+      {{- if (index .Values "volume-ceph" "enabled") }}
         - name: wait-for-volume-ceph
-          image: {{ $.Values.wait_for.image }}
-          imagePullPolicy: {{ default $.Values.wait_for.imagePullPolicy $.Values.global.imagePullPolicy | default "IfNotPresent" }}
+          image: {{ .Values.wait_for.image }}
+          imagePullPolicy: {{ default .Values.wait_for.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
           args:
             - "pod"
-            - "-lapp={{ template "volume-ceph_name" $ }}"
+            - "-lapp={{ template "volume-ceph_name" . }}"
       {{- end }}
-      {{- if (index $.Values "volume-gluster" "enabled") }}
+      {{- if (index .Values "volume-gluster" "enabled") }}
         - name: wait-for-volume-gluster
-          image: {{ $.Values.wait_for.image }}
-          imagePullPolicy: {{ default $.Values.wait_for.imagePullPolicy $.Values.global.imagePullPolicy | default "IfNotPresent" }}
+          image: {{ .Values.wait_for.image }}
+          imagePullPolicy: {{ default .Values.wait_for.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
           args:
             - "pod"
-            - "-lapp={{ template "volume-gluster_name" $ }}"
+            - "-lapp={{ template "volume-gluster_name" . }}"
       {{- end }}
-      {{- if (index $.Values "volume-swift" "enabled") }}
+      {{- if (index .Values "volume-swift" "enabled") }}
         - name: wait-for-volume-swift
-          image: {{ $.Values.wait_for.image }}
-          imagePullPolicy: {{ default $.Values.wait_for.imagePullPolicy $.Values.global.imagePullPolicy | default "IfNotPresent" }}
+          image: {{ .Values.wait_for.image }}
+          imagePullPolicy: {{ default .Values.wait_for.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
           args:
             - "pod"
-            - "-lapp={{ template "volume-swift_name" $ }}"
+            - "-lapp={{ template "volume-swift_name" . }}"
       {{- end }}
       containers:
-      - name: {{ $.Chart.Name }}
-        image: {{  $.Values.image }}
-        imagePullPolicy: {{ default $.Values.imagePullPolicy $.Values.global.imagePullPolicy | default "IfNotPresent" }}
-        {{- if or $.Values.cpu $.Values.memory }}
+      - name: {{ .Chart.Name }}
+        image: {{ .Values.image }}
+        imagePullPolicy: {{ default .Values.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
+        {{- if or .Values.cpu .Values.memory }}
         resources:
           requests:
-          {{- if $.Values.cpu }}
-            cpu: {{ $.Values.cpu }}
+          {{- if .Values.cpu }}
+            cpu: {{ .Values.cpu }}
           {{- end }}
-          {{- if $.Values.memory }}
-            memory: {{ $.Values.memory }}
+          {{- if .Values.memory }}
+            memory: {{ .Values.memory }}
           {{- end }}
         {{- end }}
         ports:
@@ -153,11 +150,13 @@ spec:
           - "/bin/bash"
           - "-c"
           - >
-            if [[ {{ quote $nodeName }} != {{ quote $.Values.clusterConfig.mainNode }} ]]; then export ONEPANEL_BATCH_MODE="false" ; fi ;
-            {{ if $.Values.addTestDomain  }}
-              echo $POD_IP {{ template "service_url" $ }}.test >> /etc/hosts
-            {{ end }}
+            echo {{ template "fullname" . }}-{{ sub (.Values.oneprovider_nodes_count) 1 }} ;
+            if [[ "$HOSTNAME" != {{ template "fullname" . }}-{{ sub (.Values.oneprovider_nodes_count) 1 }} ]]; then export ONEPANEL_BATCH_MODE="false" ; fi ;
             env ;
+            {{- if .Values.sources }}
+            python {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/parse_sources.py  {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }} ;
+            if [[ -f onepanel_override ]]; then export ONEPANEL_OVERRIDE=$(cat onepanel_override) ; fi ;
+            {{ end }}
             /root/oneprovider.sh ;
             cat /var/log/op_panel/info.log ;
             exit 1 ;
@@ -180,16 +179,11 @@ spec:
               - "-c"
               - >
                 onepanel_ready() { sleep 5 ; exit 0 ; } ;
-                if [[ {{ quote $nodeName }} == {{ quote $.Values.clusterConfig.mainNode }} ]]; then exit 0 ; else onepanel_ready ; fi ;
-
+                if [[ "$HOSTNAME" == {{ template "fullname" . }}-{{ sub (.Values.oneprovider_nodes_count) 1 }} ]]; then exit 0 ; else onepanel_ready ; fi ;
         env:
           - name: SERVICE_NAME
-            {{ if $.Values.batchConfig -}}
-              {{ if $.Values.batchConfig.name }}
-            value: {{ $.Values.batchConfig.name }}
-              {{- else -}}
-            value: {{ template "fullname" $ }}
-              {{- end }}
+            {{ if .Values.name }}
+            value: {{ .Values.name }}
             {{- else -}}
             value: {{ template "fullname" $ }}
             {{- end }}
@@ -197,52 +191,53 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: status.podIP
-          - name: HOSTNAME
-            value: {{ template "fullname" $ }}-{{ $nodeName }}-0
           - name: SERVICE_DOMAIN
             value: {{ template "service_url" $ }}
-        {{- if $nodeConfig.sources }}
-          {{ range $nodeConfig.sources }}
-            # assuming here that op-panel will always have such name
-            {{ if and (eq .name "op-panel") (.hostPath) }}
-          - name: ONEPANEL_OVERRIDE
-            value: {{ $.Values.hostPathPrefix }}/{{ .hostPath }}
-            {{ end }}
+          - name: ONEPANEL_LOG_LEVEL
+            value: {{ default "info" .Values.log_level | quote }}
+          - name: ONEPANEL_GENERATE_TEST_WEB_CERT
+            value: {{ default "false" .Values.onepanel_generate_test_web_cert | quote  }}
+          {{ if .Values.generate_cert_domain }}
+          - name: ONEPANEL_GENERATED_CERT_DOMAIN
+            value: "{{ template "service_url" $ }}"
+          {{ else }}
+          - name: ONEPANEL_GENERATED_CERT_DOMAIN
+            value: {{ default "" .Values.onepanel_generated_cert_domain | quote }}
           {{ end }}
-        {{- end }}
-
-        envFrom:
-        - configMapRef:
-            name: {{ template "fullname" $ }}-config
-
-        {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "volume-nfs" "enabled") ($nodeConfig.sources) }}
+          - name: ONEPANEL_TRUST_TEST_CA
+            value: {{ default "false" .Values.onepanel_trust_test_ca | quote }}
+          - name: ONEPANEL_BATCH_MODE
+            value: {{ .Values.onepanel_batch_mode_enabled | quote }}
+          - name: ONEPROVIDER_CONFIG
+            valueFrom:
+              configMapKeyRef:
+                name: {{ template "fullname" . }}-config
+                key: ONEPROVIDER_CONFIG
         volumeMounts:
-        {{- end }}
-        {{- range $nodeConfig.sources }}
-          {{- if .hostPath }}
-            - mountPath: {{ $.Values.hostPathPrefix }}/{{ default .hostPath .mountPath }}
-              name: {{ .name }}
-            {{ if eq $.Values.suffix "" }}
-            - mountPath: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider/oneprovider-{{ $nodeName }}-{{ .name }}-base-rel
-              name: oneprovider-{{ .name }}-base-rel
-            {{ else }}
-            - mountPath: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider-{{- $.Values.suffix -}}/oneprovider-{{ $.Values.suffix }}-{{ $nodeName }}-{{ .name }}-base-rel
-              name: oneprovider-{{ .name }}-base-rel
-            {{ end }}
-            - mountPath: {{ $.Values.hostPathPrefix }}/{{ default .hostPath .mountPath }}/_build/default/rel/{{ .name | replace "-" "_"  }}
-              name: oneprovider-{{ .name }}-rel
-          {{- end }}
-          {{ if eq .name "op-panel" }}
-            {{- if .hostPath }}
-            - mountPath: {{ $.Values.hostPathPrefix }}/{{ default .hostPath .mountPath }}/_build/default/rel/{{ .name | replace "-" "_"  }}/etc/overlay.config
-              name: onepanel-config-file
-            {{ else }}
-            - mountPath: /etc/{{ .name | replace "-" "_"  }}/overlay.config
-              name: onepanel-config-file
+          {{- if .Values.sources }}
+          - mountPath: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}
+            name: deployment-dir
+            {{- range $.Values.sources }}
+              {{- if .hostPath }}
+            # Mount sources. Again for all pods (nodes) all sources will be mounted.
+          - mountPath: {{ $.Values.hostPathPrefix }}/{{ .hostPath }}
+            name: {{ .name }}
+            # Mount data dir. It will be filled with data from scenario_runner
+          - mountPath: {{ $.Values.hostPathPrefix }}/{{ .hostPath }}/_build/default/rel
+            name: sources-{{ .name }}
+              {{ else }}
+          - mountPath: /tmp/{{ .name }}
+            name: sources-{{ .name }}
+              {{ end }}
             {{ end }}
           {{ end }}
-        {{- end }}
-      {{- if (index $.Values "generate-certificates" "enabled") }}
+          - name: config-map
+            mountPath: /etc/op_panel/overlay.config
+            subPath: panel-overlay.config
+          - name: config-map
+            mountPath: /etc/op_worker/overlay.config
+            subPath:  worker-overlay.config
+      {{- if (index .Values "generate-certificates" "enabled") }}
           - mountPath: /etc/op_panel/certs/web_key.pem
             subPath: tls.key
             name: tls
@@ -266,49 +261,18 @@ spec:
             name: tls
             readOnly: true
       {{- end }}
-      {{- if (index $.Values "volume-nfs" "enabled") }}
-          - mountPath: {{ index $.Values "volume-nfs" "container_mount_path" }}
+      {{- if (index .Values "volume-nfs" "enabled") }}
+          - mountPath: {{ index .Values "volume-nfs" "container_mount_path" }}
             name: nfs
       {{- end }}
-      {{- if and (index $.Values "volume-data-sync" "enabled") (eq (len $.Values.nodes) 1)  }}
-        {{- range $key, $val := (omit (index $.Values "volume-data-sync") "enabled") }}
+      {{- if and (index .Values "volume-data-sync" "enabled") (eq (int .Values.oneprovider_nodes_count) 1) }}
+        {{- range $key, $val := (omit (index .Values "volume-data-sync") "enabled") }}
           - mountPath: /volumes/{{ $key }}:shared
             name: {{ $key }}
         {{- end }}
       {{- end }}
-    {{- if or (index $.Values "generate-certificates" "enabled") (index $.Values "volume-nfs" "enabled") ($nodeConfig.sources) }}
-      volumes:
-    {{- end }}
-    {{ if $nodeConfig.sources }}
-      {{ if eq $.Values.suffix "" }}
-          - name: onepanel-config-file
-            hostPath:
-              path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider/{{ $nodeName }}-overlay.config
-      {{ else }}
-          - name: onepanel-config-file
-            hostPath:
-              path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider-{{- $.Values.suffix -}}/{{ $nodeName }}-overlay.config
-      {{ end }}
-    {{ end }}
-    {{- range $nodeConfig.sources }}
-      {{- if .hostPath }}
-          - name: {{ .name }}
-            hostPath:
-              path: {{ $.Values.vmPathPrefix }}/{{ .hostPath }}
-          - name: oneprovider-{{ .name }}-base-rel
-            hostPath:
-              path: {{ $.Values.vmPathPrefix }}/{{ .hostPath }}/_build/default/rel/{{ .name | replace "-" "_"  }}
-          - name: oneprovider-{{ .name }}-rel
-            hostPath:
-              {{ if eq $.Values.suffix "" }}
-                path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider/oneprovider-{{ $nodeName }}-{{ .name }}-rel
-              {{ else }}
-                path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider-{{- $.Values.suffix -}}/oneprovider-{{ $.Values.suffix }}-{{ $nodeName }}-{{ .name }}-rel
-              {{ end }}
-      {{ end }}
-    {{ end }}
-      {{- if and (index $.Values "volume-data-sync" "enabled") (eq (len $.Values.nodes) 1)  }}
-        {{- range $key, $val := (omit (index $.Values "volume-data-sync") "enabled") }}
+      {{- if and (index .Values "volume-data-sync" "enabled") (eq (int .Values.oneprovider_nodes_count) 1) }}
+        {{- range $key, $val := (omit (index .Values "volume-data-sync") "enabled") }}
       - name: {{ $key }}
         image: {{ $val.image }}
         imagePullPolicy: {{ default $val.imagePullPolicy $.Values.global.imagePullPolicy | default "IfNotPresent" }}
@@ -331,20 +295,45 @@ spec:
               - SYS_ADMIN
         {{- end }}
       {{- end }}
-    {{- if (index $.Values "generate-certificates" "enabled") }}
+      volumes:
+      {{- if .Values.sources }}
+      - name: deployment-dir
+        hostPath:
+          path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}
+      # Sources. For each pod (node) all sources will be the mounted.
+        {{- range $.Values.sources }}
+        {{- if .hostPath }}
+      - name: {{ .name }}
+        hostPath:
+          path: {{ $.Values.vmPathPrefix }}/{{ .hostPath }}
+      # Random directory for each source. It is needed to store data. Each pod (node)
+      # will have different random directories.
+        {{- end }}
+      - name: sources-{{ .name }}
+        hostPath:
+          {{ if eq $.Values.suffix "" }}
+          path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider/{{ .name }}
+          {{ else }}
+          path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider-{{- $.Values.suffix -}}/{{ .name }}
+          {{ end }}
+        {{- end }}
+      {{- end }}
+      - name: config-map
+        configMap:
+          name: {{ template "fullname" . }}-config
+    {{- if (index .Values "generate-certificates" "enabled") }}
       - name: tls
         secret:
-          secretName: {{ template "fullname" $ }}-secret-tls
+          secretName: {{ template "fullname" . }}-secret-tls
     {{- end }}
-    {{- if (index $.Values "volume-nfs" "enabled") }}
+    {{- if (index .Values "volume-nfs" "enabled") }}
       - name: nfs
         persistentVolumeClaim:
-          claimName: {{ template "fullname" $ }}-nfs-pvc
+          claimName: {{ template "fullname" . }}-nfs-pvc
     {{- end }}
-    {{- if and (index $.Values "volume-data-sync" "enabled") (eq (len $.Values.nodes) 1)  }}
-      {{- range $key, $val := (omit (index $.Values "volume-data-sync") "enabled") }}
+      {{- if and (index .Values "volume-data-sync" "enabled") (eq (int .Values.oneprovider_nodes_count) 1) }}
+        {{- range $key, $val := (omit (index .Values "volume-data-sync") "enabled") }}
       - name: {{ $key }}
         emptyDir: {}
       {{- end }}
     {{- end }}
-{{- end }}

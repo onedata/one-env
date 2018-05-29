@@ -1,14 +1,44 @@
 dependencies:
 - name: oneclient
-  version: 0.2.9
+  version: 0.2.10
   repository: file://../../charts/oneclient
   condition: oneclient.enabled
 
 - name: onedata-cli
-  version: 0.2.9
+  version: 0.2.10
   repository: file://../../charts/onedata-cli
   condition: onedata-cli.enabled
 
 - name: onedata-chart-utils
   version: 0.2.9
   repository: file://../../charts/onedata-chart-utils
+
+- name: volume-s3
+  version: 0.2.5
+  repository: file://../../charts/volume-s3
+  condition: volume-s3.enabled
+
+- name: volume-ceph
+  version: 0.2.6
+  repository: file://../../charts/volume-ceph
+  condition: volume-ceph.enabled
+
+- name: volume-nfs
+  version: 0.2.6
+  repository: file://../../charts/volume-nfs
+  condition: volume-nfs.enabled
+
+- name: volume-gluster
+  version: 0.2.3
+  repository: file://../../charts/volume-gluster
+  condition: volume-gluster.enabled
+
+- name: volume-swift
+  version: 0.2.2
+  repository: file://../../charts/volume-swift
+  condition: volume-swift.enabled
+
+- name: luma
+  version: 0.2.3
+  repository: file://../../charts/luma
+  condition: luma.enabled

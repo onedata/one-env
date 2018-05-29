@@ -1,18 +1,31 @@
-
 onedata-1p:
   onezone:
-    mainNode: node-1
+    # All services for which sources can be mounted. It is used when mounting
+    # sources in chart. We do not now which sources mount for given node.
+    # That's why we getting here sources for each service that will be mounted
+    # at least in one node.
+    sources:
+      - name: oz-panel
+      - name: oz-worker
+      - name: cluster-manager
+
+    # Specification of sources for each node
     nodes:
-      node-1:
+      n1:
         sources:
           - name: oz-panel
           - name: oz-worker
           - name: cluster-manager
 
   oneprovider-krakow:
-    mainNode: node-1
+    # Same as above
+    sources:
+      - name: op-panel
+      - name: op-worker
+      - name: cluster-manager
+
     nodes:
-      node-1:
+      n1:
         sources:
           - name: op-panel
           - name: op-worker

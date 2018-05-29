@@ -1,0 +1,60 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "fullname" . }}-init
+  labels:
+    app: {{ template "fullname" . }}
+    chart: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  annotations:
+    version: "{{ .Chart.Version }}"
+spec:
+  template:
+    metadata:
+      name: {{ .Release.Name }}
+      labels:
+        app: {{ template "fullname" . }}-init
+        chart: {{ .Chart.Name }}
+        release: {{ .Release.Name  }}
+        heritage: {{ .Release.Service }}
+      annotations:
+        version: "{{ .Chart.Version }}"
+    spec:
+      {{- if .Values.affinity }}
+      affinity:
+{{ toYaml .Values.affinity | indent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+      {{- end }}  
+      restartPolicy: Never
+{{ include "imagePullSecrets" . | indent 6 }}
+      initContainers:
+        - name: wait-for-{{ .Chart.Name }}
+          image: {{ .Values.wait_for.image }}
+          imagePullPolicy: {{ default .Values.wait_for.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
+          args:
+            - "pod"
+            - "-lapp={{ template "fullname" . }}"
+      containers:
+      - name: aws
+        image: {{ .Values.aws_client_image }}
+        imagePullPolicy: {{ default .Values.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
+        command:
+          - "sh"
+          - "-c"
+          - >
+            echo '[scality]' > ~/.aws/credentials ;
+            echo 'aws_access_key_id = {{ .Values.key_id }}' >> ~/.aws/credentials ;
+            echo 'aws_secret_access_key = {{ .Values.access_key }}' >> ~/.aws/credentials ;
+            aws s3api create-bucket --endpoint-url http://{{ template "fullname" . }}:{{ .Values.scality_port }} --profile scality --bucket {{ .Values.bucketName }} ;
+            exit 0;
+          # TODO: for some reason the s3 url does not want to be resolved with aws client hence the command $(grep search /etc/resolv.conf | cut -d ' ' -f 2)
+
+

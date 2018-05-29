@@ -1,0 +1,85 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  annotations:
+    version: "{{ .Chart.Version }}"
+spec:
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" . }}
+        chart: {{ .Chart.Name }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+      annotations:
+        version: "{{ .Chart.Version }}"
+    spec:
+      hostname: {{ .Chart.Name | quote }}
+      subdomain: {{ template "fullname" . }}
+      {{- if .Values.affinity }}
+      affinity:
+{{ toYaml .Values.affinity | indent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+      {{- end }}
+{{ include "imagePullSecrets" . | indent 6 }}
+      containers:
+      - name: swift
+        image: {{ .Values.image }}
+        imagePullPolicy: {{ default .Values.imagePullPolicy }}
+        env:
+          - name: INITIALIZE
+            value: 'yes'
+          - name: IPADDRESS
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        ports:
+          - name: horizon
+            containerPort: 80
+            protocol: TCP
+          - name: keystone
+            containerPort: 5000
+            protocol: TCP
+          - name: swiftbrowser
+            containerPort: 8000
+            protocol: TCP
+          - name: objectstorage
+            containerPort: 8080
+            protocol: TCP
+          - name: keystoneadmin
+            containerPort: 35357
+            protocol: TCP
+        readinessProbe:
+          timeoutSeconds: 3
+          initialDelaySeconds: 10
+          exec:
+            command:
+              - "/bin/bash"
+              - "-c"
+              - >
+                curl -v -H 'X-Storage-User: {{ .Values.tenantName }}:{{ .Values.username }}' -H 'X-Storage-Pass: {{ .Values.password }}' http://localhost:8080/auth/v1.0 ;
+          periodSeconds: 25
+          successThreshold: 1
+          failureThreshold: 15
+        livenessProbe:
+          timeoutSeconds: 3
+          initialDelaySeconds: 10
+          exec:
+            command:
+              - "/bin/bash"
+              - "-c"
+              - >
+                curl -v -H 'X-Storage-User: {{ .Values.tenantName }}:{{ .Values.username }}' -H 'X-Storage-Pass: {{ .Values.password }}' http://localhost:8080/auth/v1.0 ;

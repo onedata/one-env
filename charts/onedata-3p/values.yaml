@@ -1,4 +1,4 @@
-# Default values for onedata-1p.
+# Default values for onedata-3p.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
@@ -24,7 +24,7 @@ oneprovidersPanelOverlayConfig: &oneprovidersPanelOverlayConfig |-
   [].
 oneprovidersWorkerOverlayConfig: &oneprovidersPanelOverlayConfig |-
   [].
-
+  
 oneclients_enabled: &oneclients_enabled true
 onedata_cli_enabled: &onedata_cli_enabled true
 
@@ -91,7 +91,7 @@ luma: &luma_global
 
   gluster:
     enabled: &luma_enabled_gluster false
-      
+
   nfs:
     enabled: &luma_enabled_nfs false
     lowest_uid: 1000
@@ -103,15 +103,15 @@ onezone:
   onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
   onedata_anti_affinity_enabled: *onedata_anti_affinity_enabled
   log_level: *log_level
-  onezone_nodes_count: 1
   generate-certificates: 
     enabled: false
-  clusterConfig:
+  onezone_nodes_count: 1
+  cluster_config:
     managers: [ ]
     workers: [ ]
     databases: [ ]
   saml-idp:
-    enabled: &idp_enabled false
+    enabled: &idp_enabled true
     generate-certificates: 
       enabled: true
   panelOverlayConfig: |-
@@ -120,7 +120,7 @@ onezone:
     [].
 
 # What follows are the providers configurations for providers designated as:
-# krakow
+# krakow, paris, and lisbon
 oneprovider-krakow:
   suffix: &op1s krakow
   geoLatitude: 50.0647
@@ -133,7 +133,7 @@ oneprovider-krakow:
   nameOverride: oneprovider
 
   oneprovider_nodes_count: *oneproviders_nodes_count
-  clusterConfig: *oneprovider_cluster_configs
+  cluster_config: *oneprovider_cluster_configs
 
   panelOverlayConfig: *oneprovidersPanelOverlayConfig
   workerOverlayConfig: *oneprovidersPanelOverlayConfig
@@ -172,7 +172,6 @@ oneprovider-krakow:
     luma-enabled: *luma_enabled_s3
   volume-ceph:
     enabled: *ceph_enabled
-    luma-enabled: *luma_enabled_ceph
     suffix: *op1s
     luma-enabled: *luma_enabled_ceph
   volume-nfs:
@@ -188,8 +187,6 @@ oneprovider-krakow:
     suffix: *op1s
     luma-enabled: *luma_enabled_swift
 
-# What follows are the providers configurations for providers designated as:
-# paris
 oneprovider-paris:
   suffix: &op2s paris
   geoLatitude: 48.8566
@@ -202,7 +199,7 @@ oneprovider-paris:
   nameOverride: oneprovider
 
   oneprovider_nodes_count: *oneproviders_nodes_count
-  clusterConfig: *oneprovider_cluster_configs
+  cluster_config: *oneprovider_cluster_configs
 
   panelOverlayConfig: *oneprovidersPanelOverlayConfig
   workerOverlayConfig: *oneprovidersPanelOverlayConfig
@@ -211,7 +208,7 @@ oneprovider-paris:
     type: auto-generate
     disableSuffix: true
 
-  generate-certificates:
+  generate-certificates: 
     enabled: *oneproviders_generate_certificates
 
   luma:
@@ -220,7 +217,7 @@ oneprovider-paris:
 
   volume-data-sync:
     enabled: *volume_data_sync_enabled
-
+    
   oneclient:
     image: *oc_image
     debug_mode: *oneclients_debug_mode_enabled
@@ -255,7 +252,6 @@ oneprovider-paris:
     enabled: *swift_enabled
     suffix: *op2s
     luma-enabled: *luma_enabled_swift
-
 
 oneprovider-lisbon:
   suffix: &op3s lisbon
@@ -278,7 +274,7 @@ oneprovider-lisbon:
     type: auto-generate
     disableSuffix: true
 
-  generate-certificates:
+  generate-certificates: 
     enabled: *oneproviders_generate_certificates
 
   luma:

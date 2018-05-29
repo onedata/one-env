@@ -1,0 +1,14 @@
+name: saml-idp
+version: 0.2.2
+description: Chart with a plug and play SAML 2.0 IdP for development and testing.
+keywords:
+  - idp
+  - saml
+home: https://github.com/onedata/docker-test-saml-idp
+sources:
+  - https://github.com/onedata/docker-test-saml-idp
+maintainers:
+  - name: Michal Orzechowski
+    email: orzechowski.michal@gmail.com
+engine: gotpl
+appVersion: 2.0
