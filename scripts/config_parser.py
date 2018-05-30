@@ -24,7 +24,7 @@ def parse_node_num(node_name):
 
     # Because k8s numerates from 0
     node_num = int(node_num) - 1
-    
+
     return '{}'.format(node_num)
 
 

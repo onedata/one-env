@@ -56,6 +56,7 @@ def rename_pod_data_dirs(sources, service_name, node_name):
     print("Moving directories for services")
     for source in sources:
         created_path = os.path.join(args.deployment_dir, service_name, source)
+        os.makedirs(created_path)
         new_path = os.path.join(args.deployment_dir, service_name,
                                 '{}-{}'.format(source, node_name))
         print("Moving directory {} to {}".format(created_path, new_path))

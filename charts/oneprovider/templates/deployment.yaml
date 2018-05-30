@@ -150,6 +150,7 @@ spec:
           - "/bin/bash"
           - "-c"
           - >
+            while [ ! -f /tmp/sources_mounted ] ; do sleep 2 ; done ;
             echo {{ template "fullname" . }}-{{ sub (.Values.oneprovider_nodes_count) 1 }} ;
             if [[ "$HOSTNAME" != {{ template "fullname" . }}-{{ sub (.Values.oneprovider_nodes_count) 1 }} ]]; then export ONEPANEL_BATCH_MODE="false" ; fi ;
             env ;
@@ -214,23 +215,23 @@ spec:
                 name: {{ template "fullname" . }}-config
                 key: ONEPROVIDER_CONFIG
         volumeMounts:
-          {{- if .Values.sources }}
-          - mountPath: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}
-            name: deployment-dir
-            {{- range $.Values.sources }}
-              {{- if .hostPath }}
-            # Mount sources. Again for all pods (nodes) all sources will be mounted.
-          - mountPath: {{ $.Values.hostPathPrefix }}/{{ .hostPath }}
-            name: {{ .name }}
-            # Mount data dir. It will be filled with data from scenario_runner
-          - mountPath: {{ $.Values.hostPathPrefix }}/{{ .hostPath }}/_build/default/rel
-            name: sources-{{ .name }}
-              {{ else }}
-          - mountPath: /tmp/{{ .name }}
-            name: sources-{{ .name }}
-              {{ end }}
-            {{ end }}
-          {{ end }}
+#          {{- if .Values.sources }}
+#          - mountPath: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}
+#            name: deployment-dir
+#            {{- range $.Values.sources }}
+#              {{- if .hostPath }}
+#            # Mount sources. Again for all pods (nodes) all sources will be mounted.
+#          - mountPath: {{ $.Values.hostPathPrefix }}/{{ .hostPath }}
+#            name: {{ .name }}
+#            # Mount data dir. It will be filled with data from scenario_runner
+#          - mountPath: {{ $.Values.hostPathPrefix }}/{{ .hostPath }}/_build/default/rel
+#            name: sources-{{ .name }}
+#              {{ else }}
+#          - mountPath: /tmp/{{ .name }}
+#            name: sources-{{ .name }}
+#              {{ end }}
+#            {{ end }}
+#          {{ end }}
           - name: config-map
             mountPath: /etc/op_panel/overlay.config
             subPath: panel-overlay.config
@@ -296,28 +297,28 @@ spec:
         {{- end }}
       {{- end }}
       volumes:
-      {{- if .Values.sources }}
-      - name: deployment-dir
-        hostPath:
-          path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}
-      # Sources. For each pod (node) all sources will be the mounted.
-        {{- range $.Values.sources }}
-        {{- if .hostPath }}
-      - name: {{ .name }}
-        hostPath:
-          path: {{ $.Values.vmPathPrefix }}/{{ .hostPath }}
-      # Random directory for each source. It is needed to store data. Each pod (node)
-      # will have different random directories.
-        {{- end }}
-      - name: sources-{{ .name }}
-        hostPath:
-          {{ if eq $.Values.suffix "" }}
-          path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider/{{ .name }}
-          {{ else }}
-          path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider-{{- $.Values.suffix -}}/{{ .name }}
-          {{ end }}
-        {{- end }}
-      {{- end }}
+#      {{- if .Values.sources }}
+#      - name: deployment-dir
+#        hostPath:
+#          path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}
+#      # Sources. For each pod (node) all sources will be the mounted.
+#        {{- range $.Values.sources }}
+#        {{- if .hostPath }}
+#      - name: {{ .name }}
+#        hostPath:
+#          path: {{ $.Values.vmPathPrefix }}/{{ .hostPath }}
+#      # Random directory for each source. It is needed to store data. Each pod (node)
+#      # will have different random directories.
+#        {{- end }}
+#      - name: sources-{{ .name }}
+#        hostPath:
+#          {{ if eq $.Values.suffix "" }}
+#          path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider/{{ .name }}
+#          {{ else }}
+#          path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider-{{- $.Values.suffix -}}/{{ .name }}
+#          {{ end }}
+#        {{- end }}
+#      {{- end }}
       - name: config-map
         configMap:
           name: {{ template "fullname" . }}-config
