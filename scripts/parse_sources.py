@@ -79,9 +79,14 @@ def copy_data_dirs(deployment_data, hostname, service_name, node_name,
         rel_dir = '{}-{}-{}-rel'.format(service_name, node_name, source)
         rel_dir = os.path.join(args.deployment_dir, service_name, rel_dir)
 
-        dest_path = os.path.join(args.deployment_dir, service_name,
-                                 '{}-{}'.format(source, node_name),
-                                 source.replace('-', '_'))
+        dest_path = os.path.join(source_path,
+                                 '_build/default/rel/{}'.format(source.replace('-', '_')))
+        shutil.rmtree(dest_path)
+
+        #
+        # dest_path = os.path.join(args.deployment_dir, service_name,
+        #                          '{}-{}'.format(source, node_name),
+        #                          source.replace('-', '_'))
 
         print("DEBUG:")
         print(os.listdir(os.path.join(args.deployment_dir, service_name,
