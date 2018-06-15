@@ -4,7 +4,7 @@ dependencies:
   enabled: false
   import-values: null
   name: onedata-chart-utils
-  repository: https://onedata.github.io/charts/
+  repository: file://../../charts/onedata-1p
   tags: null
   version: 0.2.9
 - alias: ""
@@ -12,7 +12,7 @@ dependencies:
   enabled: false
   import-values: null
   name: onedata-3p
-  repository: https://onedata.github.io/charts/
+  repository: file://../../charts/onedata-1p
   tags: null
   version: 0.2.4
 digest: sha256:a3685d9c77065c41e3244e0933f7929e36d7adbc543ad9e9a28bb40e424c776e
