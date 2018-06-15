@@ -41,4 +41,4 @@ spec:
           - "sh"
           - "-c"
           - >
-            echo 'all ok, exiting' ;
+            echo 'all ok, exiting' ;  

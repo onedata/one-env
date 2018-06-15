@@ -19,54 +19,59 @@ spec:
         heritage: "{{ .Release.Service }}"
       annotations:
         version: "{{ .Chart.Version }}"
+        pod.beta.kubernetes.io/init-containers: '[
+            {
+                "name": "wait-for-onezone",
+                "image": "{{ .Values.wait_for.image }}",
+                "imagePullPolicy": "{{ default .Values.wait_for.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}",
+{{ include "imagePullSecrets_json" . | indent 16 }}
+                "args": [
+                    "pod", "-lapp={{ template "onezone_name" . }}"
+                ]
+            },
+            {
+                "name": "get-client-token",
+                "image": "{{ .Values.onedata_cli.image }}",
+                "imagePullPolicy": "{{ default .Values.onedata_cli.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}",
+{{ include "imagePullSecrets_json" . | indent 16 }}
+                "env": [
+                    {
+                        "name": "ONEZONE_HOST",
+                        "value": "https://{{ template "onezone_name" . }}"
+                    },
+                    {
+                        "name": "ONEZONE_BASIC_AUTH",
+                        "value": "admin:password"
+                    }
+                ],
+                "command": [
+                    "sh", "-c",
+                    "curl -k -u $ONEZONE_BASIC_AUTH -X POST -d \"\" -H \"content-type: application/json\" $ONEZONE_HOST/api/v3/onezone/user/client_tokens | jq -r \".token\" > /shared/token  ;"
+                ],
+                "volumeMounts": [
+                    {
+                        "mountPath": "/shared/",
+                        "name": "shared"
+                    }
+                ]
+            },
+            {
+                "name": "wait-for-oneprovider",
+                "image": "{{ .Values.wait_for.image }}",
+                "imagePullPolicy": "{{ default .Values.wait_for.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}",
+{{ include "imagePullSecrets_json" . | indent 16 }}
+                "args": [
+                    "pod", "-lapp={{ template "oneprovider_name" . }}"
+                ]
+            }
+        ]'
     spec:
       hostname: {{ .Chart.Name }}
       subdomain: {{ template "fullname" . }}
-    {{- if .Values.affinity }}
-      affinity:
-{{ toYaml .Values.affinity | indent 8 }}
-      {{- end }}
-    {{- if .Values.tolerations }}
-      tolerations:
-{{ toYaml .Values.tolerations | indent 8 }}
-      {{- end }}
-    {{- if .Values.nodeSelector }}
-      nodeSelector:
-{{ toYaml .Values.nodeSelector | indent 8 }}
-      {{- end }}
 {{ include "imagePullSecrets" . | indent 6 }}
       volumes:
       - name: shared
         emptyDir: {}
-      initContainers:
-        - name: wait-for-onezone
-          image: {{ .Values.wait_for.image }}
-          imagePullPolicy: {{ default .Values.wait_for.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
-          args:
-            - "job"
-            - "{{ template "onezone_name" . }}-ready-check"
-        - name: get-client-token
-          image: {{ .Values.onedata_cli.image }}
-          imagePullPolicy: {{ default .Values.wait_for.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
-          env:
-            - name: ONEZONE_HOST
-              value: https://{{ template "onezone_name" . }}
-            - name: ONEZONE_BASIC_AUTH
-              value: admin:password
-          command:
-            - "sh"
-            - "-c"
-            - >
-              curl -k -u $ONEZONE_BASIC_AUTH -X POST -d "" -H "content-type: application/json" $ONEZONE_HOST/api/v3/onezone/user/client_tokens | jq -r ".token" > /shared/token
-          volumeMounts:
-          - mountPath: /shared
-            name: shared
-        - name: wait-for-oneprovider
-          image: {{ .Values.wait_for.image }}
-          imagePullPolicy: {{ default .Values.wait_for.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
-          args:
-            - "job"
-            - "{{ template "oneprovider_name" . }}-ready-check"
       containers:
       - name: {{ .Chart.Name }}
         image: {{ .Values.image }}

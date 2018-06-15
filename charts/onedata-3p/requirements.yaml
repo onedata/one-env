@@ -1,19 +1,19 @@
 dependencies:
 - name: onezone
-  version: 0.2.12
-  repository: file://../../charts/onezone
+  version: 0.2.8
+  repository: https://onedata.github.io/charts/
 
 - name: oneprovider
   alias: oneprovider-krakow
-  version: 0.2.12
-  repository: file://../../charts/oneprovider
+  version: 0.2.8
+  repository: https://onedata.github.io/charts/
 
 - name: oneprovider
   alias: oneprovider-paris
-  version: 0.2.12
-  repository: file://../../charts/oneprovider
+  version: 0.2.8
+  repository: https://onedata.github.io/charts/
 
 - name: oneprovider
   alias: oneprovider-lisbon
-  version: 0.2.12
-  repository: file://../../charts/oneprovider
+  version: 0.2.8
+  repository: https://onedata.github.io/charts/

@@ -97,12 +97,12 @@ onezone:
   onezone_nodes_count: 1
   generate-certificates: 
     enabled: false
-  cluster_config:
+  clusterConfig:
     managers: [ ]
     workers: [ ]
     databases: [ ]
   saml-idp:
-    enabled: &idp_enabled true
+    enabled: &idp_enabled false
     generate-certificates: 
       enabled: true
 
@@ -120,7 +120,7 @@ oneprovider-krakow:
   nameOverride: oneprovider
 
   oneprovider_nodes_count: *oneproviders_nodes_count
-  cluster_config: *oneprovider_cluster_configs
+  clusterConfig: *oneprovider_cluster_configs
 
   onezone_service_url:
     type: auto-generate
@@ -166,4 +166,66 @@ oneprovider-krakow:
   volume-swift:
     enabled: *swift_enabled
     suffix: *op1s
+    luma-enabled: *luma_enabled_swift
+
+# What follows are the providers configurations for providers designated as:
+# paris
+oneprovider-paris:
+  suffix: &op2s paris
+  geoLatitude: 48.8566
+  geoLongitude: 2.3522
+
+  image: *op_image
+  onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
+  onedata_anti_affinity_enabled: *onedata_anti_affinity_enabled
+  log_level: *log_level
+  nameOverride: oneprovider
+
+  oneprovider_nodes_count: *oneproviders_nodes_count
+  clusterConfig: *oneprovider_cluster_configs
+
+  onezone_service_url:
+    type: auto-generate
+    disableSuffix: true
+
+  generate-certificates:
+    enabled: *oneproviders_generate_certificates
+
+  luma:
+    suffix: *op2s
+    << : *luma_global
+
+  oneclient:
+    image: *oc_image
+    debug_mode: *oneclients_debug_mode_enabled
+    enabled: *oneclients_enabled
+    suffix: *op2s
+    onedata_cli:
+      image: *cli_image
+  onedata-cli:
+    image: *cli_image
+    enabled: *onedata_cli_enabled
+    suffix: *op2s
+  posix:
+    enabled: *posix_enabled
+    luma-enabled: *luma_enabled_posix
+  volume-s3:
+    enabled: *s3_enabled
+    suffix: *op2s
+    luma-enabled: *luma_enabled_s3
+  volume-ceph:
+    enabled: *ceph_enabled
+    suffix: *op2s
+    luma-enabled: *luma_enabled_ceph
+  volume-nfs:
+    enabled: *nfs_enabled
+    suffix: *op2s
+    luma-enabled: *luma_enabled_nfs
+  volume-gluster:
+    enabled: *gluster_enabled
+    suffix: *op2s
+    luma-enabled: *luma_enabled_gluster
+  volume-swift:
+    enabled: *swift_enabled
+    suffix: *op2s
     luma-enabled: *luma_enabled_swift

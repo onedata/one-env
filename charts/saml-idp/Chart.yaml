@@ -1,5 +1,5 @@
 name: saml-idp
-version: 0.2.2
+version: 0.2.1
 description: Chart with a plug and play SAML 2.0 IdP for development and testing.
 keywords:
   - idp

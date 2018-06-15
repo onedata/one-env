@@ -1,9 +1,19 @@
 dependencies:
-- name: onedata-chart-utils
+- alias: ""
+  condition: ""
+  enabled: false
+  import-values: null
+  name: onedata-chart-utils
   repository: https://onedata.github.io/charts/
+  tags: null
   version: 0.2.9
-- name: saml-idp
+- alias: ""
+  condition: ""
+  enabled: false
+  import-values: null
+  name: saml-idp
   repository: https://onedata.github.io/charts/
-  version: 0.2.2
-digest: sha256:8cab1c5472f51ad6e332e4869334d7fbe856c68e9f53bbfbeda268f348aa7aa6
-generated: 2018-02-27T10:00:46.681594661+01:00
+  tags: null
+  version: 0.2.1
+digest: sha256:4320efabb6c4e97569db158ea8d03e4a35dee65760de18c700891c97bece9647
+generated: 2017-08-03T00:14:10.514698351+02:00

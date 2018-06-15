@@ -26,9 +26,8 @@ spec:
     spec:
       subdomain: {{ template "fullname" . }}
       terminationGracePeriodSeconds: 0
-      {{- if or .Values.affinity .Values.onedata_anti_affinity_enabled }}
-      affinity:
       {{- if .Values.onedata_anti_affinity_enabled }}
+      affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
           - labelSelector:
@@ -43,18 +42,6 @@ spec:
                 values:
                 - {{ .Release.Name }}
             topologyKey: kubernetes.io/hostname
-      {{- end }}
-      {{- if .Values.affinity }}
-{{ toYaml .Values.affinity | indent 8 }}
-      {{- end }}
-      {{- end }}
-      {{- if .Values.tolerations }}
-      tolerations:
-{{ toYaml .Values.tolerations | indent 8 }}
-      {{- end }}
-      {{- if .Values.nodeSelector }}
-      nodeSelector:
-{{ toYaml .Values.nodeSelector | indent 8 }}
       {{- end }}
 {{ include "imagePullSecrets" . | indent 6 }}
       {{- if or (eq (int .Values.oneprovider_nodes_count) 1) (or (index .Values "volume-s3" "enabled")) (or (index .Values "volume-ceph" "enabled") (or (index .Values "volume-gluster" "enabled") (or (index .Values "volume-swift" "enabled") (index .Values "generate-certificates" "enabled")))) }}
@@ -150,16 +137,11 @@ spec:
           - "/bin/bash"
           - "-c"
           - >
-            while [ ! -f /tmp/sources_mounted ] ; do sleep 2 ; done ;
             echo {{ template "fullname" . }}-{{ sub (.Values.oneprovider_nodes_count) 1 }} ;
             if [[ "$HOSTNAME" != {{ template "fullname" . }}-{{ sub (.Values.oneprovider_nodes_count) 1 }} ]]; then export ONEPANEL_BATCH_MODE="false" ; fi ;
             env ;
-            {{- if .Values.sources }}
-            python {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/parse_sources.py  {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }} ;
-            if [[ -f onepanel_override ]]; then export ONEPANEL_OVERRIDE=$(cat onepanel_override) ; fi ;
-            {{ end }}
             /root/oneprovider.sh ;
-            cat /var/log/op_panel/info.log ;
+            cat /var/log/op_panel/info.log ;  
             exit 1 ;
         lifecycle:
           preStop:
@@ -182,81 +164,189 @@ spec:
                 onepanel_ready() { sleep 5 ; exit 0 ; } ;
                 if [[ "$HOSTNAME" == {{ template "fullname" . }}-{{ sub (.Values.oneprovider_nodes_count) 1 }} ]]; then exit 0 ; else onepanel_ready ; fi ;
         env:
-          - name: SERVICE_NAME
-            {{ if .Values.name }}
-            value: {{ .Values.name }}
-            {{- else -}}
-            value: {{ template "fullname" $ }}
-            {{- end }}
-          - name: POD_IP
-            valueFrom:
-              fieldRef:
-                fieldPath: status.podIP
-          - name: SERVICE_DOMAIN
-            value: {{ template "service_url" $ }}
           - name: ONEPANEL_LOG_LEVEL
-            value: {{ default "info" .Values.log_level | quote }}
-          - name: ONEPANEL_GENERATE_TEST_WEB_CERT
-            value: {{ default "false" .Values.onepanel_generate_test_web_cert | quote  }}
-          {{ if .Values.generate_cert_domain }}
-          - name: ONEPANEL_GENERATED_CERT_DOMAIN
-            value: "{{ template "service_url" $ }}"
-          {{ else }}
-          - name: ONEPANEL_GENERATED_CERT_DOMAIN
-            value: {{ default "" .Values.onepanel_generated_cert_domain | quote }}
-          {{ end }}
-          - name: ONEPANEL_TRUST_TEST_CA
-            value: {{ default "false" .Values.onepanel_trust_test_ca | quote }}
+            value: {{ default .Values.log_level "info" | quote }}
           - name: ONEPANEL_BATCH_MODE
             value: {{ .Values.onepanel_batch_mode_enabled | quote }}
           - name: ONEPROVIDER_CONFIG
-            valueFrom:
-              configMapKeyRef:
-                name: {{ template "fullname" . }}-config
-                key: ONEPROVIDER_CONFIG
+            value: |
+              cluster:
+                domainName: "{{ template "service_url" . }}"
+                nodes:
+                  {{- $r := . -}}
+                  {{- range $i := until (int (.Values.oneprovider_nodes_count)) }}
+                  n{{ $i }}: 
+                    hostname: {{ template "fullname" $r }}-{{ $i }}
+                  {{- end }}
+                managers:
+                  mainNode: n{{ sub (.Values.oneprovider_nodes_count) 1 }} 
+                  nodes:
+              {{- with .Values.cluster_config.managers }}
+                  {{- range $i := . }}
+                    - n{{ $i }}
+                  {{- end }}
+              {{- else }}
+                  {{- range $i := until (int ($r.Values.oneprovider_nodes_count)) }}
+                    - n{{ $i }}
+                  {{- end }}
+              {{- end }}
+                workers:
+                  nodes:
+              {{- with .Values.cluster_config.workers }}
+                  {{- range $i := . }}
+                    - n{{ $i }}
+                  {{- end }}
+              {{- else }}
+                  {{- range $i := until (int ($r.Values.oneprovider_nodes_count)) }}
+                    - n{{ $i }}
+                  {{- end }}
+              {{- end }}
+                databases:
+                  nodes:
+              {{- with .Values.cluster_config.databases }}
+                  {{- range $i := . }}
+                    - n{{ $i }}
+                  {{- end }}
+              {{- else }}
+                  {{- range $i := until (int ($r.Values.oneprovider_nodes_count)) }}
+                    - n{{ $i }}
+                  {{- end }}
+              {{- end }}
+                {{- if or (eq (int .Values.oneprovider_nodes_count) 1) (or (index .Values "volume-s3" "enabled")) (or (index .Values "volume-ceph" "enabled") (or (index .Values "volume-gluster" "enabled") (index .Values "volume-swift" "enabled"))) }}
+                storages:
+                {{- end }}
+                {{- if and (index .Values "posix" "enabled") (eq (int .Values.oneprovider_nodes_count) 1) }}
+                  posix:
+                    type: posix
+                    mountPoint: /volumes/storage
+                  {{- if (index .Values "posix" "luma-enabled") }}
+                    lumaEnabled: {{ .Values.luma.enabled }}
+                    lumaUrl: {{ template "luma_name" . }}:5000
+                    lumaCacheTimeout: {{ .Values.luma.lumaCacheTimeout }}
+                    lumaApiKey: {{ .Values.luma.lumaApiKey }}
+                  {{- end }}
+                {{- end }}
+                {{- if (index .Values "volume-nfs" "enabled") }}
+                  nfs:
+                    type: posix
+                    mountPoint: {{ index .Values "volume-nfs" "container_mount_path" }}
+                  {{- if (index .Values "volume-nfs" "luma-enabled") }}
+                    lumaEnabled: {{ .Values.luma.enabled }}
+                    lumaUrl: {{ template "luma_name" . }}:5000
+                    lumaCacheTimeout: {{ .Values.luma.lumaCacheTimeout }}
+                    lumaApiKey: {{ .Values.luma.lumaApiKey }}
+                  {{- end }}
+                {{- end }}
+                {{- if (index .Values "volume-s3" "enabled") }}
+                  s3:
+                    type: s3
+                    hostname: {{ template "volume-s3_name" . }}:8000
+                    bucketName: {{ index .Values "volume-s3" "bucketName" }}
+                    accessKey: {{ index .Values "volume-s3" "key_id" }}
+                    secretKey: {{ index .Values "volume-s3" "access_key" }}
+                    insecure: {{ index .Values "volume-s3" "insecure" }}
+                  {{- if (index .Values "volume-s3" "luma-enabled") }}
+                    lumaEnabled: {{ .Values.luma.enabled }}
+                    lumaUrl: {{ template "luma_name" . }}:5000
+                    lumaCacheTimeout: {{ .Values.luma.lumaCacheTimeout }}
+                    lumaApiKey: {{ .Values.luma.lumaApiKey }}
+                  {{- end }}
+                {{- end }}
+                {{- if (index .Values "volume-ceph" "enabled") }}
+                  ceph:
+                    type: ceph
+                    username: {{ index .Values "volume-ceph" "username" }}
+                    key: {{ index .Values "volume-ceph" "key" }}
+                    monitorHostname: {{ template "volume-ceph_name" . }}
+                    clusterName: {{ index .Values "volume-ceph" "cluster_name" }}
+                    poolName: {{ index .Values "volume-ceph" "pool_name" }}
+                    insecure: {{ index .Values "volume-ceph" "insecure" }}
+                  {{- if (index .Values "volume-ceph" "luma-enabled") }}
+                    lumaEnabled: {{ .Values.luma.enabled }}
+                    lumaUrl: {{ template "luma_name" . }}:5000
+                    lumaCacheTimeout: {{ .Values.luma.lumaCacheTimeout }}
+                    lumaApiKey: {{ .Values.luma.lumaApiKey }}
+                  {{- end }}
+                {{- end }}
+                {{- if (index .Values "volume-gluster" "enabled") }}
+                  gluster:
+                    type: glusterfs
+                    hostname: {{ template "volume-gluster_name" . }}
+                    volume: {{ index .Values "volume-gluster" "volumeName" }}
+                    transport: tcp
+                    insecure: {{ index .Values "volume-gluster" "insecure" }}
+                  {{- if (index .Values "volume-gluster" "luma-enabled") }}
+                    lumaEnabled: {{ .Values.luma.enabled }}
+                    lumaUrl: {{ template "luma_name" . }}:5000
+                    lumaCacheTimeout: {{ .Values.luma.lumaCacheTimeout }}
+                    lumaApiKey: {{ .Values.luma.lumaApiKey }}
+                  {{- end }}
+                {{- end }}
+                {{- if (index .Values "volume-swift" "enabled") }}
+                  swift:
+                    type: swift
+                    authUrl: http://{{ template "volume-swift_name" . }}:5000/v2.0/tokens
+                    tenantName: {{ index .Values "volume-swift" "tenantName" }}
+                    containerName: {{ index .Values "volume-swift" "containerName" }}
+                    username: {{ index .Values "volume-swift" "username" }}
+                    password: {{ index .Values "volume-swift" "password" }}
+                    insecure: {{ index .Values "volume-swift" "insecure" }}
+                  {{- if (index .Values "volume-swift" "luma-enabled") }}
+                    lumaEnabled: {{ .Values.luma.enabled }}
+                    lumaUrl: {{ template "luma_name" . }}:5000
+                    lumaCacheTimeout: {{ .Values.luma.lumaCacheTimeout }}
+                    lumaApiKey: {{ .Values.luma.lumaApiKey }}
+                  {{- end }}
+                {{- end }}
+              oneprovider:
+                register: true
+                {{ if .Values.name -}}
+                name: {{ .Values.name }}
+                {{- else -}}
+                name: {{ template "fullname" . }}
+                {{- end }}
+                redirectionPoint: https://{{ template "service_url" . }}
+                geoLatitude: {{ .Values.geoLatitude }}
+                geoLongitude: {{ .Values.geoLongitude }}
+              # TODO: make it possible for onedata services to communicate using 
+              # system configured DNS. this will allow to put here just service name
+              # instead of FQDN
+              onezone:
+                domainName: {{ template "onezone_service_url" . }}
+              {{- if or .Values.onepanel_admin_users .Values.onepanel_users }}
+              onepanel:
+                users:
+                  {{- range .Values.onepanel_admin_users }}
+                  {{ .login }}:
+                    password: {{ .password }}
+                    userRole: admin
+                  {{- end }}
+                  {{- range .Values.onepanel_users }}
+                  {{ .login }}:
+                    password: {{ .password }}
+                    userRole: regular
+                  {{- end }}
+              {{- end }}
+      {{- if or (index .Values "generate-certificates" "enabled") (index .Values "volume-nfs" "enabled") }}
         volumeMounts:
-#          {{- if .Values.sources }}
-#          - mountPath: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}
-#            name: deployment-dir
-#            {{- range $.Values.sources }}
-#              {{- if .hostPath }}
-#            # Mount sources. Again for all pods (nodes) all sources will be mounted.
-#          - mountPath: {{ $.Values.hostPathPrefix }}/{{ .hostPath }}
-#            name: {{ .name }}
-#            # Mount data dir. It will be filled with data from scenario_runner
-#          - mountPath: {{ $.Values.hostPathPrefix }}/{{ .hostPath }}/_build/default/rel
-#            name: sources-{{ .name }}
-#              {{ else }}
-#          - mountPath: /tmp/{{ .name }}
-#            name: sources-{{ .name }}
-#              {{ end }}
-#            {{ end }}
-#          {{ end }}
-          - name: config-map
-            mountPath: /etc/op_panel/overlay.config
-            subPath: panel-overlay.config
-          - name: config-map
-            mountPath: /etc/op_worker/overlay.config
-            subPath:  worker-overlay.config
+      {{- end }}
       {{- if (index .Values "generate-certificates" "enabled") }}
-          - mountPath: /etc/op_panel/certs/web_key.pem
+          - mountPath: /etc/op_panel/certs/key.pem
             subPath: tls.key
             name: tls
             readOnly: true
-          - mountPath: /etc/op_panel/certs/web_cert.pem
+          - mountPath: /etc/op_panel/certs/cert.pem
             subPath: tls.crt
             name: tls
             readOnly: true
-          - mountPath: /etc/op_panel/certs/web_chain.pem
+          - mountPath: /etc/op_panel/cacerts/cacert.pem
             subPath: k8s.crt
             name: tls
             readOnly: true
-          # Make onepanel trust k8s cert
-          - mountPath: /etc/op_panel/cacerts/kubernetes.crt
+          - mountPath: /etc/op_worker/cacerts/cacert.pem
             subPath: k8s.crt
             name: tls
             readOnly: true
-          # Make system trust k8s cert
           - mountPath: /etc/ssl/certs/kubernetes.crt
             subPath: k8s.crt
             name: tls
@@ -266,62 +356,9 @@ spec:
           - mountPath: {{ index .Values "volume-nfs" "container_mount_path" }}
             name: nfs
       {{- end }}
-      {{- if and (index .Values "volume-data-sync" "enabled") (eq (int .Values.oneprovider_nodes_count) 1) }}
-        {{- range $key, $val := (omit (index .Values "volume-data-sync") "enabled") }}
-          - mountPath: /volumes/{{ $key }}:shared
-            name: {{ $key }}
-        {{- end }}
-      {{- end }}
-      {{- if and (index .Values "volume-data-sync" "enabled") (eq (int .Values.oneprovider_nodes_count) 1) }}
-        {{- range $key, $val := (omit (index .Values "volume-data-sync") "enabled") }}
-      - name: {{ $key }}
-        image: {{ $val.image }}
-        imagePullPolicy: {{ default $val.imagePullPolicy $.Values.global.imagePullPolicy | default "IfNotPresent" }}
-        command:
-          - "/bin/sh"
-          - "-c"
-          - >
-            mount -o bind {{ $val.dataPath }} /{{ $key }} ;
-            {{- if $val.readOnly }}
-            mount -o remount,ro /{{ $key }} ;
-            {{- end }}
-            sleep 3600000 ;
-        volumeMounts:
-          - mountPath: /{{ $key }}:shared
-            name: {{ $key }}
-        securityContext:
-          privileged: true
-          capabilities:
-            add:
-              - SYS_ADMIN
-        {{- end }}
-      {{- end }}
+    {{- if or (index .Values "generate-certificates" "enabled") (index .Values "volume-nfs" "enabled") }}
       volumes:
-#      {{- if .Values.sources }}
-#      - name: deployment-dir
-#        hostPath:
-#          path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}
-#      # Sources. For each pod (node) all sources will be the mounted.
-#        {{- range $.Values.sources }}
-#        {{- if .hostPath }}
-#      - name: {{ .name }}
-#        hostPath:
-#          path: {{ $.Values.vmPathPrefix }}/{{ .hostPath }}
-#      # Random directory for each source. It is needed to store data. Each pod (node)
-#      # will have different random directories.
-#        {{- end }}
-#      - name: sources-{{ .name }}
-#        hostPath:
-#          {{ if eq $.Values.suffix "" }}
-#          path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider/{{ .name }}
-#          {{ else }}
-#          path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider-{{- $.Values.suffix -}}/{{ .name }}
-#          {{ end }}
-#        {{- end }}
-#      {{- end }}
-      - name: config-map
-        configMap:
-          name: {{ template "fullname" . }}-config
+    {{- end }}
     {{- if (index .Values "generate-certificates" "enabled") }}
       - name: tls
         secret:
@@ -331,10 +368,4 @@ spec:
       - name: nfs
         persistentVolumeClaim:
           claimName: {{ template "fullname" . }}-nfs-pvc
-    {{- end }}
-      {{- if and (index .Values "volume-data-sync" "enabled") (eq (int .Values.oneprovider_nodes_count) 1) }}
-        {{- range $key, $val := (omit (index .Values "volume-data-sync") "enabled") }}
-      - name: {{ $key }}
-        emptyDir: {}
-      {{- end }}
     {{- end }}

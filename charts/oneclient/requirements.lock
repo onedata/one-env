@@ -1,6 +1,11 @@
 dependencies:
-- name: onedata-chart-utils
-  repository: file://../onedata-chart-utils
+- alias: ""
+  condition: ""
+  enabled: false
+  import-values: null
+  name: onedata-chart-utils
+  repository: https://onedata.github.io/charts/
+  tags: null
   version: 0.2.9
-digest: sha256:9c36b42242e7ea127e14fdeb896638be1405ca222f7bbfd33ce0712faa0033d8
-generated: 2018-02-15T13:52:05.113985+01:00
+digest: sha256:ab680b451fe54d63ca4ba093407cc44e7acb0d48852b7730789bc0e2f1322868
+generated: 2017-08-03T00:14:11.866200568+02:00

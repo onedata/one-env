@@ -1,6 +1,6 @@
-name: onedata-3p
-version: 0.2.4
-description: Complex Onedata deployment with one Onezone, three Oneproviders and S3, CEPH, NFS, POSIX backends.
+name: onedata-2p
+version: 0.2.6
+description: Complex Onedata deployment with one Onezone, one Oneprovider and S3, CEPH, NFS, POSIX backends.
 keywords:
   - onedata
   - onedata-meta-chart

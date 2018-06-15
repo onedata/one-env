@@ -20,11 +20,6 @@ oneprovider_cluster_configs: &oneprovider_cluster_configs
   workers: [ ]
   databases: [ ]
 
-oneprovidersPanelOverlayConfig: &oneprovidersPanelOverlayConfig |-
-  [].
-oneprovidersWorkerOverlayConfig: &oneprovidersPanelOverlayConfig |-
-  [].
-  
 oneclients_enabled: &oneclients_enabled true
 onedata_cli_enabled: &onedata_cli_enabled true
 
@@ -36,8 +31,6 @@ ceph_enabled: &ceph_enabled false
 nfs_enabled: &nfs_enabled false
 gluster_enabled: &gluster_enabled false
 swift_enabled: &swift_enabled false
-
-volume_data_sync_enabled: &volume_data_sync_enabled false
 
 # Those variables are the unfortunate necessity of an issue discussed here:
 # https://github.com/kubernetes/helm/issues/2479
@@ -59,8 +52,6 @@ volume-gluster:
   enabled: *gluster_enabled
 volume-swift:
   enabled: *swift_enabled
-volume-data-sync:
-  enabled: *volume_data_sync_enabled
 
 # Global luma configuration shared among providers
 luma: &luma_global
@@ -114,11 +105,6 @@ onezone:
     enabled: &idp_enabled true
     generate-certificates: 
       enabled: true
-  panelOverlayConfig: |-
-    [].
-  workerOverlayConfig: |-
-    [].
-
 # What follows are the providers configurations for providers designated as:
 # krakow, paris, and lisbon
 oneprovider-krakow:
@@ -135,9 +121,6 @@ oneprovider-krakow:
   oneprovider_nodes_count: *oneproviders_nodes_count
   cluster_config: *oneprovider_cluster_configs
 
-  panelOverlayConfig: *oneprovidersPanelOverlayConfig
-  workerOverlayConfig: *oneprovidersPanelOverlayConfig
-
   onezone_service_url:
     type: auto-generate
     disableSuffix: true
@@ -148,9 +131,6 @@ oneprovider-krakow:
   luma:
     suffix: *op1s
     << : *luma_global
-
-  volume-data-sync:
-    enabled: *volume_data_sync_enabled
 
   oneclient:
     image: *oc_image
@@ -201,9 +181,6 @@ oneprovider-paris:
   oneprovider_nodes_count: *oneproviders_nodes_count
   cluster_config: *oneprovider_cluster_configs
 
-  panelOverlayConfig: *oneprovidersPanelOverlayConfig
-  workerOverlayConfig: *oneprovidersPanelOverlayConfig
-
   onezone_service_url:
     type: auto-generate
     disableSuffix: true
@@ -215,9 +192,6 @@ oneprovider-paris:
     suffix: *op2s
     << : *luma_global
 
-  volume-data-sync:
-    enabled: *volume_data_sync_enabled
-    
   oneclient:
     image: *oc_image
     debug_mode: *oneclients_debug_mode_enabled
@@ -267,9 +241,6 @@ oneprovider-lisbon:
   oneprovider_nodes_count: *oneproviders_nodes_count
   cluster_config: *oneprovider_cluster_configs
 
-  panelOverlayConfig: *oneprovidersPanelOverlayConfig
-  workerOverlayConfig: *oneprovidersPanelOverlayConfig
-
   onezone_service_url:
     type: auto-generate
     disableSuffix: true
@@ -280,9 +251,6 @@ oneprovider-lisbon:
   luma:
     suffix: *op3s
     << : *luma_global
-
-  volume-data-sync:
-    enabled: *volume_data_sync_enabled
 
   oneclient:
     image: *oc_image
