@@ -110,7 +110,6 @@ onedata-1p:
 
     oneprovider_nodes_count: 1
 
-
     memory: 0.5Gi
     cpu: 0.3
     suffix: &op1s krakow
