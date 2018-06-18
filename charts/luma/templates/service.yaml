@@ -5,7 +5,7 @@ metadata:
   labels:
     app: {{ template "fullname" . }}
     chart: {{ .Chart.Name }}
-    release: {{ .Release.Name }}
+    release: {{ template "releaseName" . }}
     heritage: {{ .Release.Service }}
   annotations:
     version: "{{ .Chart.Version }}"
@@ -13,6 +13,8 @@ spec:
   type: {{ .Values.serviceType }}
   ports:
     - name: luma
-      port: 5000
+      protocol: TCP
+      port: 80
+      targetPort: 8080
   selector:
     app: {{ template "fullname" . }}

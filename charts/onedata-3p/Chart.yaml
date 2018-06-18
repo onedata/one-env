@@ -1,5 +1,5 @@
 name: onedata-3p
-version: 0.2.4
+version: 0.2.9
 description: Complex Onedata deployment with one Onezone, three Oneproviders and S3, CEPH, NFS, POSIX backends.
 keywords:
   - onedata
@@ -11,4 +11,4 @@ maintainers:
   - name: Michal Orzechowski
     email: orzechowski.michal@gmail.com
 engine: gotpl
-appVersion: 17.06.0-beta6
+appVersion: 18.02.0-rc4

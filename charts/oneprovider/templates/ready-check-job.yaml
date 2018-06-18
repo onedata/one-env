@@ -6,7 +6,7 @@ metadata:
   labels:
     app: {{ template "fullname" . }}
     chart: {{ .Chart.Name }}
-    release: {{ .Release.Name }}
+    release: {{ template "releaseName" . }}
     heritage: {{ .Release.Service }}
   annotations:
     version: "{{ .Chart.Version }}"
@@ -16,7 +16,7 @@ spec:
       labels:
         app: {{ template "fullname" . }}
         chart: {{ .Chart.Name }}
-        release: {{ .Release.Name  }}
+        release: {{ template "releaseName" .  }}
         heritage: {{ .Release.Service }}
       annotations:
         version: "{{ .Chart.Version }}"
@@ -26,7 +26,7 @@ spec:
       initContainers:
       - name: wait-for-{{ .Chart.Name }}
         image: byrnedo/alpine-curl
-        imagePullPolicy: {{ default .Values.wait_for.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
+        imagePullPolicy: {{ template "imagePullPolicy" .Values.wait_for }}
         command:
           - "/bin/sh"
           - "-c"
@@ -36,9 +36,9 @@ spec:
       containers:
       - name: oneprovider-ready-check
         image: alpine:3.6
-        imagePullPolicy: {{ default .Values.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
+        imagePullPolicy: {{ template "imagePullPolicy" . }}
         command:
           - "sh"
           - "-c"
           - >
-            echo 'all ok, exiting' ;  
+            echo 'all ok, exiting' ;

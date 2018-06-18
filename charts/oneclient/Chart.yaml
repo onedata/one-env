@@ -1,5 +1,5 @@
 name: oneclient
-version: 0.2.8
+version: 0.2.10
 description: Oneclient is the Onedata command line interface for mounting distributed virtual filesystem on local machines
 keywords:
   - onedata
@@ -11,4 +11,4 @@ maintainers:
   - name: Michal Orzechowski
     email: orzechowski.michal@gmail.com
 engine: gotpl
-appVersion: 17.06.0-rc1
+appVersion: 18.02.0-rc2

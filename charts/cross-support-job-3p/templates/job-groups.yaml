@@ -1,0 +1,113 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "fullname" . }}-groups
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}"
+    release: "{{ template "releaseName" . }}"
+    heritage: "{{ .Release.Service }}"
+    job: {{ template "fullname" . }}-groups
+  annotations:
+    version: "{{ .Chart.Version }}"
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      name: "{{ template "releaseName" . }}"
+      labels:
+        app: {{ template "fullname" . }}
+        chart: "{{ .Chart.Name }}"
+        release: "{{ template "releaseName" . }}"
+        heritage: "{{ .Release.Service }}"
+        job: {{ template "fullname" . }}-groups
+      annotations:
+        version: "{{ .Chart.Version }}"
+    spec:
+      {{- if .Values.affinity }}
+      affinity:
+{{ toYaml .Values.affinity | indent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+      {{- end }}
+      initContainers:
+        - name: wait-for-groups
+          image: {{ .Values.wait_for.image }}
+          imagePullPolicy: {{ template "imagePullPolicy" .Values.wait_for }}
+          args:
+            - "job"
+            - "{{ template "fullname" . }}-users"
+{{ include "imagePullSecrets" . | indent 6 }}
+      restartPolicy: Never
+      containers:
+      - name: {{ .Chart.Name }}
+        image: {{ .Values.image }}
+        imagePullPolicy: {{ template "imagePullPolicy" . }}
+
+        env:
+          - name: ONEZONE_HOST
+            value: "https://{{ template "onezone_name" . }}"
+          - name: ONEZONE_API_KEY
+            value: "supplied_at_runtime"
+          - name: ONEPANEL_BASIC_AUTH
+            value: "{{ template "admin_username_template" . }}:{{ template "admin_password_template" . }}"
+          - name: ONEPROVIDER_HOST
+            value: "https://{{ template "oneprovider_name" . }}"
+          - name: ONEPANEL_HOST
+            value: "https://{{ template "onezone_name" . }}:9443"
+          - name: TERM # otherwise zsh and bash autocompletion used in this container tends to go crazy
+            value: "xterm-256color"
+        command:
+          - "bash"
+          - "-c"
+          - >
+            set -e;
+            echo "-k" > ~/.curlrc ; echo "-f" >> ~/.curlrc ;
+            echo "Getting token:" ;
+            export ONEZONE_API_KEY="$(curl --silent -k -u $ONEPANEL_BASIC_AUTH -X POST -d '' -H 'content-type: application/json' $ONEZONE_HOST/api/v3/onezone/user/client_tokens)" ;
+            echo "Curl output:" ;
+            echo "$ONEZONE_API_KEY" ;
+            export ONEZONE_API_KEY="$(echo "$ONEZONE_API_KEY" | jq -r .token)" ;
+            echo "ONEZONE_HOST=$ONEZONE_HOST" ;
+            echo "ONEPANEL_BASIC_AUTH=$ONEPANEL_BASIC_AUTH" ;
+            echo "ONEZONE_API_KEY=$ONEZONE_API_KEY" ;
+          {{- range .Values.groups }}{{ if .idps }}{{ if .idps.onezone }}{{if .idps.onezone.enabled }}
+            printf "Creating group {{ .name }} [response: " ;
+            onezone-rest-cli -w "'%{http_code}'" -u {{ template "admin_username_template" $ }}:{{ template "admin_password_template" $ }} createGroup name=='{{ .name }}'{{- if .type }} type=role{{- end }} ;
+            echo "] Success." ;
+          {{- end }}{{- end }}{{- end }}{{- end }}
+          {{- range $user := .Values.users }}
+            {{- if (hasKey $user.idps "onepanel")}}{{ if ($user.idps.onepanel.enabled) }}
+            idp=onepanel;
+            {{- end }}{{ end }}
+            {{- if (hasKey $user.idps "keycloak")}}{{ if ($user.idps.keycloak.enabled) }}
+            idp=keycloak-{{ template "keycloak_idpName_template" $ }};
+            {{- end -}}{{- end -}}
+            userId=$(curl --silent -k -u {{ $user.name }}:{{ $user.password }} http://{{ template "token-dispenser_name" $ }}/api/v1.0/onezone/uid/$idp) ;
+            {{- $parent := . -}}
+            {{- range .groups }}
+            groupId=$(onezone-rest-cli -u {{ template "admin_username_template" $ }}:{{ template "admin_password_template" $ }} getGroup | jq -r '.groups[]' | while read -r group_id ; do onezone-rest-cli -u {{ template "admin_username_template" $ }}:{{ template "admin_password_template" $ }} getGroup id=$group_id ; done | jq -r 'select(.name=="{{ .group.name }}").groupId') ;
+            printf "Adding user {{ $parent.name }}($userId) to group {{ .group.name }}($groupId). [response: " ;
+            onezone-rest-cli -u {{ template "admin_username_template" $ }}:{{ template "admin_password_template" $ }} -w "'%{http_code}'" {{ template "json_quoted_list" dict "name" "privileges" "list" .privileges -}} -H "'Content-type: application/json'" addGroupUser id=$groupId uid=$userId ;
+            echo "]. Success added user {{ $parent.name }}($userId) to group {{ .group.name }}($groupId) with privileges(empty means default): {{ template "json_quoted_list" dict "name" "privileges" "list" .privileges -}}" ;
+            {{- end }}
+          {{- end }}
+          {{- range .Values.groups_graph }}
+            parent_group_id=$(onezone-rest-cli -u {{ template "admin_username_template" $ }}:{{ template "admin_password_template" $ }} getGroup | jq -r '.groups[]' | while read -r a_group_id ; do onezone-rest-cli -u {{ template "admin_username_template" $ }}:{{ template "admin_password_template" $ }} getGroup id=$a_group_id ; done | jq -r 'select(.name=="{{ .parent.name }}").groupId') ;
+            {{- $parent := . -}}
+            {{- range .children }}
+            child_group_id=$(onezone-rest-cli -u {{ template "admin_username_template" $ }}:{{ template "admin_password_template" $ }} getGroup | jq -r '.groups[]' | while read -r a_group_id ; do onezone-rest-cli -u {{ template "admin_username_template" $ }}:{{ template "admin_password_template" $ }} getGroup id=$a_group_id ; done | jq -r 'select(.name=="{{ .name }}").groupId') ;
+            printf "Admin user={{ template "admin_username_template" $ }} joining child group {{ .name }}($child_group_id) to parent group {{ $parent.parent.name }}($parent_group_id) with privileges(empty means default): {{ template "json_quoted_list" dict "name" "privileges" "list" $parent.privileges -}}. [response: " ;
+            onezone-rest-cli -u {{ template "admin_username_template" $ }}:{{ template "admin_password_template" $ }} -w "'%{http_code}'" -u {{ template "admin_username_template" $ }}:{{ template "admin_password_template" $ }} {{ template "json_quoted_list" dict "name" "privileges" "list" $parent.privileges -}} -H "'Content-type: application/json'" addChildGroup id=$parent_group_id cid=$child_group_id ;
+            echo "]. Success." ;
+            {{- end }}
+          {{- end }}
+
+

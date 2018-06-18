@@ -1,0 +1,125 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "fullname" . }}-supports
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}"
+    release: "{{ template "releaseName" . }}"
+    heritage: "{{ .Release.Service }}"
+    job: {{ template "fullname" . }}-supports
+  annotations:
+    version: "{{ .Chart.Version }}"
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      name: "{{ template "releaseName" . }}"
+      labels:
+        app: {{ template "fullname" . }}
+        chart: "{{ .Chart.Name }}"
+        release: "{{ template "releaseName" . }}"
+        heritage: "{{ .Release.Service }}"
+        job: {{ template "fullname" . }}-supports
+      annotations:
+        version: "{{ .Chart.Version }}"
+    spec:
+      {{- if .Values.affinity }}
+      affinity:
+{{ toYaml .Values.affinity | indent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+      {{- end }}
+      initContainers:
+        - name: wait-for-luma
+          image: {{ .Values.wait_for.image }}
+          imagePullPolicy: {{ template "imagePullPolicy" .Values.wait_for }}
+          args:
+            - "job"
+            - "{{ template "fullname" . }}-luma"
+{{ include "imagePullSecrets" . | indent 6 }}
+      restartPolicy: Never
+      containers:
+      - name: {{ .Chart.Name }}
+        image: {{ .Values.image }}
+        imagePullPolicy: {{ template "imagePullPolicy" . }}
+        env:
+          - name: ONEZONE_HOST
+            value: "https://{{ template "releaseName" . }}-onezone.{{ template "service_namespace_domain" . }}"
+          - name: ONEPANEL_BASIC_AUTH
+            value: "{{ template "admin_username_template" . }}:{{ template "admin_password_template" . }}"
+          - name: ONEZONE_API_KEY
+            value: "supplied_at_runtime"
+        args:
+          - "-c"
+          - >
+            set -e;
+            echo "-k" > ~/.curlrc ; echo "-f" >> ~/.curlrc ;
+            echo "ONEZONE_HOST=$ONEZONE_HOST" ;
+            echo "ONEPANEL_BASIC_AUTH=$ONEPANEL_BASIC_AUTH" ;
+{{- range $space := .Values.spaces }}
+  {{- if (hasKey .user "idps"  )}}
+            {{- if (hasKey .user.idps "onepanel")}}{{ if (.user.idps.onepanel.enabled) }}
+            idp=onepanel;
+            {{- end }}{{ end }}
+            {{- if (hasKey .user.idps "keycloak")}}{{ if (.user.idps.keycloak.enabled) }}
+            idp=keycloak-{{ template "keycloak_idpName_template" $ }};
+            {{- end -}}{{- end -}}
+            echo "Getting token..." ;
+            export ONEZONE_API_KEY=$(curl --silent -k -u {{ .user.name }}:{{ .user.password }} http://{{ template "token-dispenser_name" $ }}/api/v1.0/token/$idp);
+            echo "Got token for idp=$idp user={{ .user.name }}, token=$ONEZONE_API_KEY" ;
+            SPACE_ID=$(onezone-rest-cli getUserSpace | jq -r '.spaces[]' | while read -r a_space_id ; do onezone-rest-cli getSpace id=$a_space_id ; done | jq -r 'select(.name=="{{ $space.name }}").spaceId');
+            echo "Supporting space name={{ $space.name }} id=$SPACE_ID" ;
+            {{- range $space.supports }}
+            export ONEPROVIDER_HOST='https://{{ template "releaseName" $ }}-{{ template "providerName" .provider }}.{{ template "service_namespace_domain" $ }}:8443' ;
+            export ONEPANEL_HOST='https://{{ template "releaseName" $ }}-{{ template "providerName" .provider }}.{{ template "service_namespace_domain" $ }}:9443' ;
+            echo "Support space name={{ $space.name }} id=$SPACE_ID with provider $ONEPROVIDER_HOST" ;
+            export SPACE_TOKEN=$(onezone-rest-cli createSpaceSupportToken id=$SPACE_ID | jq -r '.token') ;
+            echo "Storages avilable on provider=$ONEPROVIDER_HOST" ;
+            onepanel-rest-cli getStorages  | jq -r '.ids[]' | xargs -I{} onepanel-rest-cli getStorageDetails id={} |  jq -rj '.name,":",.id,"\n"'  ;
+            export STORAGE_ID=$(onepanel-rest-cli getStorages | jq -r '.ids[]' | xargs -I{} onepanel-rest-cli getStorageDetails id={} | jq -r 'select(.name=="{{ .storage_name }}").id') ;
+            if [ $STORAGE_ID = "" ]; then echo "ERROR: unable get storage id for storage name={{ .storage_name }} in provider={{ template "providerName" .provider }}" ; exit 1 ; fi ;
+            echo "Supporting  space name={{ $space.name }} id=$SPACE_ID, with with storage name={{ .storage_name }}, on provider=$ONEPROVIDER_HOST, using space support token token=$SPACE_TOKEN." ;
+            storage_support_json=$(cat <<EEOF
+
+            {
+              "token": "$SPACE_TOKEN",
+              "size": {{ .size | quote }},
+              "storageId": "$STORAGE_ID"
+              {{ if .mountInRoot -}} ,"mountInRoot": {{ .mountInRoot | quote }} {{- end }}
+              {{ if .import -}}
+                ,"storageImport": {
+                  {{ if .import.strategy -}} "strategy": {{ .import.strategy | quote }} {{- end }}
+                  {{- if .import.maxDepth -}} ,"maxDepth": {{ .import.maxDepth | quote }} {{- end }}
+                  {{- if .import.syncAcl -}} ,"syncAcl": {{ .import.syncAcl | quote }} {{- end }}
+              }
+              {{- end }}
+              {{- if .update -}}
+                ,"storageUpdate": {
+                  {{ if .update.strategy -}} "strategy": {{ .update.strategy | quote }} {{- end }}
+                  {{- if .update.maxDepth -}} ,"maxDepth": {{ .update.maxDepth | quote }} {{- end }}
+                  {{- if .update.scanInterval -}} ,"scanInterval": {{ .update.scanInterval | quote }} {{- end }}
+                  {{- if .update.writeOnce -}} ,"writeOnce": {{ .update.writeOnce | quote }} {{- end }}
+                  {{- if .update.deleteEnable -}} ,"deleteEnable": {{ .update.deleteEnable | quote }} {{- end }}
+                  {{- if .update.syncAcl -}} ,"syncAcl": {{ .update.syncAcl | quote }} {{- end }}
+              }
+              {{- end }}
+            }
+
+            EEOF
+            
+            ) ;
+            echo "$storage_support_json" ;
+            {{/* see https://github.com/stedolan/jq/issues/1497 for js flags here */}}
+            echo "$storage_support_json" | onepanel-rest-cli supportSpace - | jq --null-input  --exit-status 'inputs' ;
+            echo "return_code=$?" ;
+            {{- end -}}
+  {{- end -}}
+{{- end -}}

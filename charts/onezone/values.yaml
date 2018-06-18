@@ -2,9 +2,17 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-image: onedata/oneprovider:17.06.0-rc1
+image: onedata/onezone:18.02.0-rc4
 imagePullPolicy: IfNotPresent
 serviceType: ClusterIP
+
+onedata_cli:
+  image: onedata/rest-cli:18.02.0-rc2
+  imagePullPolicy: IfNotPresent
+
+wait_for:
+  image: onedata/k8s-wait-for:v1.1
+  imagePullPolicy: IfNotPresent
 
 # onezone name, if empty defaults to a chart name
 name: ''
@@ -18,6 +26,23 @@ log_level: "info"
 
 # Enable loading oneozne configuration from ONEZONE_CONFIG env variable
 onepanel_batch_mode_enabled: true
+
+# If enabled, a new web cert will be generated with CN matching the
+#   ONEPANEL_GENERATED_CERT_DOMAIN and signed by OnedataTestWebServerCa
+# NOTE: The generation will be performed upon every startup, any
+#   existing certs will be backed up and placed in the same directory.
+# WARNING: This functionality is devised for test purposes and must not
+#   be used in production.
+onepanel_generate_test_web_cert: false
+
+# The generated test web cert will be issued for below domain.
+onepanel_generated_cert_domain: "xx"
+
+# If enabled, onepanel will trust any server that has a cert signed by
+#   the OnedataTestWebServerCa.
+# WARNING: This functionality is devised for test purposes and must not
+#   be used in production.
+onepanel_trust_test_ca: false
 
 # Number of nodes (pod replicas) for of this onezone
 # their indexes will be asigned FROM 0 (ZERO!)
@@ -33,25 +58,70 @@ cluster_config:
   workers: [ ]
   databases: [ ]
 
+# Erlang configuration file, which values will overide
+# respected default values in the app.conf of Onepanel
+# The idea is to overite as needed small parts when needed
+# the app.conf evolve on it's own.
+panelOverlayConfig: |-
+  [].
+
+# Same stroy as above, just for worker service.
+workerOverlayConfig: |-
+  [].
+
+# The gneralization of nodeSelector.
+# Allows for moe fine grained controll over which
+# nodes are selected by a kubernetes scheduler
+# https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+affinity: {}
+
+# List of taints which are tolerated by the pods 
+# when nodes are selected by a kubernetes scheduler
+# https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+tolerations: {}
+
+# Specify a map of key-value pairs. For the pod 
+# to be eligible to run on a node, the node 
+# must have each of the indicated key-value pairs as labels
+# https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+nodeSelector: {}
+
 # Generate certificates to access this onezone having trusted https connection
 # You need to add cluster root certificate to your system for this to work
 generate-certificates: 
   enabled: false
   image: onedata/certificate-init-container:8434eb0
+  imagePullPolicy: IfNotPresent
 
 # If set true, onezone will not be deployed on the same node as other onezones
 # or oneproviders that are part of this deployment
 onedata_anti_affinity_enabled: false
 
+onezone_main_admin: 
+  name: admin
+  password: password
+
 # List of onezone onepanel users with administrative privileges
-onepanel_admin_users:
-  - login: admin
-    password: password
+onepanelAdminUsers: []
 
 # List of onezone onepanel regular users
 onepanel_users:
-  - login: user
+  - name: user
     password: password
+    idps:
+      onepanel:
+        enabled: true
 
 saml-idp:
   enabled: false
+
+keycloak: &keycloak
+  idpName: rhea
+  tokenPrefix: onedata
+  appId: onedata
+  voGroupId: Onedata-Keycloak-1
+  superGroup: vo:HNSciCloud-RHEA/rl:one-data-special-role
+  enabled: true
+  
+token-dispenser:
+  enabled: true

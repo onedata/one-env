@@ -1,0 +1,101 @@
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "fullname" . }}-spaces
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}"
+    release: "{{ template "releaseName" . }}"
+    heritage: "{{ .Release.Service }}"
+    job: {{ template "fullname" . }}-spaces
+  annotations:
+    version: "{{ .Chart.Version }}"
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      name: "{{ template "releaseName" . }}"
+      labels:
+        app: {{ template "fullname" . }}
+        chart: "{{ .Chart.Name }}"
+        release: "{{ template "releaseName" . }}"
+        heritage: "{{ .Release.Service }}"
+        job: {{ template "fullname" . }}-spaces
+      annotations:
+        version: "{{ .Chart.Version }}"
+    spec:
+      {{- if .Values.affinity }}
+      affinity:
+{{ toYaml .Values.affinity | indent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+      {{- end }}
+      initContainers:
+        - name: wait-for-groups
+          image: {{ .Values.wait_for.image }}
+          imagePullPolicy: {{ template "imagePullPolicy" .Values.wait_for }}
+          args:
+            - "job"
+            - "{{ template "fullname" . }}-groups"
+{{ include "imagePullSecrets" . | indent 6 }}
+      restartPolicy: Never
+      containers:
+      - name: {{ .Chart.Name }}
+        image: {{ .Values.image }}
+        imagePullPolicy: {{ template "imagePullPolicy" . }}
+        env:
+          - name: ONEZONE_HOST
+            value: "https://{{ template "releaseName" . }}-onezone.{{ template "service_namespace_domain" . }}"
+          - name: ONEZONE_API_KEY
+            value: "supplied_at_runtime"
+        args:
+          - "-c"
+          - >
+            set -e;
+            echo "-k" > ~/.curlrc ; echo "-f" >> ~/.curlrc ;
+            echo "ONEZONE_HOST=$ONEZONE_HOST" ;
+{{- range $space := .Values.spaces }}
+            echo "Creating spaces as user {{ .user.name }}:{{ .user.password }}" ;
+            echo "Getting token..." ;
+      {{- if (hasKey .user "idps"  )}}
+            {{- if (hasKey .user.idps "onepanel")}}{{ if (.user.idps.onepanel.enabled) }}
+            idp=onepanel;
+            {{- end }}{{ end }}
+            {{- if (hasKey .user.idps "keycloak")}}{{ if (.user.idps.keycloak.enabled) }}
+            idp=keycloak-{{ template "keycloak_idpName_template" $ }};
+            {{- end -}}{{- end -}}
+            export ONEZONE_API_KEY=$(curl --silent -k -u {{ .user.name }}:{{ .user.password }} http://{{ template "token-dispenser_name" $ }}/api/v1.0/token/$idp);
+            echo "Got token for idp=$idp user={{ .user.name }}, token=$ONEZONE_API_KEY" ;
+            echo "Create space and request support" ;
+            echo "Creating space {{ $space.name }}" ;
+            export SPACE_ID="$(onezone-rest-cli -vvv  createSpace name=='{{ $space.name }}' 2>&1 | grep -i 'location:' | sed -nr 's#.*/spaces/(.*)#\1#p' | tr -d ' \r')" ;
+            echo "Space SPACE_ID=$SPACE_ID created" ;
+            {{- range $space.users }}
+            {{ $user := .user }}
+            {{- if (hasKey $user.idps "onepanel")}}{{ if ($user.idps.onepanel.enabled) }}
+            idp=onepanel;
+            {{- end }}{{ end }}
+            {{- if (hasKey $user.idps "keycloak")}}{{ if ($user.idps.keycloak.enabled) }}
+            idp=keycloak-{{ template "keycloak_idpName_template" $ }};
+            {{- end -}}{{- end -}}
+            userId=$(curl --silent -k -u {{ $user.name }}:{{ $user.password }} http://{{ template "token-dispenser_name" $ }}/api/v1.0/onezone/uid/$idp) ;
+            printf "Admin user {{ template "admin_username_template" $ }} is joining user {{ .user.name }}($userId) to space {{ $space.name }}($SPACE_ID). with privileges(empty means default): {{ template "json_quoted_list" dict "name" "privileges" "list" .privileges -}} [response: " ;
+            onezone-rest-cli -w "'%{http_code}'" -u {{ template "admin_username_template" $ }}:{{ template "admin_password_template" $ }} {{ template "json_quoted_list" dict "name" "privileges" "list" .privileges -}} addUserToSpace id=$SPACE_ID uid=$userId ;
+            echo "]. Success." ;
+            {{- end -}}
+            {{- range $space.groups }}
+            group_id=$(onezone-rest-cli -u {{ template "admin_username_template" $ }}:{{ template "admin_password_template" $ }} getGroup | jq -r '.groups[]' | while read -r a_group_id ; do onezone-rest-cli -u {{ template "admin_username_template" $ }}:{{ template "admin_password_template" $ }} getGroup id=$a_group_id ; done | jq -r 'select(.name=="{{ .group.name }}").groupId') ;
+            printf "Admin user={{ template "admin_username_template" $ }} is joining group {{ .group.name }}($group_id) to space {{ $space.name }}($SPACE_ID) with privileges(empty means default): {{ template "json_quoted_list" dict "name" "privileges" "list" .privileges -}} [response: " ;
+            onezone-rest-cli -w "'%{http_code}'" -u {{ template "admin_username_template" $ }}:{{ template "admin_password_template" $ }} {{ template "json_quoted_list" dict "name" "privileges" "list" .privileges -}} addGroupToSpace id=$SPACE_ID gid=$group_id ;
+            echo "]. Success" ;
+            {{- end -}}
+      {{- end -}}
+{{- end -}}

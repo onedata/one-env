@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" . }}-config
+  labels:
+    app: {{ template "fullname" . }}
+    chart: {{ .Chart.Name }}
+    release: {{ template "releaseName" . }}
+    heritage: {{ .Release.Service }}
+  annotations:
+    version: "{{ .Chart.Version }}"
+data:
+  db.yaml: |-
+    idps:
+{{- range .Values.config }}
+  {{- if eq .type "onepanel" }}
+      onepanel: 
+        url: "https://{{ template "onezone_service_url" $ }}"
+        type: onepanel
+  {{- end }}
+  {{- if eq .type "keycloak" }}
+      keycloak-{{ .name }}:
+        name: {{ .name }}
+        onezoneUrl: "https://{{ template "onezone_service_url" $ }}"
+        url: "http://{{ template "keycloak_service_url" $ }}"
+        tokenPrefix: {{ .tokenPrefix }}
+        type: keycloak
+  {{- end }}
+{{- end }}

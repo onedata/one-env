@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" . }}-config
+  labels:
+    app: {{ template "fullname" . }}
+    chart: {{ .Chart.Name }}
+    release: {{ template "releaseName" . }}
+    heritage: {{ .Release.Service }}
+  annotations:
+    version: "{{ .Chart.Version }}"
+data:
+  oneclient-mount.sh:
+    {{ range $user := .Values.users }}{{ if (hasKey $user "idps"  )}}
+    mount_{{ $user.name }}() {
+      {{ if (hasKey $user.idps "onepanel") }}{{ if ($user.idps.onepanel.enabled) }}
+      idp=onepanel;
+      {{- end }}{{- end }}
+      {{ if (hasKey $user.idps "keycloak") }}{{ if ($user.idps.keycloak.enabled) }}
+      idp=keycloak-rhea;
+      {{- end }}{{- end }}
+      export ONEZONE_API_KEY=$(curl -k -u {{ $user.name }}:{{ $user.password }} http://{{ template "token-dispenser_name" $ }}/api/v1.0/token/$idp);
+      echo "Got token for $idp user={{ $user.name }}, token=$ONEZONE_API_KEY" ;
+      mkdir -p "/mnt/oneclient/{{ $user.name }}";
+      oneclient -t $ONEZONE_API_KEY "/mnt/oneclient/{{ $user.name }}";
+      echo "Mounted oneclient in '/mnt/oneclient/{{ $user.name }}' for user={{ $user.name }}, from idp=$idp, using TOKEN=$ONEZONE_API_KEY";
+    }
+    {{ end }}{{ end }}

@@ -5,7 +5,7 @@ metadata:
   labels:
     app: {{ template "fullname" . }}
     chart: {{ .Chart.Name }}
-    release: {{ .Release.Name }}
+    release: {{ template "releaseName" . }}
     heritage: {{ .Release.Service }}
     onedata-service: "onezone"
   annotations:
@@ -18,7 +18,7 @@ spec:
       labels:
         app: {{ template "fullname" . }}
         chart: {{ .Chart.Name }}
-        release: {{ .Release.Name }}
+        release: {{ template "releaseName" . }}
         heritage: {{ .Release.Service }}
         onedata-service: "onezone"
       annotations:
@@ -26,8 +26,9 @@ spec:
     spec:
       subdomain: {{ template "fullname" . }}
       terminationGracePeriodSeconds: 0
-      {{- if .Values.onedata_anti_affinity_enabled }}
+      {{- if or .Values.affinity .Values.onedata_anti_affinity_enabled }}
       affinity:
+      {{- if .Values.onedata_anti_affinity_enabled }}
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
           - labelSelector:
@@ -40,15 +41,29 @@ spec:
               - key: release
                 operator: In
                 values:
-                - {{ .Release.Name }}
+                - {{ template "releaseName" . }}
             topologyKey: kubernetes.io/hostname
       {{- end }}
+      {{- if .Values.affinity }}
+{{ toYaml .Values.affinity | indent 8 }}
+      {{- end }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+      {{- end }}
 {{ include "imagePullSecrets" . | indent 6 }}
-      {{- if (index .Values "generate-certificates" "enabled") }}
+      {{- if or (index .Values "generate-certificates" "enabled") (index .Values "keycloak" "enabled") }}
       initContainers:
+      {{- end }}
+      {{- if (index .Values "generate-certificates" "enabled") }}
         - name: certificate-init-container
           image: {{ index .Values "generate-certificates" "image" }}
-          imagePullPolicy: {{ default .Values.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
+          imagePullPolicy: {{ template "imagePullPolicy" .Values.wait_for }}
           env:
             - name: NAMESPACE
               valueFrom:
@@ -70,12 +85,44 @@ spec:
             - >
               if [[ $POD_NAME != {{ template "fullname" . }}-0 ]] ; then echo "Not generating certificates" ; exit 0 ; fi ;
               mkdir $(CERT_DIR) ;
-              /certificate-init-container -secret-name={{ template "fullname" . }}-secret-tls -labels=app={{ template "fullname" . }},chart={{ .Chart.Name }},release={{ .Release.Name }},heritage={{ .Release.Service }} -additional-dnsnames={{ template "fullname" . }},{{ template "fullname" . }}.$(NAMESPACE),{{ template "fullname" . }}.$(NAMESPACE).svc -cert-dir=$(CERT_DIR) -namespace=$(NAMESPACE) -pod-ip=$(POD_IP) -pod-name=$(POD_NAME) -service-names={{ template "fullname" . }} -cluster-domain={{ template "cluster_domain" . }} ;
+              /certificate-init-container -secret-name={{ template "fullname" . }}-secret-tls -labels=app={{ template "fullname" . }},chart={{ .Chart.Name }},release={{ template "releaseName" . }},heritage={{ .Release.Service }} -additional-dnsnames={{ template "fullname" . }},{{ template "fullname" . }}.$(NAMESPACE),{{ template "fullname" . }}.$(NAMESPACE).svc -cert-dir=$(CERT_DIR) -namespace=$(NAMESPACE) -pod-ip=$(POD_IP) -pod-name=$(POD_NAME) -service-names={{ template "fullname" . }} -cluster-domain={{ template "cluster_domain" . }} ;
+     {{- end }}
+     {{- if (index .Values "keycloak" "enabled") }}
+        - name: keycloak-secret-init
+          image: {{ index .Values "wait_for" "image" }}
+          imagePullPolicy: {{ template "imagePullPolicy" (index .Values "generate-certificates") }}
+          volumeMounts:
+            - mountPath: /mnt
+              name: config-map
+              readOnly: true
+          command:
+            - "/bin/sh"
+            - "-c"
+            - >
+              echo "Mounted whole config" ;
+              ls -lR /mnt ;
+              while [ "$(kubectl get cm {{ template "keycloak_name" . }}-config -o jsonpath='{.data.clientSecret}')" = "KEYCLOAK_APP_CELINT_SECRET_SUPPLIED_AT_RUNTIME" ]; do echo "$(date) Waiting for keycloak client secret..." ; sleep 2 ; done ;
+              keycloak_client_secret="$(kubectl get cm {{ template "keycloak_name" . }}-config -o jsonpath='{.data.clientSecret}')" ;
+              echo "Keycloak client secret is keycloak_client_secret=<${keycloak_client_secret}>" ;
+              echo "Config before" ;
+              kubectl get cm {{ template "fullname" . }}-config -o yaml ;
+              kubectl get cm {{ template "fullname" . }}-config -o yaml | sed "s/KEYCLOAK_APP_SECRET_SUPPLIED_AT_RUNTIME/$keycloak_client_secret/" | kubectl apply -f - ;
+              echo "Waiting for changes to get propegated" ;
+              while cat /mnt/auth.config | grep -q KEYCLOAK_APP_SECRET_SUPPLIED_AT_RUNTIME ; do sleep 2 ; done ;
+              echo "Changes has been propegated. Mounted config after:" ;
+              cat /mnt/auth.config ;
+              exit 0 ;
       {{- end }}
+        - name: wait-token-dispenser
+          image: {{ .Values.wait_for.image }}
+          imagePullPolicy: {{ template "imagePullPolicy" .Values.wait_for }}
+          args:
+            - "pod"
+            - "-lapp={{ template "token-dispenser_name" . }}"
       containers:
       - name: {{ .Chart.Name }}
         image: {{ .Values.image }}
-        imagePullPolicy: {{ default .Values.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
+        imagePullPolicy: {{ template "imagePullPolicy" . }}
         {{- if or .Values.cpu .Values.memory }}
         resources:
           requests:
@@ -106,10 +153,6 @@ spec:
             echo {{ template "fullname" . }}-{{ sub (.Values.onezone_nodes_count) 1 }} ;
             if [[ "$HOSTNAME" != {{ template "fullname" . }}-{{ sub (.Values.onezone_nodes_count) 1 }} ]]; then export ONEPANEL_BATCH_MODE="false" ; fi ;
             env ;
-        {{- if .Values.sources }}
-              python {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/parse_sources.py  {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }} ;
-              if [[ -f onepanel_override ]]; then export ONEPANEL_OVERRIDE=$(cat onepanel_override) ; fi ;
-        {{ end }}
             /root/onezone.sh ;
             cat /var/log/oz_panel/info.log ;
             exit 1 ;
@@ -138,174 +181,77 @@ spec:
                 onepanel_ready() { sleep 5 ; exit 0 ; } ;
                 if [[ "$HOSTNAME" == {{ template "fullname" . }}-{{ sub (.Values.onezone_nodes_count) 1 }} ]]; then exit 0 ; else onepanel_ready ; fi ;
         env:
-           - name: SERVICE_NAME
-             {{ if .Values.name }}
-             value: {{ .Values.name }}
-             {{- else -}}
-             value: {{ template "fullname" $ }}
-             {{- end }}
-           - name: POD_IP
-             valueFrom:
-               fieldRef:
-                 fieldPath: status.podIP
-           - name: SERVICE_DOMAIN
-             value: {{ template "service_url" $ }}
-           - name: ONEPANEL_LOG_LEVEL
-             value: {{ default "info" .Values.log_level | quote }}
-           - name: ONEPANEL_GENERATE_TEST_WEB_CERT
-             value: {{ default "false" .Values.onepanel_generate_test_web_cert | quote  }}
-           {{ if .Values.generate_cert_domain }}
-           - name: ONEPANEL_GENERATED_CERT_DOMAIN
-             value: "{{ template "service_url" $ }}"
-           {{ else }}
-           - name: ONEPANEL_GENERATED_CERT_DOMAIN
-             value: {{ default "" .Values.onepanel_generated_cert_domain | quote }}
-           {{ end }}
-           - name: ONEPANEL_TRUST_TEST_CA
+          - name: ONEPANEL_LOG_LEVEL
+            value: {{ default "info" .Values.log_level | quote }}
+          - name: ONEPANEL_GENERATE_TEST_WEB_CERT
+            value: {{ default "false" .Values.onepanel_generate_test_web_cert | quote }}
+          - name: ONEPANEL_GENERATED_CERT_DOMAIN
+            value: "{{ template "service_url" . | default .Values.onepanel_generated_cert_domain }}"
+          - name: ONEPANEL_TRUST_TEST_CA
             value: {{ default "false" .Values.onepanel_trust_test_ca | quote }}
-           - name: ONEPANEL_BATCH_MODE
-             value: {{ .Values.onepanel_batch_mode_enabled | quote }}
-           - name: ONEZONE_CONFIG
-            value: |
-              cluster:
-                domainName: "{{ template "service_url" . }}"
-                nodes:
-                  {{- $r := . -}}
-                  {{- range $i := until (int (.Values.onezone_nodes_count)) }}
-                  n{{ $i }}: 
-                    hostname: {{ template "fullname" $r }}-{{ $i }}
-                  {{- end }}
-                managers:
-                  mainNode: n{{ sub (.Values.onezone_nodes_count) 1 }} 
-                  nodes:
-              {{- with .Values.cluster_config.managers }}
-                  {{- range $i := . }}
-                    - n{{ $i }}
-                  {{- end }}
-              {{- else }}
-                  {{- range $i := until (int ($r.Values.onezone_nodes_count)) }}
-                    - n{{ $i }}
-                  {{- end }}
-              {{- end }}
-                workers:
-                  nodes:
-              {{- with .Values.cluster_config.workers }}
-                  {{- range $i := . }}
-                    - n{{ $i }}
-                  {{- end }}
-              {{- else }}
-                  {{- range $i := until (int ($r.Values.onezone_nodes_count)) }}
-                    - n{{ $i }}
-                  {{- end }}
-              {{- end }}
-                databases:
-                  nodes:
-              {{- with .Values.cluster_config.databases }}
-                  {{- range $i := . }}
-                    - n{{ $i }}
-                  {{- end }}
-              {{- else }}
-                  {{- range $i := until (int ($r.Values.onezone_nodes_count)) }}
-                    - n{{ $i }}
-                  {{- end }}
-              {{- end }}
-              onezone:
-                {{ if .Values.name -}}
-                name: {{ .Values.name }}
-                {{- else -}}
-                name: {{ template "fullname" . }}
-                {{- end }}
-                domainName: {{ template "service_url" . }}
-              {{- if or .Values.onepanel_admin_users .Values.onepanel_users }}
-              onepanel:
-                users:
-                  {{- range .Values.onepanel_admin_users }}
-                  {{ .login }}:
-                    password: {{ .password }}
-                    userRole: admin
-                  {{- end }}
-                  {{- range .Values.onepanel_users }}
-                  {{ .login }}:
-                    password: {{ .password }}
-                    userRole: regular
-                  {{- end }}
-              {{- end }}
-      {{- if or (index .Values "generate-certificates" "enabled") (index .Values "saml-idp" "enabled")}}
+          - name: ONEPANEL_BATCH_MODE
+            value: {{ .Values.onepanel_batch_mode_enabled | quote }}
+          - name: ONEZONE_CONFIG
+            valueFrom:
+              configMapKeyRef:
+                name: {{ template "fullname" . }}-config
+                key: ONEZONE_CONFIG
         volumeMounts:
-      {{- end }}
-        {{- if .Values.sources }}
-          - mountPath: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}
-            name: deployment-dir
-          {{- range $.Values.sources }}
-            {{- if .hostPath }}
-           # Mount sources. Again for all pods (nodes)all sources will be mounted.
-          - mountPath: {{ $.Values.hostPathPrefix }}/{{ .hostPath }}
-            name: {{ .name }}
-          # Mount data dir. It will be filled with data from scenario_runner
-          - mountPath: {{ $.Values.hostPathPrefix }}/{{ .hostPath }}/_build/default/rel
-            name: sources-{{ .name }}
-             {{ else }}
-          - mountPath: /tmp/{{ .name }}
-            name: sources-{{ .name }}
-              {{ end }}
-            {{ end }}
-          {{ end }}
+          - name: config-map
+            mountPath: /etc/oz_panel/overlay.config
+            subPath: panel-overlay.config
+          - name: config-map
+            mountPath: /etc/oz_worker/overlay.config
+            subPath:  worker-overlay.config
       {{- if (index .Values "generate-certificates" "enabled") }}
-          - mountPath: /etc/oz_panel/certs/key.pem
+          - mountPath: /etc/oz_panel/certs/web_key.pem
             subPath: tls.key
             name: tls
             readOnly: true
-          - mountPath: /etc/oz_panel/certs/cert.pem
+          - mountPath: /etc/oz_panel/certs/web_cert.pem
             subPath: tls.crt
             name: tls
             readOnly: true
-          - mountPath: /etc/oz_panel/cacerts/cacert.pem
+          - mountPath: /etc/oz_panel/certs/web_chain.pem
             subPath: k8s.crt
             name: tls
             readOnly: true
-          - mountPath: /etc/oz_worker/cacerts/cacert.pem
+          # Make onepanel trust k8s cert
+          - mountPath: /etc/oz_panel/cacerts/kubernetes.crt
             subPath: k8s.crt
             name: tls
             readOnly: true
+          # Make system trust k8s cert
           - mountPath: /etc/ssl/certs/kubernetes.crt
             subPath: k8s.crt
             name: tls
             readOnly: true
     {{- end }}
     {{- if (index .Values "saml-idp" "enabled") }}
-          - mountPath: /var/lib/oz_worker/saml.config
+          - mountPath: /etc/oz_worker/saml.config
             subPath: saml.config
-            name: saml-config
-            readOnly: false
+            name: config-map
+            readOnly: true
     {{- end }}
-    {{- if or (index .Values "generate-certificates" "enabled") (index .Values "saml-idp" "enabled")}}
+          - mountPath: /etc/oz_worker/auth.config
+            subPath: auth.config
+            name: config-map
+            readOnly: true
       volumes:
-    {{- end }}
-      {{- if .Values.sources }}
-      - name: deployment-dir
-        hostPath:
-          path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}
-      # Sources. For each pod (node) all sources will be the mounted.
-        {{- range $.Values.sources }}
-        {{- if .hostPath }}
-      - name: {{ .name }}
-        hostPath:
-          path: {{ $.Values.vmPathPrefix }}/{{ .hostPath }}
-      # Random directory for each source. It is needed to store data. Each pod (node)
-      # will have different random directories.
-        {{- end }}
-      - name: sources-{{ .name }}
-        hostPath:
-          path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/onezone/{{ .name }}
-        {{- end }}
-      {{ end }}
+      - name: config-map
+        configMap:
+          name: {{ template "fullname" . }}-config
     {{- if (index .Values "generate-certificates" "enabled") }}
       - name: tls
         secret:
           secretName: {{ template "fullname" . }}-secret-tls
     {{- end }}
     {{- if (index .Values "saml-idp" "enabled") }}
+    # This is handled diffetently because of https://github.com/kubernetes/kubernetes/issues/50345
       - name: saml-config
         configMap:
-          name: {{ template "fullname" . }}-saml-config
+          name: {{ template "fullname" . }}-config
+          items:
+          - key: saml.config
+            path: saml.config
     {{- end }}

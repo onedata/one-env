@@ -1,4 +1,6 @@
-
+{{- $admin_username := "admin" }}
+{{- $admin_password := "password" }}
+---
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -6,7 +8,7 @@ metadata:
   labels:
     app: {{ template "fullname" . }}
     chart: {{ .Chart.Name }}
-    release: {{ .Release.Name }}
+    release: {{ template "releaseName" . }}
     heritage: {{ .Release.Service }}
   annotations:
     version: "{{ .Chart.Version }}"
@@ -16,7 +18,7 @@ spec:
       labels:
         app: {{ template "fullname" . }}
         chart: {{ .Chart.Name }}
-        release: {{ .Release.Name  }}
+        release: {{ template "releaseName" .  }}
         heritage: {{ .Release.Service }}
       annotations:
         version: "{{ .Chart.Version }}"
@@ -26,7 +28,7 @@ spec:
       initContainers:
       - name: wait-for-{{ .Chart.Name }}
         image: byrnedo/alpine-curl
-        imagePullPolicy: {{ default .Values.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
+        imagePullPolicy: {{ template "imagePullPolicy" .Values.wait_for }}
         command:
           - "/bin/sh"
           - "-c"
@@ -35,10 +37,30 @@ spec:
             while [ "$user" = "" ] ; do user="$(curl -k -u admin:password -sS --tlsv1.2 -X GET 'https://{{ template "onezone_name" . }}:9443/api/v3/onepanel/users/user')"; echo "Waiting for https://{{ template "onezone_name" . }}:9443/api/v3/onepanel/users/user to return something..." ; echo "$user" ; sleep 2 ; done ;
       containers:
       - name: onezone-ready-check
-        image: alpine:3.6
-        imagePullPolicy: {{ default .Values.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
+        image: {{ .Values.onedata_cli.image }}
+        imagePullPolicy: {{ template "imagePullPolicy" . }}
+        env:
+          - name: ONEZONE_API_KEY
+            value: "supplied_at_runtime"
+          - name: ONEZONE_HOST
+            value: "https://{{ template "onezone_name" . }}"
+          - name: ONEPANEL_HOST
+            value: "https://{{ template "onezone_name" . }}:9443"
+          - name: TERM # otherwise zsh and bash autocompletion used in this container tends to go crazy
+            value: "xterm-256color"
         command:
-          - "sh"
+          - "bash"
           - "-c"
           - >
-            echo 'all ok, exiting' ;  
+            echo "-k" > ~/.curlrc ; echo "-f" >> ~/.curlrc ;
+            echo "Getting token:" ;
+            export ONEZONE_API_KEY="$(curl -k -u $ONEPANEL_BASIC_AUTH -X POST -d '' -H 'content-type: application/json' $ONEZONE_HOST/api/v3/onezone/user/client_tokens | jq -r .token)" ;
+            echo "Curl output:" ; 
+            echo "ONEZONE_HOST=$ONEZONE_HOST" ;
+            echo "ONEZONE_API_KEY=$ONEZONE_API_KEY" ;
+          {{/* TODO: Fix this onepanel user propagation hack */}}
+          {{- range .Values.onepanel_users }}
+            onezone-rest-cli -w "'%{http_code}'" -u {{ .name }}:{{ .password }} getUser ;
+          {{- end }}
+            exit 0 ;
+

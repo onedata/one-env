@@ -5,7 +5,7 @@ metadata:
   labels:
     app: {{ template "fullname" . }}
     chart: {{ .Chart.Name }}
-    release: {{ .Release.Name }}
+    release: {{ template "releaseName" . }}
     heritage: {{ .Release.Service }}
   annotations:
     version: "{{ .Chart.Version }}"
@@ -15,18 +15,30 @@ spec:
       labels:
         app: {{ template "fullname" . }}
         chart: {{ .Chart.Name }}
-        release: {{ .Release.Name }}
+        release: {{ template "releaseName" . }}
         heritage: {{ .Release.Service }}
       annotations:
         version: "{{ .Chart.Version }}"
     spec:
       hostname: {{ .Chart.Name | quote }}
       subdomain: {{ template "fullname" . }}
+      {{- if .Values.affinity }}
+      affinity:
+{{ toYaml .Values.affinity | indent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+      {{- end }}
 {{ include "imagePullSecrets" . | indent 6 }}
       containers:
       - name: {{ .Chart.Name }}
         image: {{ .Values.image }}
-        imagePullPolicy: {{ default .Values.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
+        imagePullPolicy: {{ template "imagePullPolicy" . }}
         ports:
           - containerPort: 80
           - containerPort: 5000
@@ -36,6 +48,20 @@ spec:
           - containerPort: 6803
           - containerPort: 6804
           - containerPort: 6805
+        env:
+        - name: MON_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        command:
+          - "/bin/bash"
+          - "-c"
+          - >
+            a=$(ip -o -f inet addr show | awk '/scope global/{sub(/[^.]+\//,"0/",$4);print $4}') ;
+            export CEPH_PUBLIC_NETWORK="${a%.*}.0/24" ;
+            export CEPH_NETWORK=$CEPH_PUBLIC_NETWORK ;
+            env ;
+            /entrypoint.sh ;
         lifecycle:
           postStart:
             exec:
@@ -43,22 +69,25 @@ spec:
                 - "sh"
                 - "-c"
                 - >
-                  curl --output /dev/null --silent --connect-timeout 2 localhost:6800 ;
+                  wget -t 2 --spider --connect-timeout 2 $MON_IP:6789 ;
                   while [[ $? -ne 0 ]] ; do
                     sleep 2 ;
                     echo "Waiting for ceph server to start to create pools" ;
-                    curl --output /dev/null --silent --connect-timeout 2 localhost:6800 ;
+                    wget -t 2 --spider --connect-timeout 2 $MON_IP:6789 ;
                   done ;
                   ceph osd pool create {{ .Values.pool_name }} 8 ;
                   echo '[{{ .Values.username }}]' > /etc/ceph/ceph.{{ .Values.username }}.keyring ;
                   echo '        key = {{ .Values.key }}' >> /etc/ceph/ceph.{{ .Values.username }}.keyring ;
                   echo '        caps mon = "allow r"' >> /etc/ceph/ceph.{{ .Values.username }}.keyring ;
-                  echo '        caps osd = "allow rw pool={{ .Values.pool_name }}"' >>  /etc/ceph/ceph.{{ .Values.username }}.keyring ;
+                  echo '        caps osd = "allow rwx pool={{ .Values.pool_name }}"' >>  /etc/ceph/ceph.{{ .Values.username }}.keyring ;
                   ceph auth import -i /etc/ceph/ceph.{{ .Values.username }}.keyring ;
         livenessProbe:
-          exec:
-            command:
-              - "sh"
-              - "-c"
-              - >
-                curl --output /dev/null --silent --connect-timeout 2 localhost:6800 ;
+        # https://github.com/ceph/ceph-container/blob/master/examples/kubernetes/ceph-mon-v1-dp.yaml
+            tcpSocket:
+              port: 6789
+            initialDelaySeconds: 60
+            timeoutSeconds: 5
+        readinessProbe:
+            tcpSocket:
+              port: 6789
+            timeoutSeconds: 5

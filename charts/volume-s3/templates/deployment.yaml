@@ -5,7 +5,7 @@ metadata:
   labels:
     app: {{ template "fullname" . }}
     chart: {{ .Chart.Name }}
-    release: {{ .Release.Name  }}
+    release: {{ template "releaseName" .  }}
     heritage: {{ .Release.Service }}
   annotations:
     version: "{{ .Chart.Version }}"
@@ -15,18 +15,30 @@ spec:
       labels:
         app: {{ template "fullname" . }}
         chart: {{ .Chart.Name }}
-        release: {{ .Release.Name }}
+        release: {{ template "releaseName" . }}
         heritage: {{ .Release.Service }}
       annotations:
         version: "{{ .Chart.Version }}"
     spec:
       hostname: {{ .Chart.Name | quote }}
       subdomain: {{ template "fullname" . }}
+      {{- if .Values.affinity }}
+      affinity:
+{{ toYaml .Values.affinity | indent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+      {{- end }}
 {{ include "imagePullSecrets" . | indent 6 }}
       containers:
       - name: {{ .Chart.Name }}
         image: {{ .Values.image }}
-        imagePullPolicy: {{ default .Values.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
+        imagePullPolicy: {{ template "imagePullPolicy" . }}
         env:
           - name: SCALITY_ACCESS_KEY_ID
             value: {{ .Values.key_id }}
@@ -46,11 +58,17 @@ spec:
          - >
            /usr/src/app/docker-entrypoint.sh npm start ;
         ports:
-          - containerPort: 8000
+          - containerPort: {{ .Values.scality_port }}
         readinessProbe:
           exec:
             command:
-              - "sh"
+              - "bash"
               - "-c"
               - >
-                curl --output /dev/null --silent --connect-timeout 2 localhost:{{ .Values.scality_port }} ;
+                set -e;
+                echo "" > /dev/tcp/127.0.0.1/8000;
+                echo "" > /dev/tcp/127.0.0.1/9990;
+                echo "" > /dev/tcp/127.0.0.1/9991;
+        livenessProbe:
+          tcpSocket:
+            port: {{ .Values.scality_port }}

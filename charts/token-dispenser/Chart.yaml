@@ -1,0 +1,12 @@
+name: token-dispenser
+version: 0.1.0
+description: Proxy for requesting Onezone API tokens
+keywords:
+  - token
+  - proxy
+home: https://github.com/onedata/token-dispenser
+maintainers:
+  - name: Michal Orzechowski
+    email: orzechowski.michal@gmail.com
+engine: gotpl
+appVersion: 0.1.0

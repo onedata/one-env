@@ -1,0 +1,26 @@
+{{/*
+Although, the parent keycloak chart provides keycloak services, 
+we need a service which name and labels are in line with
+a standard of Onedata charts.
+*/}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}"
+    release: "{{ template "releaseName" . }}"
+    heritage: "{{ .Release.Service }}"
+    onedata-service: "onezone"
+  annotations:
+    version: "{{ .Chart.Version }}"
+spec:
+  type: "{{ .Values.serviceType }}"
+  ports:
+    - name: http
+      port: {{ .Values.keycloak.keycloak.service.port }}
+      targetPort: http
+      protocol: TCP
+  selector:
+    app: {{ template "fullname" . }}

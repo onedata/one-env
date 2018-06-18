@@ -1,0 +1,284 @@
+{{- $keycloak_realmId := "UNINITIALIZED" }}
+{{- $keycloak_idpName := "UNINITIALIZED" }}
+{{- if hasKey (index .Values "keycloakInstance" ) "init" }}
+{{- $keycloak_realmId := .Values.keycloakInstance.init.realmId }}
+{{- $keycloak_idpName := .Values.keycloakInstance.idpName }}
+{{- end }}
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "fullname" . }}-luma
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}"
+    release: "{{ template "releaseName" $ }}"
+    heritage: "{{ .Release.Service }}"
+    job: {{ template "fullname" . }}-luma
+  annotations:
+    version: "{{ .Chart.Version }}"
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      name: "{{ template "releaseName" $ }}"
+      labels:
+        app: {{ template "fullname" . }}
+        chart: "{{ .Chart.Name }}"
+        release: "{{ template "releaseName" $ }}"
+        heritage: "{{ .Release.Service }}"
+        job: {{ template "fullname" . }}-luma
+      annotations:
+        version: "{{ .Chart.Version }}"
+    spec:
+      {{- if .Values.affinity }}
+      affinity:
+{{ toYaml .Values.affinity | indent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+      {{- end }}
+      initContainers:
+        - name: wait-for-spaces
+          image: {{ .Values.wait_for.image }}
+          imagePullPolicy: {{ template "imagePullPolicy" .Values.wait_for }}
+          args:
+            - "job"
+            - >
+              -ljob={{ template "fullname" . }}-spaces
+{{ include "imagePullSecrets" . | indent 6 }}
+      restartPolicy: Never
+      containers:
+      - name: {{ .Chart.Name }}
+        image: {{ .Values.image }}
+        imagePullPolicy: {{ template "imagePullPolicy" . }}
+        env:
+          - name: ONEZONE_HOST
+            value: "https://{{ template "onezone_name" . }}"
+          - name: ONEZONE_API_KEY
+            value: "supplied_at_runtime"
+          - name: ONEPANEL_BASIC_AUTH
+            value: "{{ template "admin_username_template" $ }}:{{ template "admin_password_template" $ }}"
+          - name: ONEPROVIDER_HOST
+            value: "https://{{ template "oneprovider_name" . }}"
+          - name: ONEPANEL_HOST
+            value: "https://{{ template "onezone_name" . }}:9443"
+          - name: LUMA_HOST
+            value: "supplied_at_runtime"
+          - name: TERM # otherwise zsh and bash autocompletion used in this container tends to go crazy
+            value: "xterm-256color"
+            # add users
+            # add users credentials:
+            #  per provider (not luma)
+            #  per storage
+
+            # add groups
+            #   per user
+            #   per provider (not luma)
+            #   per space
+        command:
+          - "bash"
+          - "-c"
+          - >
+            set -e; 
+            echo "-k" > ~/.curlrc ; echo "-f" >> ~/.curlrc ;
+            echo "Curl output:" ; 
+            echo "ONEZONE_HOST=$ONEZONE_HOST" ;
+            echo "ONEPANEL_BASIC_AUTH=$ONEPANEL_BASIC_AUTH" ;
+          {{- range $user := .Values.users }}
+           {{- if .luma -}}
+            {{- $user_providers := list }}
+            {{- range $provider := .luma }}
+            {{- if (hasKey $user "idps"  )}}
+            {{- $providerName := $provider.name }}
+            export ONEPROVIDER_HOST='https://{{ template "releaseName" $ }}-{{ template "providerName" $providerName }}.{{ template "service_namespace_domain" $ }}' ;
+            export ONEPANEL_HOST='https://{{ template "releaseName" $ }}-{{ template "providerName" $providerName }}.{{ template "service_namespace_domain" $ }}:9443' ;
+            export LUMA_HOST='http://{{ template "releaseName" $ }}-luma-{{- $providerName -}}.{{ template "service_namespace_domain" $ }}' ;
+            echo "LUMA_HOST=$LUMA_HOST" ;
+            printf "Creating luma user {{ $user.name }} in {{ $providerName }}." ;
+            {{- if (hasKey $user.idps "onepanel")}}{{ if ($user.idps.onepanel.enabled) }}
+            idp=onepanel;
+            {{- end }}{{ end }}
+            {{- if (hasKey $user.idps "keycloak")}}{{ if ($user.idps.keycloak.enabled) }}
+            idp=keycloak-{{ template "keycloak_idpName_template" $ }};
+            {{- end -}}{{- end -}}
+            userId=$(curl --silent -k -u {{ $user.name }}:{{ $user.password }} http://{{ template "token-dispenser_name" $ }}/api/v1.0/onezone/uid/$idp) ;
+            lumaUserId="$(curl --silent -k -u {{ $user.name }}:{{ $user.password }} http://{{ template "token-dispenser_name" $ }}/api/v1.0/user/info/$idp | sed -e 's/{"userId":/{"id":/g' | luma-rest-cli -v addUserDetails - 2>&1 | grep 'Location:' | sed -ne 's#^.*/\(.*\)$#\1#p' | tr -d $'\r' )" ;
+            printf " Success idp=$idp user {{ $user.name }}($userId), created as luma user {{ $user.name }}($lumaUserId)." ;
+            echo "" ;
+            {{- range .storages }}
+            printf "Adding maping for storage {{ .name }} with" ;
+            storageDetails=$(onepanel-rest-cli -u {{ template "admin_username_template" $ }}:{{ template "admin_password_template" $ }} getStorages | jq -r '.ids[]' | while read a_storage_id ; do onepanel-rest-cli -u {{ template "admin_username_template" $ }}:{{ template "admin_password_template" $ }} getStorageDetails id=$a_storage_id ; done | jq -r 'select(.name=="{{ .name }}")') ;
+            storageId=$(echo "$storageDetails" | jq -r '.id') ;
+            storageType=$(echo "$storageDetails" | jq -r '.type') ;
+            case $storageType in
+              posix)
+                posix_uid={{ if .uid -}}{{ .uid }}{{- end }}
+                posix_gid={{ if .gid -}}{{ .gid }}{{- end }}
+                luma_storage_mapping_json=$(cat <<EEOF
+                [
+                  {
+                    "type": "$storageType",
+                    "storageId": "$storageId",
+                    "storageName": "{{ .name }}",
+                    "uid": $posix_uid,
+                    "gid": $posix_gid
+                  }
+                ]
+            EEOF
+
+                )
+                printf " credentials {{ $user.name }}(uid=$posix_uid,gid=$posix_gid)" ;;
+              glusterfs)
+                glusterfs_uid={{ if .uid -}}{{ .uid }}{{- end }}
+                glusterfs_gid={{ if .gid -}}{{ .gid }}{{- end }}
+                glusterfs_key={{ if .key -}}{{ .key }}{{- end }}
+                glusterfs_certificate={{ if .certificate -}}{{ .certificate }}{{- end }}
+                glusterfs_caCertificate={{ if .caCertificate -}}{{ .caCertificate }}{{- end }}
+                luma_storage_mapping_json=$(cat <<EEOF
+                [
+                  {
+                    "type": "$storageType",
+                    "storageId": "$storageId",
+                    "storageName": "{{ .name }}",
+                    "uid": $glusterfs_uid,
+                    "gid": $glusterfs_gid,
+                    "key": $glusterfs_key,
+                    "certificate": $glusterfs_certificate,
+                    "caCertificate": $glusterfs_caCertificate
+                  }
+                ]
+            EEOF
+
+                )
+                printf " credentials $user.name(uid=$glusterfs_uid,gid=$glusterfs_gid,key=$glusterfs_key,certificate=$glusterfs_certificate,caCertificate,$glusterfs_caCertificate)" ;;
+              s3)
+                s3_accessKey={{ if .accessKey -}}{{ .accessKey }}{{- end }}
+                s3_secretKey={{ if .secretKey -}}{{ .secretKey }}{{- end }}
+                luma_storage_mapping_json=$(cat <<EEOF
+                [
+                  {
+                    "type": "$storageType",
+                    "storageId": "$storageId",
+                    "storageName": "{{ .name }}",
+                    "accessKey": $s3_accessKey,
+                    "secretKey": $s3_secretKey
+                  }
+                ]
+            EEOF
+
+                )
+                printf " credentials $user.name(accessKey=$s3_accessKey,secretKey=$s3_secretKey)" ;;
+              ceph)
+                ceph_username={{ if .username -}}{{ .username }}{{- end }}
+                ceph_key={{ if .key -}}{{ .key }}{{- end }}
+                luma_storage_mapping_json=$(cat <<EEOF
+                [
+                  {
+                    "type": "$storageType",
+                    "storageId": "$storageId",
+                    "storageName": "{{ .name }}",
+                    "username": $ceph_username,
+                    "key": $ceph_key
+                  }
+                ]
+            EEOF
+
+                )
+                printf " credentials $user.name(username=$ceph_username,key=$ceph_key)" ;;
+              swift)
+                swift_username={{ if .username -}}{{ .username }}{{- end }}
+                swift_password={{ if .password -}}{{ .password }}{{- end }}
+                luma_storage_mapping_json=$(cat <<EEOF
+                [
+                  {
+                    "type": "$storageType",
+                    "storageId": "$storageId",
+                    "storageName": "{{ .name }}",
+                    "username": $swift_username,
+                    "password": $swift_password
+                  }
+                ]
+            EEOF
+
+                ) ;
+                printf " credentials $user.name(username=$swift_username,password=$swift_password)" ;;
+            esac ;
+            printf ". [response: " ;
+            echo "$luma_storage_mapping_json" | luma-rest-cli -w "'%{http_code}'" addUserCredentials lid=$lumaUserId - ;
+            echo "] Success type($storageType) {{ .name }}($storageId)." ;
+            {{- end -}}
+            {{- end -}}
+            {{- end -}}
+           {{- end -}}
+          {{- end }}
+          {{- range $group := .Values.groups }}
+           {{- if .luma -}}
+            {{- range $provider := .luma }}
+            {{- $providerName := $provider.name }}
+            export ONEPROVIDER_HOST='https://{{ template "releaseName" $ }}-{{ template "providerName" $providerName }}.{{ template "service_namespace_domain" $ }}' ;
+            export ONEPANEL_HOST='https://{{ template "releaseName" $ }}-{{ template "providerName" $providerName }}.{{ template "service_namespace_domain" $ }}:9443' ;
+            export LUMA_HOST='http://{{ template "releaseName" $ }}-luma-{{- $providerName -}}.{{ template "service_namespace_domain" $ }}' ;
+            echo "LUMA_HOST=$LUMA_HOST" ;
+            {{- range $storage := .storages -}}
+            printf "Adding group mapping {{ $group.name }} for storage {{ $storage.name }} in provider {{ $provider.name }}. [response: " ;
+            group_id=$(onezone-rest-cli -u {{ template "admin_username_template" $ }}:{{ template "admin_password_template" $ }} listUserGroups | jq -r '.groups[]' | while read -r a_group_id ; do onezone-rest-cli -u {{ template "admin_username_template" $ }}:{{ template "admin_password_template" $ }} getGroup id=$a_group_id ; done | jq -r 'select(.name=="{{ $group.name }}").groupId') ;
+            storageDetails=$(onepanel-rest-cli -u {{ template "admin_username_template" $ }}:{{ template "admin_password_template" $ }} getStorages | jq -r '.ids[]' | while read a_storage_id ; do onepanel-rest-cli -u {{ template "admin_username_template" $ }}:{{ template "admin_password_template" $ }} getStorageDetails id=$a_storage_id ; done | jq -r 'select(.name=="{{ $storage.name }}")') ;
+            storageId=$(echo "$storageDetails" | jq -r '.id') ;
+            luma_group_mapping_json=$(cat <<EEOF
+
+            [
+              {
+                "storageId": "$storageId",
+                "storageName": "{{ $storage.name }}",
+                "gid": {{ $storage.gid }}
+              }
+            ]
+
+            EEOF
+
+            ) ;
+            echo "$luma_group_mapping_json" | luma-rest-cli -w "'%{http_code}'" addGroupMapping idp=onedata groupId=$group_id - ;
+            echo "] Success added group {{ $group.name }}($group_id) for storage {{ $storage.name }}($storageId) for provider {{ $provider.name }} as luma group." ;
+            
+            {{- end -}}
+            {{- end -}}
+           {{- end -}}
+          {{- end }}
+          {{- range $space := .Values.spaces }}
+           {{- range $provider := .supports -}}
+           {{- if .luma -}}
+           {{- $providerName := $provider.provider }}
+            export ONEPROVIDER_HOST='https://{{ template "releaseName" $ }}-{{ template "providerName" $providerName }}.{{ template "service_namespace_domain" $ }}' ;
+            export ONEPANEL_HOST='https://{{ template "releaseName" $ }}-{{ template "providerName" $providerName }}.{{ template "service_namespace_domain" $ }}:9443' ;
+            export LUMA_HOST='http://{{ template "releaseName" $ }}-luma-{{- $providerName -}}.{{ template "service_namespace_domain" $ }}' ;
+            echo "LUMA_HOST=$LUMA_HOST" ;
+            printf "Setting default space {{ $space.name }} gid for storage storage {{ $provider.storage_name }} in provider $providerName. [response: " ;
+            space_id=$(onezone-rest-cli -u {{ template "admin_username_template" $ }}:{{ template "admin_password_template" $ }} getSpace | jq -r '.spaces[]' | while read -r a_space_id ; do onezone-rest-cli -u {{ template "admin_username_template" $ }}:{{ template "admin_password_template" $ }} getSpace id=$a_space_id ; done | jq -r 'select(.name=="{{ $space.name }}").spaceId') ;
+            storageDetails=$(onepanel-rest-cli -u {{ template "admin_username_template" $ }}:{{ template "admin_password_template" $ }} getStorages | jq -r '.ids[]' | while read a_storage_id ; do onepanel-rest-cli -u {{ template "admin_username_template" $ }}:{{ template "admin_password_template" $ }} getStorageDetails id=$a_storage_id ; done | jq -r 'select(.name=="{{ $provider.storage_name }}")') ;
+            storageId=$(echo "$storageDetails" | jq -r '.id') ;
+            luma_soace_group_mapping_json=$(cat <<EEOF  
+
+            [
+              {
+                "storageId": "$storageId",
+                "storageName": "{{ $provider.storage_name }}",
+                "gid": {{ $provider.luma.gid }}
+              }
+            ]
+
+            EEOF
+
+            ) ;
+            echo "$luma_soace_group_mapping_json" | luma-rest-cli -w "'%{http_code}'" setSpaceDefaultGroup sid=$space_id - ;
+            echo "] Success set gid({{ $provider.luma.gid }}) as default for space {{ $space.name }}($space_id) for storage {{ $provider.storage_name }}($storageId) in provider {{ $providerName }}." ;
+            {{- end -}}
+           {{- end -}}
+          {{- end }}
+

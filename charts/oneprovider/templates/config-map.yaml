@@ -5,7 +5,7 @@ metadata:
   labels:
     app: {{ template "fullname" . }}
     chart: {{ .Chart.Name }}
-    release: {{ .Release.Name  }}
+    release: {{ template "releaseName" .  }}
     heritage: {{ .Release.Service }}
     onedata-service: "oneprovider"
   annotations:
@@ -66,7 +66,7 @@ data:
           readonly: {{ index .Values "posix" "readOnly" }}
         {{- if (index .Values "posix" "luma-enabled") }}
           lumaEnabled: {{ .Values.luma.enabled }}
-          lumaUrl: {{ template "luma_name" . }}:5000
+          lumaUrl: http://{{ template "luma_name" . }}/api/v3/luma
           lumaCacheTimeout: {{ .Values.luma.lumaCacheTimeout }}
           lumaApiKey: {{ .Values.luma.lumaApiKey }}
         {{- end }}
@@ -78,7 +78,7 @@ data:
           readonly: {{ index .Values "volume-nfs" "readOnly" }}
         {{- if (index .Values "volume-nfs" "luma-enabled") }}
           lumaEnabled: {{ .Values.luma.enabled }}
-          lumaUrl: {{ template "luma_name" . }}:5000
+          lumaUrl: http://{{ template "luma_name" . }}/api/v3/luma
           lumaCacheTimeout: {{ .Values.luma.lumaCacheTimeout }}
           lumaApiKey: {{ .Values.luma.lumaApiKey }}
         {{- end }}
@@ -94,7 +94,7 @@ data:
           insecure: {{ index .Values "volume-s3" "insecure" }}
         {{- if (index .Values "volume-s3" "luma-enabled") }}
           lumaEnabled: {{ .Values.luma.enabled }}
-          lumaUrl: {{ template "luma_name" . }}:5000
+          lumaUrl: http://{{ template "luma_name" . }}/api/v3/luma
           lumaCacheTimeout: {{ .Values.luma.lumaCacheTimeout }}
           lumaApiKey: {{ .Values.luma.lumaApiKey }}
         {{- end }}
@@ -111,7 +111,7 @@ data:
           insecure: {{ index .Values "volume-ceph" "insecure" }}
         {{- if (index .Values "volume-ceph" "luma-enabled") }}
           lumaEnabled: {{ .Values.luma.enabled }}
-          lumaUrl: {{ template "luma_name" . }}:5000
+          lumaUrl: http://{{ template "luma_name" . }}/api/v3/luma
           lumaCacheTimeout: {{ .Values.luma.lumaCacheTimeout }}
           lumaApiKey: {{ .Values.luma.lumaApiKey }}
         {{- end }}
@@ -126,7 +126,7 @@ data:
           insecure: {{ index .Values "volume-gluster" "insecure" }}
         {{- if (index .Values "volume-gluster" "luma-enabled") }}
           lumaEnabled: {{ .Values.luma.enabled }}
-          lumaUrl: {{ template "luma_name" . }}:5000
+          lumaUrl: http://{{ template "luma_name" . }}/api/v3/luma
           lumaCacheTimeout: {{ .Values.luma.lumaCacheTimeout }}
           lumaApiKey: {{ .Values.luma.lumaApiKey }}
         {{- end }}
@@ -143,20 +143,20 @@ data:
           insecure: {{ index .Values "volume-swift" "insecure" }}
         {{- if (index .Values "volume-swift" "luma-enabled") }}
           lumaEnabled: {{ .Values.luma.enabled }}
-          lumaUrl: {{ template "luma_name" . }}:5000
+          lumaUrl: http://{{ template "luma_name" . }}/api/v3/luma
           lumaCacheTimeout: {{ .Values.luma.lumaCacheTimeout }}
           lumaApiKey: {{ .Values.luma.lumaApiKey }}
         {{- end }}
       {{- end }}
       {{- if and (index .Values "volume-data-sync" "enabled") (eq (int .Values.oneprovider_nodes_count) 1) }}
-        {{- range $key, $val := (omit (index .Values "volume-data-sync") "enabled") }}
-        {{ $key }}:
+        {{- range $volume := (index .Values "volume-data-sync" "volumes") }}
+        {{ $volume.name }}:
           type: posix
-          mountPoint: /volumes/{{ $key }}
-          readonly: {{ $val.readOnly }}
+          mountPoint: /volumes/{{ $volume.name }}
+          readonly: {{ $volume.readOnly }}
         {{- if (index . "luma-enabled") }}
           lumaEnabled: {{ $.Values.luma.enabled }}
-          lumaUrl: {{ template "luma_name" $ }}:5000
+          lumaUrl: http://{{ template "luma_name" $ }}/api/v3/luma
           lumaCacheTimeout: {{ $.Values.luma.lumaCacheTimeout }}
           lumaApiKey: {{ $.Values.luma.lumaApiKey }}
         {{- end }}

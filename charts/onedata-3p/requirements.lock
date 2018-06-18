@@ -1,35 +1,15 @@
 dependencies:
-- alias: ""
-  condition: ""
-  enabled: false
-  import-values: null
-  name: onezone
-  repository: file://../../charts/onedata-1p
-  tags: null
-  version: 0.2.8
-- alias: ""
-  condition: ""
-  enabled: false
-  import-values: null
-  name: oneprovider
-  repository: file://../../charts/onedata-1p
-  tags: null
-  version: 0.2.8
-- alias: ""
-  condition: ""
-  enabled: false
-  import-values: null
-  name: oneprovider
-  repository: file://../../charts/onedata-1p
-  tags: null
-  version: 0.2.8
-- alias: ""
-  condition: ""
-  enabled: false
-  import-values: null
-  name: oneprovider
-  repository: file://../../charts/onedata-1p
-  tags: null
-  version: 0.2.8
-digest: sha256:799220b0f66e1f569666c4a282e9fb2e1117e182eb8249de2ddaf3564b9cae8a
-generated: 2017-08-03T00:14:12.447925787+02:00
+- name: onezone
+  repository: https://onedata.github.io/charts/
+  version: 0.2.12
+- name: oneprovider
+  repository: https://onedata.github.io/charts/
+  version: 0.2.12
+- name: oneprovider
+  repository: https://onedata.github.io/charts/
+  version: 0.2.12
+- name: oneprovider
+  repository: https://onedata.github.io/charts/
+  version: 0.2.12
+digest: sha256:2997e468ef0c67a3316fe11ef8c563be639c2f6d7237ada1e4f22126f90afe0d
+generated: 2018-03-20T10:56:20.255683791Z

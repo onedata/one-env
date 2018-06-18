@@ -1,9 +1,0 @@
-dependencies:
-- name: onezone
-  version: 0.2.8
-  repository: file://../../charts/onezone
-
-- name: oneprovider
-  alias: oneprovider-krakow
-  version: 0.2.8
-  repository: file://../../charts/oneprovider

@@ -2,29 +2,31 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-image: onedata/luma:VFS-2336
+image: onedata/luma:18.02.0-rc4
 imagePullPolicy: IfNotPresent
 serviceType: ClusterIP
 
-lumaApiKey: example_api_key
+wait_for:
+  image: onedata/k8s-wait-for:v1.1
+  imagePullPolicy: IfNotPresent
 
-posix:
-  enabled: false
-  lowest_uid: 1000
-  highest_uid: 65536
+# The initial content of lumas config
+# blank by default
+config: ""
 
-s3:
-  enabled: false
-  access_key: AccessKey
-  secret_key: SecretKey
+# The gneralization of nodeSelector.
+# Allows for moe fine grained controll over which
+# nodes are selected by a kubernetes scheduler
+# https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+affinity: {}
 
-ceph:
-  enabled: false
-  pool_name: onedata
-  username: client.admin
-  key: key
+# List of taints which are tolerated by the pods 
+# when nodes are selected by a kubernetes scheduler
+# https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+tolerations: {}
 
-swift:
-  enabled: false
-  username: swift
-  password: swift
+# Specify a map of key-value pairs. For the pod 
+# to be eligible to run on a node, the node 
+# must have each of the indicated key-value pairs as labels
+# https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+nodeSelector: {}

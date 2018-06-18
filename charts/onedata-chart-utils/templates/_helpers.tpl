@@ -8,13 +8,23 @@ Expand the name of the chart.
 {{- end -}}
 
 {{/*
+Allows to override the release name.
+*/}}
+{{- define "releaseName" -}}
+  {{- $releaseName := default .Release.Name .Values.global.releaseNameOverride | toString -}}
+  {{- printf "%s" $releaseName | trunc 63 -}}
+{{- end -}}
+
+
+{{/*
 Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 */}}
 {{- define "fullname" -}}
   {{- $name := default .Chart.Name .Values.nameOverride -}}
   {{- $suffix := default "" .Values.suffix | toString -}}
-  {{- printf "%s-%s-%s" .Release.Name $name $suffix | trunc 63 | trimSuffix "-" -}}
+  {{- $releaseName := default .Release.Name .Values.global.releaseNameOverride | toString -}}
+  {{- printf "%s-%s-%s" $releaseName $name $suffix | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
@@ -77,4 +87,22 @@ ImagePullSecrets template for json format
   {{- else -}}
     {{- "\"imagePullSecrets\": []," -}}
   {{- end -}}
+{{- end -}}
+
+{{/*
+ImagePullPolicy template 
+*/}}
+{{- define "_imagePullPolicy" -}}
+  {{- if .imagePullPolicy -}}
+    {{- .imagePullPolicy }}
+  {{- else if .Values -}}
+    {{- if .Values.imagePullPolicy -}}
+      {{- .Values.imagePullPolicy }}
+    {{- end -}}
+  {{- else if $.Values.global -}}
+      {{- $.Values.global.imagePullPolicy }}
+  {{- end -}}
+{{- end -}}
+{{- define "imagePullPolicy" -}}
+{{- template "_imagePullPolicy" . | default "IfNotPresent" }}
 {{- end -}}

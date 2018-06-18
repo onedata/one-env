@@ -5,16 +5,14 @@ metadata:
   labels:
     app: {{ template "fullname" . }}
     chart: {{ .Chart.Name }}
-    release: {{ .Release.Name }}
+    release: {{ template "releaseName" . }}
     heritage: {{ .Release.Service }}
   annotations:
     version: "{{ .Chart.Version }}"
 spec:
   type: {{ .Values.serviceType }}
   ports:
-    - name: http
+    - name: token-dispenser
       port: 80
-    - name: https
-      port: 443
   selector:
     app: {{ template "fullname" . }}
