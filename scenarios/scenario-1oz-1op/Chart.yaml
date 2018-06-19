@@ -1,6 +1,6 @@
-name: cross-support-job-1p
-version: 0.2.5
-description: Chart that populates deployment environment created with onedata/onedata-1p chart with spaces
+name: cross-support-job-3p
+version: 0.2.4
+description: Chart that populates deployment environment created with onedata/onedata-3p chart with spaces
 keywords:
   - onedata
   - initialization

@@ -1,4 +1,4 @@
-onedata-1p:
+onedata-3p:
   onezone:
     # All services for which sources can be mounted. It is used when mounting
     # sources in chart. We do not now which sources mount for given node.

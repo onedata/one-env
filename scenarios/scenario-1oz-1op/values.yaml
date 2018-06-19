@@ -11,7 +11,7 @@ wait_for:
 
 # You can enable automatic deployment od the environment
 # that this chart initializes
-onedata-1p:
+onedata-3p:
   enabled: true
 
 # Or manually specify a helm release name of the already
@@ -20,25 +20,81 @@ onedata-1p:
 
 oneprovider:
   - oneprovider-krakow
+  - oneprovider-paris
+  - oneprovider-lisbon
 
 spaces:
-  - name: "krk-c"
+  - name: "krk-3"
     supports:
       - provider: "krakow"
         storage_name: "ceph"
         size: '1000000000'
-  - name: "krk-n"
+  - name: "par-n"
+    supports:
+      - provider: "paris"
+        storage_name: "nfs"
+        size: '1000000000'
+  - name: "lis-3"
+    supports:
+      - provider: "lisbon"
+        storage_name: "s3"
+        size: '1000000000'
+  - name: "krk-n-par-3"
     supports:
       - provider: "krakow"
         storage_name: "nfs"
         size: '1000000000'
-  - name: "krk-3"
+      - provider: "paris"
+        storage_name: "s3"
+        size: '1000000000'
+  - name: "krk-3-lis-c"
     supports:
       - provider: "krakow"
         storage_name: "s3"
         size: '1000000000'
+      - provider: "lisbon"
+        storage_name: "ceph"
+        size: '1000000000'
+  - name: "par-n-lis-c"
+    supports:
+      - provider: "paris"
+        storage_name: "nfs"
+        size: '1000000000'
+      - provider: "lisbon"
+        storage_name: "ceph"
+        size: '1000000000'
+  - name: "krk-3-par-c-lis-n"
+    supports:
+      - provider: "krakow"
+        storage_name: "s3"
+        size: '1000000000'
+      - provider: "paris"
+        storage_name: "ceph"
+        size: '1000000000'
+      - provider: "lisbon"
+        storage_name: "nfs"
+        size: '1000000000'
+  - name: "krk-3-par-c-lis-n"
+    supports:
+      - provider: "krakow"
+        storage_name: "s3"
+        size: '1000000000'
+      - provider: "paris"
+        storage_name: "ceph"
+        size: '1000000000'
+      - provider: "lisbon"
+        storage_name: "nfs"
+        size: '1000000000'  
   - name: "krk-g"
     supports:
       - provider: "krakow"
         storage_name: "gluster"
+        size: '1000000000' 
+  - name: "krk-g-par-3"
+    supports:
+      - provider: "krakow"
+        storage_name: "gluster"
+        size: '1000000000'
+      - provider: "paris"
+        storage_name: "ceph"
         size: '1000000000'

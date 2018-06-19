@@ -3,7 +3,7 @@ dependencies:
   version: 0.2.9
   repository: file://../../charts/onedata-chart-utils
 
-- name: onedata-1p
-  version: 0.2.5
-  repository: file://../../charts/onedata-1p
-  condition: onedata-1p.enabled
+- name: onedata-3p
+  version: 0.2.9
+  repository: file://../../charts/onedata-3p
+  condition: onedata-3p.enabled
