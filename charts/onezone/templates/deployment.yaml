@@ -153,6 +153,10 @@ spec:
             echo {{ template "fullname" . }}-{{ sub (.Values.onezone_nodes_count) 1 }} ;
             if [[ "$HOSTNAME" != {{ template "fullname" . }}-{{ sub (.Values.onezone_nodes_count) 1 }} ]]; then export ONEPANEL_BATCH_MODE="false" ; fi ;
             env ;
+            {{- if .Values.sources }}
+               python {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/parse_sources.py  {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }} ;
+               if [[ -f onepanel_override ]]; then export ONEPANEL_OVERRIDE=$(cat onepanel_override) ; fi ;
+            {{ end }}
             /root/onezone.sh ;
             cat /var/log/oz_panel/info.log ;
             exit 1 ;
@@ -191,6 +195,20 @@ spec:
             value: {{ default "false" .Values.onepanel_trust_test_ca | quote }}
           - name: ONEPANEL_BATCH_MODE
             value: {{ .Values.onepanel_batch_mode_enabled | quote }}
+          - name: SERVICE_NAME
+            {{ if .Values.name }}
+            value: {{ .Values.name }}
+            {{- else -}}
+            value: {{ template "fullname" $ }}
+            {{- end }}
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: SERVICE_DOMAIN
+            value: {{ template "service_url" $ }}
+          - name: ONEPANEL_LOG_LEVEL
+            value: {{ default "info" .Values.log_level | quote }}
           - name: ONEZONE_CONFIG
             valueFrom:
               configMapKeyRef:
@@ -203,6 +221,23 @@ spec:
           - name: config-map
             mountPath: /etc/oz_worker/overlay.config
             subPath:  worker-overlay.config
+      {{- if .Values.sources }}
+          - mountPath: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}
+            name: deployment-dir
+        {{- range $.Values.sources }}
+          {{- if .hostPath }}
+          # Mount sources. Again for all pods (nodes)all sources will be mounted.
+          - mountPath: {{ $.Values.hostPathPrefix }}/{{ .hostPath }}
+            name: {{ .name }}
+         # Mount data dir. It will be filled with data from scenario_runner
+          - mountPath: {{ $.Values.hostPathPrefix }}/{{ .hostPath }}/_build/default/rel
+            name: sources-{{ .name }}
+          {{ else }}
+          - mountPath: /tmp/{{ .name }}
+            name: sources-{{ .name }}
+          {{ end }}
+        {{ end }}
+      {{ end }}
       {{- if (index .Values "generate-certificates" "enabled") }}
           - mountPath: /etc/oz_panel/certs/web_key.pem
             subPath: tls.key
@@ -238,6 +273,24 @@ spec:
             name: config-map
             readOnly: true
       volumes:
+    {{- if .Values.sources }}
+      - name: deployment-dir
+        hostPath:
+          path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}
+      # Sources. For each pod (node) all sources will be the mounted.
+      {{- range $.Values.sources }}
+        {{- if .hostPath }}
+      - name: {{ .name }}
+        hostPath:
+          path: {{ $.Values.vmPathPrefix }}/{{ .hostPath }}
+     # Random directory for each source. It is needed to store data. Each pod (node)
+     # will have different random directories.
+        {{- end }}
+      - name: sources-{{ .name }}
+        hostPath:
+          path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/onezone/{{ .name }}
+      {{- end }}
+    {{ end }}
       - name: config-map
         configMap:
           name: {{ template "fullname" . }}-config

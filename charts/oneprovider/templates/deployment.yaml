@@ -153,6 +153,10 @@ spec:
             echo {{ template "fullname" . }}-{{ sub (.Values.oneprovider_nodes_count) 1 }} ;
             if [[ "$HOSTNAME" != {{ template "fullname" . }}-{{ sub (.Values.oneprovider_nodes_count) 1 }} ]]; then export ONEPANEL_BATCH_MODE="false" ; fi ;
             env ;
+            {{- if .Values.sources }}
+              python {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/parse_sources.py  {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }} ;
+              if [[ -f onepanel_override ]]; then export ONEPANEL_OVERRIDE=$(cat onepanel_override) ; fi ;
+            {{ end }}
             /root/oneprovider.sh ;
             cat /var/log/op_panel/info.log ;
             exit 1 ;
@@ -177,6 +181,18 @@ spec:
                 onepanel_ready() { sleep 5 ; exit 0 ; } ;
                 if [[ "$HOSTNAME" == {{ template "fullname" . }}-{{ sub (.Values.oneprovider_nodes_count) 1 }} ]]; then exit 0 ; else onepanel_ready ; fi ;
         env:
+          - name: SERVICE_NAME
+          {{ if .Values.name }}
+            value: {{ .Values.name }}
+          {{- else -}}
+            value: {{ template "fullname" $ }}
+          {{- end }}
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: SERVICE_DOMAIN
+            value: {{ template "service_url" $ }}
           - name: ONEPANEL_LOG_LEVEL
             value: {{ default "info" .Values.log_level | quote }}
           - name: ONEPANEL_GENERATE_TEST_WEB_CERT
@@ -193,6 +209,23 @@ spec:
                 name: {{ template "fullname" . }}-config
                 key: ONEPROVIDER_CONFIG
         volumeMounts:
+          {{- if .Values.sources }}
+          - mountPath: {{ $.Values.hostPathPrefix }}/{{ $.Values.deploymentDir }}
+            name: deployment-dir
+            {{- range $.Values.sources }}
+              {{- if .hostPath }}
+            # Mount sources. Again for all pods (nodes) all sources will be mounted.
+          - mountPath: {{ $.Values.hostPathPrefix }}/{{ .hostPath }}
+            name: {{ .name }}
+            # Mount data dir. It will be filled with data from scenario_runner
+          - mountPath: {{ $.Values.hostPathPrefix }}/{{ .hostPath }}/_build/default/rel
+            name: sources-{{ .name }}
+              {{ else }}
+          - mountPath: /tmp/{{ .name }}
+            name: sources-{{ .name }}
+              {{ end }}
+            {{ end }}
+          {{ end }}
           - name: config-map
             mountPath: /etc/op_panel/overlay.config
             subPath: panel-overlay.config
@@ -261,6 +294,28 @@ spec:
         {{- end }}
       {{- end }}
       volumes:
+    {{- if .Values.sources }}
+      - name: deployment-dir
+        hostPath:
+          path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}
+      # Sources. For each pod (node) all sources will be the mounted.
+      {{- range $.Values.sources }}
+        {{- if .hostPath }}
+      - name: {{ .name }}
+        hostPath:
+          path: {{ $.Values.vmPathPrefix }}/{{ .hostPath }}
+      # Random directory for each source. It is needed to store data. Each pod (node)
+      # will have different random directories.
+        {{- end }}
+      - name: sources-{{ .name }}
+        hostPath:
+          {{ if eq $.Values.suffix "" }}
+          path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider/{{ .name }}
+          {{ else }}
+          path: {{ $.Values.vmPathPrefix }}/{{ $.Values.deploymentDir }}/oneprovider-{{- $.Values.suffix -}}/{{ .name }}
+          {{ end }}
+      {{- end }}
+    {{- end }}
       - name: config-map
         configMap:
           name: {{ template "fullname" . }}-config
