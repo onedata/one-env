@@ -70,8 +70,6 @@ def copy_data_dirs(deployment_data, hostname, service_name, node_name,
     hostname = '{}-{}'.format('-'.join(hostname.split('-')[:-1]), node_num)
 
     sources = deployment_data.get('sources').get(hostname)
-    overlay_cfg = os.path.join(args.deployment_dir, service_name,
-                               '{}-{}'.format(node_name, OVERLAY_CFG))
 
     print("Copying data dirs for sources: {}".format(sources))
     for source, source_path in sources.items():
@@ -85,21 +83,27 @@ def copy_data_dirs(deployment_data, hostname, service_name, node_name,
         print("Copying data dirs from {} to {}".format(rel_dir, dest_path))
         shutil.copytree(rel_dir, dest_path, symlinks=True)
 
-        if 'panel' in source:
-            dest_path = os.path.join(dest_path, 'etc/{}'.format(OVERLAY_CFG))
-            print("Moving overlay_config from {} to {}".format(overlay_cfg,
-                                                               dest_path))
-            shutil.move(overlay_cfg, dest_path)
+        dest_path = os.path.join(dest_path, 'etc/{}'.format(OVERLAY_CFG))
+        overlay_cfg = '/etc/{}/{}'.format(source.replace('-', '_'),
+                                          OVERLAY_CFG)
+        if os.path.exists(overlay_cfg):
+            print("Copying overlay_config from {} to {}".format(overlay_cfg,
+                                                                dest_path))
+            shutil.copy(overlay_cfg, dest_path)
             panel_from_sources = True
-            with open('onepanel_override', 'w') as f:
-                f.write(source_path)
 
-    if not panel_from_sources:
-        etc = '/etc/{}/{}'.format(
-            'oz_panel' if 'onezone' in service_name else 'op_panel',
-             OVERLAY_CFG)
-        print("Moving overlay_config from {} to {}".format(overlay_cfg, etc))
-        shutil.copy(overlay_cfg, etc)
+            if 'panel' in source:
+                with open('onepanel_override', 'w') as f:
+                    f.write(source_path)
+
+    # if not panel_from_sources:
+    #     overlay_cfg = os.path.join(args.deployment_dir, service_name,
+    #                                '{}-{}'.format(node_name, OVERLAY_CFG))
+    #     etc = '/etc/{}/{}'.format(
+    #         'oz_panel' if 'onezone' in service_name else 'op_panel',
+    #         OVERLAY_CFG)
+    #     print("Moving overlay_config from {} to {}".format(overlay_cfg, etc))
+    #     shutil.copy(overlay_cfg, etc)
 
 
 main()

@@ -779,7 +779,7 @@ onedata-3p:
       suffix: *op1s
     posix:
       enabled: *posix_enabled
-      luma-enabled: true #*luma_enabled_posix
+      luma-enabled: false #*luma_enabled_posix
     volume-s3:
       enabled: *s3_enabled
       suffix: *op1s

@@ -1,34 +1,31 @@
 import os
 import textwrap
+import re
 
 
-def create_node_config_file(deployment_dir, service_name, node_name, apps):
-    with open(os.path.join(deployment_dir, service_name,
-                           '{}-overlay.config'.format(node_name)), 'w') as f:
-        apps_configs = []
-
-        for app in apps:
-            apps_configs.append(create_config_for_app(app))
-
-        last_comma = apps_configs[-1].rfind(',')
-        apps_configs[-1] = (apps_configs[-1][:last_comma] +
-                            apps_configs[-1][last_comma + 1:])
-
-        f.write('''
-[
-    {{onepanel, [
-{}
-    ]}}
-].
-'''.format(textwrap.indent('\n\n'.join(apps_configs), '        ')))
+def replace(file_path, pattern, value):
+    with open(file_path, 'r+') as f:
+        content = f.read()
+        content = re.sub(pattern, value, content)
+        f.seek(0)
+        f.truncate()
+        f.write(content)
 
 
-def create_config_for_app(app):
-    app_config = []
+def change_node_app_config(deployment_dir, service_name, node_name, apps):
+    panel = 'op-panel' if 'oneprovider' in service_name else 'oz-panel'
+    app_config_path = os.path.join(deployment_dir, service_name,
+                           '{}-{}-{}-rel'.format(service_name, node_name, panel),
+                           'data', 'app.config'.format(node_name))
 
+    for app in apps:
+        create_config_for_app(app, app_config_path)
+
+
+def create_config_for_app(app, path):
     for attr, val in app.config.items():
         if 'panel' not in app.name:
             attr = '{}_{}'.format(app.name, attr)
-        app_config.append('{{{0}, "{1}"}},'.format(attr, val))
-
-    return '\n'.join(app_config)
+        else:
+            attr = 'onepanel_{}'.format(attr)
+        replace(path, r'{{{}, .*}}'.format(attr), r'{{{}, "{}"}}'.format(attr, val))

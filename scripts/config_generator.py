@@ -83,8 +83,8 @@ def generate_nodes_config(scenario_sources_cfg, service, host_home_dir,
                                    node_sources_conf, scenario_sources_cfg):
                 override_prefix = True
 
-        node.create_node_config_file(env_config_dir_path, service,
-                                     node_name, node_apps)
+        node.change_node_app_config(env_config_dir_path, service,
+                                    node_name, node_apps)
         new_nodes_config[node_name] = {'sources': node_sources_conf}
 
     if override_prefix:
