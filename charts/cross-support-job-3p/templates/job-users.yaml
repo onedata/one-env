@@ -31,6 +31,7 @@ spec:
       annotations:
         version: "{{ .Chart.Version }}"
     spec:
+      hostNetwork: {{ template "hostNetwork" . }}
       {{- if .Values.affinity }}
       affinity:
 {{ toYaml .Values.affinity | indent 8 }}
@@ -46,7 +47,7 @@ spec:
       initContainers:
         - name: wait-for-release
           image: {{ .Values.wait_for.image }}
-          imagePullPolicy: {{ template "imagePullPolicy" .Values.wait_for }}
+          imagePullPolicy: {{ template "imagePullPolicy" dict "root" . "context" .Values.wait_for }}
           args:
             - "pod"
             - >
@@ -56,7 +57,7 @@ spec:
       containers:
       - name: {{ .Chart.Name }}
         image: {{ .Values.image }}
-        imagePullPolicy: {{ template "imagePullPolicy" . }}
+        imagePullPolicy: {{ template "imagePullPolicy" dict "root" . }}
         env:
           - name: ONEZONE_HOST
             value: "https://{{ template "onezone_name" . }}"

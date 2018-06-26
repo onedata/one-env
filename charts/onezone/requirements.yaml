@@ -1,14 +1,14 @@
 dependencies:
 - name: onedata-chart-utils
   version: 0.2.9
-  repository: file://../../chartsonedata-chart-utils
+  repository: https://onedata.github.io/charts/
 
 - name: keycloak
   version: 0.1.0
-  repository: file://../../chartskeycloak
+  repository: https://onedata.github.io/charts/
   condition: keycloak.enabled
   
 - name: token-dispenser
   version: 0.1.0
-  repository: file://../../chartstoken-dispenser
+  repository: https://onedata.github.io/charts/
   condition: token-dispenser.enabled

@@ -1,8 +1,8 @@
 dependencies:
 - name: keycloak
   version: 0.3.0
-  repository: file://../../chartskeycloak
+  repository: https://kubernetes-charts-incubator.storage.googleapis.com
 
 - name: onedata-chart-utils
   version: 0.2.9
-  repository: file://../../chartsonedata-chart-utils
+  repository: https://onedata.github.io/charts/

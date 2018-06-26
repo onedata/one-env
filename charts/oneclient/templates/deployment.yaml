@@ -22,6 +22,7 @@ spec:
     spec:
       hostname: {{ .Chart.Name }}
       subdomain: {{ template "fullname" . }}
+      hostNetwork: {{ template "hostNetwork" . }}
       replicas: {{ .Values.replicas }}
     {{- if .Values.affinity }}
       affinity:
@@ -42,27 +43,27 @@ spec:
       initContainers:
         - name: wait-for-onezone
           image: {{ .Values.wait_for.image }}
-          imagePullPolicy: {{ template "imagePullPolicy" .Values.wait_for }}
+          imagePullPolicy: {{ template "imagePullPolicy" dict "root" . "context" .Values.wait_for }}
           args:
             - "job"
             - "{{ template "onezone_name" . }}-ready-check"
         - name: wait-for-token-dispenser
           image: {{ .Values.wait_for.image }}
-          imagePullPolicy: {{ template "imagePullPolicy" .Values.wait_for }}
+          imagePullPolicy: {{ template "imagePullPolicy" dict "root" . "context" .Values.wait_for }}
           args:
             - "pod"
             - >
               -lapp={{ template "token-dispenser_name" . }}
         - name: wait-for-oneprovider
           image: {{ .Values.wait_for.image }}
-          imagePullPolicy: {{ template "imagePullPolicy" .Values.wait_for }}
+          imagePullPolicy: {{ template "imagePullPolicy" dict "root" . "context" .Values.wait_for }}
           args:
             - "job"
             - "{{ template "oneprovider_name" . }}-ready-check" 
       containers:
       - name: {{ .Chart.Name }}
         image: {{ .Values.image }}
-        imagePullPolicy: {{ template "imagePullPolicy" . }}
+        imagePullPolicy: {{ template "imagePullPolicy" dict "root" . }}
         env:
           - name: ONECLIENT_INSECURE
             value: "true"

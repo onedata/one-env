@@ -24,11 +24,12 @@ spec:
         version: "{{ .Chart.Version }}"
     spec:
       restartPolicy: Never
+      hostNetwork: {{ template "hostNetwork" . }}
 {{ include "imagePullSecrets" . | indent 6 }}
       initContainers:
       - name: wait-for-{{ .Chart.Name }}
         image: byrnedo/alpine-curl
-        imagePullPolicy: {{ template "imagePullPolicy" .Values.wait_for }}
+        imagePullPolicy: {{ template "imagePullPolicy" dict "root" . "context" .Values.wait_for }}
         command:
           - "/bin/sh"
           - "-c"
@@ -38,7 +39,7 @@ spec:
       containers:
       - name: onezone-ready-check
         image: {{ .Values.onedata_cli.image }}
-        imagePullPolicy: {{ template "imagePullPolicy" . }}
+        imagePullPolicy: {{ template "imagePullPolicy" dict "root" . }}
         env:
           - name: ONEZONE_API_KEY
             value: "supplied_at_runtime"

@@ -1,4 +1,4 @@
 dependencies:
 - name: onedata-chart-utils
   version: 0.2.9
-  repository: file://../../chartsonedata-chart-utils
+  repository: https://onedata.github.io/charts/

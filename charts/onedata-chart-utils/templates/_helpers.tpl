@@ -93,16 +93,46 @@ ImagePullSecrets template for json format
 ImagePullPolicy template 
 */}}
 {{- define "_imagePullPolicy" -}}
-  {{- if .imagePullPolicy -}}
-    {{- .imagePullPolicy }}
-  {{- else if .Values -}}
-    {{- if .Values.imagePullPolicy -}}
-      {{- .Values.imagePullPolicy }}
-    {{- end -}}
-  {{- else if $.Values.global -}}
-      {{- $.Values.global.imagePullPolicy }}
+  {{- if .root.Values.global -}}
+      {{- if .root.Values.global.imagePullPolicy -}}
+        {{- .root.Values.global.imagePullPolicy -}}
+      {{- else if .context -}}
+          {{- if .context.imagePullPolicy  }}
+           {{- .context.imagePullPolicy  }}
+          {{- else if .root.Values.imagePullPolicy -}}
+              {{- .root.Values.imagePullPolicy -}}
+          {{- end -}}
+      {{- else if .root.Values.imagePullPolicy -}}
+          {{- .root.Values.imagePullPolicy -}}
+      {{- end -}}
+  {{- else if .context.imagePullPolicy -}}
+      {{- .context.imagePullPolicy  }}
+  {{- else if .root.Values.imagePullPolicy -}}
+      {{- .root.Values.imagePullPolicy -}}
   {{- end -}}
 {{- end -}}
 {{- define "imagePullPolicy" -}}
-{{- template "_imagePullPolicy" . | default "IfNotPresent" }}
+  {{- if .context -}} 
+    {{- template "_imagePullPolicy" dict "root" .root "context" .context | default "IfNotPresent" }}
+  {{- else -}}
+    {{- template "_imagePullPolicy" dict "root" .root "context" (dict) | default "IfNotPresent" }}
+  {{- end -}}
+{{- end -}}
+
+{{/*  
+HostNetwork template 
+*/}}
+{{- define "_hostNetwork" -}}
+  {{- if .Values.global -}}
+      {{- if .Values.global.hostNetwork -}}
+        {{- .Values.global.hostNetwork -}}
+      {{- else if .Values.hostNetwork -}}
+          {{- .Values.hostNetwork -}}
+      {{- end -}}
+  {{- else if .Values.hostNetwork -}}
+      {{- .Values.hostNetwork -}}
+  {{- end -}}
+{{- end -}}
+{{- define "hostNetwork" -}}
+  {{- include "_hostNetwork" . | default false }}
 {{- end -}}

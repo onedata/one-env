@@ -22,6 +22,7 @@ spec:
     spec:
       hostname: {{ .Chart.Name | quote }}
       subdomain: {{ template "fullname" . }}
+      hostNetwork: {{ template "hostNetwork" . }}
       {{- if .Values.affinity }}
       affinity:
 {{ toYaml .Values.affinity | indent 8 }}
@@ -38,7 +39,7 @@ spec:
       containers:
       - name: {{ .Chart.Name }}
         image: {{ .Values.image }}
-        imagePullPolicy: {{ template "imagePullPolicy" . }}
+        imagePullPolicy: {{ template "imagePullPolicy" dict "root" . }}
         ports:
           - containerPort: 80
           - containerPort: 5000
