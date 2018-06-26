@@ -14,16 +14,28 @@ def default_config(name):
         'overlay_config_file': "/etc/{}/overlay.config".format(name)
     }
 
+    web_args = {
+        'web_key_file': "/etc/{0}/certs/web_key.pem".format(name),
+        'web_cert_file': "/etc/{0}/certs/web_cert.pem".format(name),
+        'cacerts_dir': "/etc/{0}/cacerts/".format(name)
+    }
+
+    protocol_args = {
+        'protocol_key_file': "/etc/{}/certs/protocol_key.pem".format(name),
+        'protocol_cert_file': "/etc/{}/certs/protocol_cert.pem".format(name)
+    }
+
     cmds = {
         'start_cmd': "service {} start".format(name),
         'stop_cmd': "service {} stop".format(name),
         'status_cmd': "service {} ping".format(name)
     }
 
+
     apps = {
         'cluster_manager': {**env_file_arg, **files_args, **cmds},
-        'oz_worker': {**files_args, **cmds},
-        'op_worker': {**files_args, **cmds},
+        'oz_worker': {**web_args, **files_args, **cmds},
+        'op_worker': {**web_args, **files_args, **protocol_args, **cmds},
         'oz_panel': {**cmds, **files_args},
         'op_panel': {**cmds, **files_args}
     }
