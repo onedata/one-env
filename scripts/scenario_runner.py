@@ -19,13 +19,13 @@ import config_parser
 import re
 import pods
 import time
-from onenv_rsync import rsync
 import yaml
 
 
-def get_scenario_key(deployment_scenario_path: str):
+def get_scenario_key(deployment_charts_path: str):
     requirements = readers.ConfigReader(
-        os.path.join(deployment_scenario_path, 'requirements.yaml')
+        os.path.join(deployment_charts_path, 'stable', 'cross-support-job-3p',
+                     'requirements.yaml')
     ).load()
 
     scenario_key = ''
@@ -39,17 +39,14 @@ def get_scenario_key(deployment_scenario_path: str):
 
 def update_charts_dependencies(env_config_charts_path, env_config_scenario_path,
                                log_directory):
-    helm_dep_update_cmd = ['helm', 'dependency', 'update']
+    helm_dep_update_cmd = ['make', 'cross-support-job-3p']
     log_file = os.path.join(log_directory, 'helm_dep_update.log')
     console.info('Updating charts dependencies. Writing logs to {}'.
                  format(log_file))
 
     with open(log_file, 'w') as f:
-        for chart in os.listdir(env_config_charts_path):
-            subprocess.check_call(helm_dep_update_cmd +
-                                  [os.path.join(env_config_charts_path, chart)],
-                                  stdout=f, stderr=subprocess.STDOUT)
-        subprocess.check_call(helm_dep_update_cmd + [env_config_scenario_path],
+        subprocess.check_call(helm_dep_update_cmd,
+                              cwd=os.path.join(env_config_charts_path, 'stable'),
                               stdout=f, stderr=subprocess.STDOUT)
 
 
@@ -72,7 +69,7 @@ def run_scenario(deployment_dir: str):
     os.mkdir(deployment_logdir)
 
     base_sources_cfg = readers.ConfigReader(base_sources_cfg_path).load()
-    scenario_key = get_scenario_key(deployment_scenario_path)
+    scenario_key = get_scenario_key(deployment_charts_path)
     update_charts_dependencies(deployment_charts_path, deployment_scenario_path,
                                deployment_logdir)
 
@@ -80,7 +77,8 @@ def run_scenario(deployment_dir: str):
                                    deployment_scenario_path)
 
     helm_install_cmd = ['helm', 'install', '--namespace', user_config.get('namespace'),
-                        deployment_scenario_path, '-f',
+                        os.path.join(deployment_charts_path,
+                                     'stable', 'cross-support-job-3p'), '-f',
                         os.path.join(deployment_scenario_path, 'MyValues.yaml'),
                         '--name', user_config.get('helmDeploymentName')]
 

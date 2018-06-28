@@ -4,14 +4,14 @@ Date: Tue, 19 Jun 2018 10:52:53 +0200
 Subject: [PATCH] VFS-3989 Added sources to patch
 
 ---
- charts/oneprovider/templates/deployment.yaml | 55 ++++++++++++++++++++++++++++
- charts/onezone/templates/deployment.yaml     | 53 +++++++++++++++++++++++++++
+ charts/stable/oneprovider/templates/deployment.yaml | 55 ++++++++++++++++++++++++++++
+ charts/stable/stable/onezone/templates/deployment.yaml     | 53 +++++++++++++++++++++++++++
  2 files changed, 108 insertions(+)
 
-diff --git a/charts/oneprovider/templates/deployment.yaml b/charts/oneprovider/templates/deployment.yaml
+diff --git a/charts/stable/oneprovider/templates/deployment.yaml b/charts/stable/oneprovider/templates/deployment.yaml
 index e451a38..c022596 100644
---- a/charts/oneprovider/templates/deployment.yaml
-+++ b/charts/oneprovider/templates/deployment.yaml
+--- a/charts/stable/oneprovider/templates/deployment.yaml
++++ b/charts/stable/oneprovider/templates/deployment.yaml
 @@ -153,6 +153,10 @@ spec:
              echo {{ template "fullname" . }}-{{ sub (.Values.oneprovider_nodes_count) 1 }} ;
              if [[ "$HOSTNAME" != {{ template "fullname" . }}-{{ sub (.Values.oneprovider_nodes_count) 1 }} ]]; then export ONEPANEL_BATCH_MODE="false" ; fi ;
@@ -95,10 +95,10 @@ index e451a38..c022596 100644
        - name: config-map
          configMap:
            name: {{ template "fullname" . }}-config
-diff --git a/charts/onezone/templates/deployment.yaml b/charts/onezone/templates/deployment.yaml
+diff --git a/charts/stable/onezone/templates/deployment.yaml b/charts/stable/onezone/templates/deployment.yaml
 index 0597aac..aec6076 100644
---- a/charts/onezone/templates/deployment.yaml
-+++ b/charts/onezone/templates/deployment.yaml
+--- a/charts/stable/onezone/templates/deployment.yaml
++++ b/charts/stable/onezone/templates/deployment.yaml
 @@ -153,6 +153,10 @@ spec:
              echo {{ template "fullname" . }}-{{ sub (.Values.onezone_nodes_count) 1 }} ;
              if [[ "$HOSTNAME" != {{ template "fullname" . }}-{{ sub (.Values.onezone_nodes_count) 1 }} ]]; then export ONEPANEL_BATCH_MODE="false" ; fi ;
