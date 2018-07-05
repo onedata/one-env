@@ -23,9 +23,11 @@ APP_TYPE_CLUSTER_MANAGER = 'cluster-manager'
 SERVICE_ONEZONE = 'onezone'
 SERVICE_ONEPROVIDER = 'oneprovider'
 
+NODE_NAME = 'n'
+
 
 def gen_pod_name(service, node_name):
-    node_num = node_name.replace('n', '')
+    node_num = node_name.split(NODE_NAME)[1]
     return '{}-{}-{}'.format(helm.deployment_name(), service, node_num)
 
 

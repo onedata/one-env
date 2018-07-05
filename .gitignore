@@ -1,2 +1,11 @@
+*.iml
 *.pyc
 .idea
+
+.gitmodules
+
+# OSX
+.DS_Store
+
+# VSCode
+.vscode

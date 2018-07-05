@@ -31,7 +31,6 @@ def default_config(name):
         'status_cmd': "service {} ping".format(name)
     }
 
-
     apps = {
         'cluster_manager': {**env_file_arg, **files_args, **cmds},
         'oz_worker': {**web_args, **files_args, **cmds},
@@ -43,8 +42,9 @@ def default_config(name):
 
 
 class Application(object):
-    def __init__(self, name, node_name, project_path, additional_args, service,
-                 service_dir, host_home_dir):
+    def __init__(self, name: str, node_name: str, project_path: str,
+                 additional_args, service,
+                 service_dir, host_home_dir: str):
         self.name = name.replace('-', '_')
 
         if not project_path:
@@ -73,13 +73,6 @@ class Application(object):
             'stop_cmd': 'bin/{} stop'.format(self.name),
             'status_cmd': 'bin/{} ping'.format(self.name)
         }
-
-        # create application's rel dir for current installation
-        rel_dir = os.path.join(service_dir,
-                               '{}-{}-{}-rel'.format(service, node_name, name))
-        if os.path.exists(rel_dir):
-            shutil.rmtree(rel_dir)
-        shutil.copytree(self.release_path, rel_dir, symlinks=True)
 
         for arg in default_config(self.name):
             if arg in release_args_paths:

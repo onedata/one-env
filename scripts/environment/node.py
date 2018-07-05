@@ -1,6 +1,7 @@
 import os
 import textwrap
 import re
+import shutil
 
 
 def replace(file_path, pattern, value):
@@ -13,10 +14,20 @@ def replace(file_path, pattern, value):
 
 
 def change_node_app_config(deployment_dir, service_name, node_name, apps):
-    panel = 'op-panel' if 'oneprovider' in service_name else 'oz-panel'
-    app_config_path = os.path.join(deployment_dir, service_name,
-                           '{}-{}-{}-rel'.format(service_name, node_name, panel),
-                           'data', 'app.config'.format(node_name))
+    panel = [app for app in apps if 'panel' in app.name][0]
+
+    service_dir = os.path.join(deployment_dir, service_name)
+
+    # create application's rel dir for current installation
+    rel_dir = os.path.join(service_dir, node_name)
+    if not os.path.isdir(rel_dir):
+        os.makedirs(rel_dir, exist_ok=True)
+
+    if panel.release_path:
+        shutil.copy(os.path.join(panel.release_path, 'data/app.config'),
+                    rel_dir)
+
+    app_config_path = os.path.join(rel_dir, 'app.config')
 
     for app in apps:
         create_config_for_app(app, app_config_path)

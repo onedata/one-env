@@ -90,6 +90,14 @@ parser.add_argument(
     help='forces a new deployment - deletes an old one if present',
     dest='force')
 
+parser.add_argument(
+    '-l', '--local',
+    action='store_true',
+    default=argparse.SUPPRESS,
+    help='use local charts',
+    dest='local')
+
+
 args = parser.parse_args()
 
 user_config.ensure_exists()
@@ -128,4 +136,4 @@ env_config.coalesce(env_config_output_dir, args.env_config, args.scenario,
                     args.sources, args.packages, args.onezone_image,
                     args.oneprovider_image, args.no_pull)
 
-scenario_runner.run_scenario(env_config_output_dir)
+scenario_runner.run_scenario(env_config_output_dir, args.local)

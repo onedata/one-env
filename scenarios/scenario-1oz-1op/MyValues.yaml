@@ -681,6 +681,7 @@ onedata-3p:
     onepanel_users: *all_users
 
     keycloak: &keycloak
+      enable: false
       users: *all_users
       groups: *all_groups
       idpName: rhea

@@ -11,11 +11,8 @@ __license__ = "This software is released under the MIT license cited in " \
 from config import readers, writers
 from environment import application, node
 import os
-import argparse
 import user_config
 import sources
-import time
-import sys
 from names_and_paths import *
 
 
@@ -98,8 +95,8 @@ def generate_nodes_config(scenario_sources_cfg, service, host_home_dir,
     return new_nodes_config
 
 
-def generate_configs(sources_cfg, sources_cfg_path, scenario_key,
-                     deployment_dir):
+def generate_configs(sources_cfg: dict, sources_cfg_path: str,
+                     scenario_key: str, deployment_dir: str):
     scenario_sources_cfg = sources_cfg[scenario_key]
     host_home_dir = user_config.get('hostHomeDir')
     kube_host_home_dir = user_config.get('kubeHostHomeDir')
@@ -113,10 +110,10 @@ def generate_configs(sources_cfg, sources_cfg_path, scenario_key,
         service_dir_path = os.path.join(deployment_dir, service)
         os.mkdir(service_dir_path)
 
-        scenario_sources_cfg[service]['nodes'] = \
-            generate_nodes_config(scenario_sources_cfg, service,
-                                  host_home_dir, service_dir_path,
-                                  deployment_dir)
+        node_cfg = generate_nodes_config(scenario_sources_cfg, service,
+                                         host_home_dir, service_dir_path,
+                                         deployment_dir)
+        scenario_sources_cfg[service]['nodes'] = node_cfg
 
     writer = writers.ConfigWriter(sources_cfg, 'yaml')
     with open(sources_cfg_path, 'w') as f:

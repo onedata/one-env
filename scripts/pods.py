@@ -19,6 +19,8 @@ import console
 import sources
 import user_config
 from names_and_paths import *
+import subprocess
+
 
 SIGINT = 128 + int(signal.SIGINT)
 
@@ -58,6 +60,31 @@ def cmd_copy_from_pod(pod, source, destination):
     return ['kubectl', 'cp',
             '{}/{}:{}'.format(user_config.get('namespace'), pod, source),
             destination]
+
+
+def cmd_rsync(source_path, destination_path):
+    if ':' in source_path:
+        pod_name, parsed_source_path = source_path.split(':')
+        console.info('Rsyncing from pod {}: {} -> {} '.format(pod_name,
+                                                              parsed_source_path,
+                                                              destination_path))
+        rsync_cmd = ['rsync -a --rsync-path={} --blocking-io --rsh=\'kubectl '
+                     'exec {} -i -- \' rsync:. {}'.format(parsed_source_path,
+                                                          pod_name, destination_path)]
+        return rsync_cmd
+    else:
+        pod_name, parsed_destination_path = destination_path.split(':')
+        console.info('Rsyncing to pod {}: {} -> {} '.format(pod_name,
+                                                            source_path,
+                                                            parsed_destination_path))
+        rsync_cmd = ['rsync -a --rsync-path={} --blocking-io --rsh=\'kubectl '
+                     'exec {} -i -- \' {} rsync:.'.format(parsed_destination_path,
+                                                          pod_name, source_path)]
+        return rsync_cmd
+
+
+def get_node_num(pod_name: str):
+    return pod_name.split('-')[-1]
 
 
 def get_name(pod):
@@ -141,6 +168,23 @@ def all_jobs_succeeded():
         if not is_job_finished(job):
             return False
     return True
+
+
+def all_pods_running():
+    for pod in list_pods():
+        if not is_pod_running(pod):
+            return False
+    return True
+
+
+def wait_for_pod(pod):
+    pod_name = get_name(pod)
+    pod_ready = is_pod_running(pod)
+
+    while not pod_ready:
+        time.sleep(1)
+        pod = match_pods(pod_name)[0]
+        pod_ready = is_pod_running(pod)
 
 
 def clean_jobs():

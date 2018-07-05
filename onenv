@@ -60,6 +60,10 @@ case "${1}" in
         SCRIPT="onenv_clean.py"
         ;;
 
+    update)
+        SCRIPT="onenv_update.py"
+        ;;
+
     *)
         usage_and_exit
         ;;
