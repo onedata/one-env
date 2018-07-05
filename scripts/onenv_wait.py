@@ -40,7 +40,7 @@ start_time = time.time()
 
 try:
     while int(time.time() - start_time) <= int(args.timeout):
-        if pods.all_jobs_succeeded() and pods.all_pods_running()::
+        if pods.all_jobs_succeeded() and pods.all_pods_running():
             sys.exit(0)
         else:
             time.sleep(0.5)
