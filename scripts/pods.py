@@ -68,7 +68,7 @@ def cmd_rsync(source_path, destination_path):
         console.info('Rsyncing from pod {}: {} -> {} '.format(pod_name,
                                                               parsed_source_path,
                                                               destination_path))
-        rsync_cmd = ['rsync -a --rsync-path={} --blocking-io --rsh=\'kubectl '
+        rsync_cmd = ['rsync -av --rsync-path={} --blocking-io --rsh=\'kubectl '
                      'exec {} -i -- \' rsync:. {}'.format(parsed_source_path,
                                                           pod_name, destination_path)]
         return rsync_cmd
@@ -77,7 +77,7 @@ def cmd_rsync(source_path, destination_path):
         console.info('Rsyncing to pod {}: {} -> {} '.format(pod_name,
                                                             source_path,
                                                             parsed_destination_path))
-        rsync_cmd = ['rsync -a --rsync-path={} --blocking-io --rsh=\'kubectl '
+        rsync_cmd = ['rsync -av --rsync-path={} --blocking-io --rsh=\'kubectl '
                      'exec {} -i -- \' {} rsync:.'.format(parsed_destination_path,
                                                           pod_name, source_path)]
         return rsync_cmd

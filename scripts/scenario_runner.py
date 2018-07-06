@@ -65,10 +65,11 @@ def update_charts_dependencies(deployment_charts_path: str,
                               stderr=subprocess.STDOUT)
 
 
-def rsync_sources(deployment_dir: str):
+def rsync_sources(deployment_dir: str, log_directory_path: str):
     with open(os.path.join(deployment_dir, 'deployment_data.yml')) as \
             deployment_data_file:
         deployment_data = yaml.load(deployment_data_file)
+        log_file_path = os.path.join(log_directory_path, 'rsync_up.log')
 
         for pod_name in deployment_data.get('sources'):
             panel_from_sources = False
@@ -84,35 +85,39 @@ def rsync_sources(deployment_dir: str):
             pods.wait_for_pod(pod)
             pod_cfg = deployment_data.get('sources').get(pod_name).items()
 
-            for source, source_path in pod_cfg:
-                build_path = os.path.join(source_path, '_build')
-                destination_path = '{}:{}'.format(pod_name, source_path)
-                mkdir_cmd = ['bash', '-c', 'mkdir -p {}'.format(build_path)]
-                subprocess.call(pods.cmd_exec(pod_name, mkdir_cmd))
-                subprocess.call(pods.cmd_rsync(build_path, destination_path))
+            with open(log_file_path, 'w') as log_file:
+                for source, source_path in pod_cfg:
+                    build_path = os.path.join(source_path, '_build')
+                    destination_path = '{}:{}'.format(pod_name, source_path)
+                    mkdir_cmd = ['bash', '-c', 'mkdir -p {}'.format(build_path)]
+                    subprocess.call(pods.cmd_exec(pod_name, mkdir_cmd))
+                    subprocess.call(pods.cmd_rsync(build_path, destination_path),
+                                    shell=True, stdout=log_file)
 
-                if 'panel' in source:
-                    source_app_config_path = os.path.join(
-                        build_path, 'default/rel/{}/data'.format(panel_name))
-                    destination_path = '{}:{}'.format(pod_name,
-                                                      source_app_config_path)
+                    if 'panel' in source:
+                        source_app_config_path = os.path.join(
+                            build_path, 'default/rel/{}/data'.format(panel_name))
+                        destination_path = '{}:{}'.format(pod_name,
+                                                          source_app_config_path)
+                        subprocess.call(pods.cmd_rsync(generated_app_config_path,
+                                                       destination_path),
+                                        shell=True, stdout=log_file)
+                        panel_from_sources = True
+                        panel_path = source_path
+
+                if not panel_from_sources:
+                    destination_path = '{}:/var/lib/{}/app.config'.format(pod_name,
+                                                                          panel_name)
                     subprocess.call(pods.cmd_rsync(generated_app_config_path,
-                                                   destination_path))
-                    panel_from_sources = True
-                    panel_path = source_path
-
-            if not panel_from_sources:
-                destination_path = '{}:/var/lib/{}/app.config'.format(pod_name,
-                                                                      panel_name)
-                subprocess.call(pods.cmd_rsync(generated_app_config_path,
-                                               destination_path))
-                create_ready_file_cmd = ['bash', '-c', 'touch {}'
-                    .format(SOURCES_READY_FILE_PATH)]
-                subprocess.call(pods.cmd_exec(pod_name, create_ready_file_cmd))
-            else:
-                create_ready_file_cmd = ['bash', '-c', 'echo {} >> {}'
-                    .format(panel_path, SOURCES_READY_FILE_PATH)]
-                subprocess.call(pods.cmd_exec(pod_name, create_ready_file_cmd))
+                                                   destination_path),
+                                    shell=True, stdout=log_file)
+                    create_ready_file_cmd = ['bash', '-c', 'touch {}'
+                        .format(SOURCES_READY_FILE_PATH)]
+                    subprocess.call(pods.cmd_exec(pod_name, create_ready_file_cmd))
+                else:
+                    create_ready_file_cmd = ['bash', '-c', 'echo {} >> {}'
+                        .format(panel_path, SOURCES_READY_FILE_PATH)]
+                    subprocess.call(pods.cmd_exec(pod_name, create_ready_file_cmd))
 
 
 def run_scenario(deployment_dir: str, local: bool):
@@ -157,4 +162,4 @@ def run_scenario(deployment_dir: str, local: bool):
     subprocess.check_call(make_install_cmd, cwd=os.path.join(
             deployment_charts_path, STABLE_PATH), stderr=subprocess.STDOUT)
 
-    rsync_sources(deployment_dir)
+    rsync_sources(deployment_dir, deployment_logdir_path)
