@@ -15,6 +15,12 @@ import console
 import yaml
 
 
+def update(key, val):
+    user_cfg = load_yaml(user_config_path())
+    user_cfg[key] = val
+    write_yaml(user_cfg, user_config_path())
+
+
 def host_home():
     return os.path.expanduser('~')
 
@@ -85,6 +91,20 @@ def load_yaml(path):
         return yaml.load(f)
 
 
+# FIXME use config reader from readers
+def write_yaml(data, path):
+    with open(path, "w+") as f:
+        yaml.safe_dump(data, f, default_flow_style=False)
+
+
 def get(key):
     config = load_yaml(user_config_path())
     return config[key]
+
+
+def get_current_namespace():
+    return get('currentNamespace')
+
+
+def get_current_release_name():
+    return get('currentHelmDeploymentName')

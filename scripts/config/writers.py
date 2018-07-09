@@ -2,7 +2,7 @@ import json
 import yaml
 
 
-class ConfigWriter(object):
+class ConfigWriter:
     def __init__(self, cfg, format):
         if format == 'json':
             self.writer = JsonConfigWriter(cfg)
@@ -13,7 +13,7 @@ class ConfigWriter(object):
         return self.writer.dump()
 
 
-class JsonConfigWriter(object):
+class JsonConfigWriter:
     def __init__(self, cfg):
         self.cfg = cfg
 
@@ -21,7 +21,7 @@ class JsonConfigWriter(object):
         print(json.dumps(self.cfg, indent=2, sort_keys=True))
 
 
-class YamlConfigWriter(object):
+class YamlConfigWriter:
     def __init__(self, cfg):
         self.cfg = cfg
 

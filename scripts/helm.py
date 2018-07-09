@@ -13,14 +13,26 @@ import user_config
 import console
 
 
-def GET_DEPLOYMENT(name): return ['helm', 'get', name]
+def cmd_install(chart_path: str, values_paths: list):
+    helm_install_cmd = ['helm', 'install', chart_path, '--namespace',
+                        user_config.get_current_namespace(),
+                        '--name', user_config.get_current_release_name()]
+
+    for values_path in values_paths:
+        helm_install_cmd.extend(['-f', values_path])
+    return helm_install_cmd
 
 
-def DELETE_DEPLOYMENT(name): return ['helm', 'delete', '--purge', name]
+def GET_DEPLOYMENT(name):
+    return ['helm', 'get', name]
+
+
+def DELETE_DEPLOYMENT(name):
+    return ['helm', 'delete', '--purge', name]
 
 
 def deployment_name():
-    return user_config.get('helmDeploymentName')
+    return user_config.get('currentHelmDeploymentName')
 
 
 def deployment_exists():

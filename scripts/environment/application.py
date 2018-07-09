@@ -41,7 +41,7 @@ def default_config(name):
     return apps.get(name, dict())
 
 
-class Application(object):
+class Application:
     def __init__(self, name: str, node_name: str, project_path: str,
                  additional_args, service,
                  service_dir, host_home_dir: str):

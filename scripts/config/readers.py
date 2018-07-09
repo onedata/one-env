@@ -3,10 +3,10 @@ import os
 import yaml
 
 
-class ConfigReader(object):
+class ConfigReader:
     def __init__(self, path):
         filename, extension = os.path.splitext(path)
-        if extension in ['.yml', '.yaml']:
+        if extension in ('.yml', '.yaml'):
             self.reader = YamlConfigReader(path)
         else:
             self.reader = JsonConfigReader(path)
@@ -15,7 +15,7 @@ class ConfigReader(object):
         return self.reader.load()
 
 
-class JsonConfigReader(object):
+class JsonConfigReader:
     def __init__(self, path):
         self.path = path
 
@@ -24,7 +24,7 @@ class JsonConfigReader(object):
             return json.load(f)
 
 
-class YamlConfigReader(object):
+class YamlConfigReader:
     def __init__(self, path):
         self.path = path
 

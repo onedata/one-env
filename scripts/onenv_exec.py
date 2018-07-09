@@ -28,10 +28,11 @@ parser.add_argument(
     help='pod name (or matching pattern, use "-" for wildcard)',
     dest='pod')
 
+args = parser.parse_args()
+
 user_config.ensure_exists()
 helm.ensure_deployment(exists=True, fail_with_error=True)
 
-args = parser.parse_args()
 if 'pod' not in args:
     args.pod = None
 

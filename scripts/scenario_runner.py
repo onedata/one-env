@@ -14,6 +14,7 @@ import yaml
 import shutil
 import subprocess
 
+import helm
 import pods
 import console
 import user_config
@@ -43,7 +44,7 @@ def get_scenario_key(deployment_charts_path: str):
     return scenario_key
 
 
-def change_requirements(log_file, deployment_charts_path):
+def change_requirements(log_file, deployment_charts_path: str):
     change_req_cmd = ['./repository-dev.sh']
     subprocess.check_call(change_req_cmd, cwd=os.path.join(
         deployment_charts_path, STABLE_PATH), stdout=log_file,
@@ -120,7 +121,7 @@ def rsync_sources(deployment_dir: str, log_directory_path: str):
                     subprocess.call(pods.cmd_exec(pod_name, create_ready_file_cmd))
 
 
-def run_scenario(deployment_dir: str, local: bool):
+def run_scenario(deployment_dir: str, local: bool, debug: bool, dry_run: bool):
     env_cfg = readers.ConfigReader(os.path.join(deployment_dir,
                                                 'env_config.yaml')).load()
     original_scenario_path = os.path.join('scenarios', env_cfg.get('scenario'))
@@ -143,23 +144,25 @@ def run_scenario(deployment_dir: str, local: bool):
     config_parser.parse_env_config(env_cfg, base_sources_cfg, scenario_key,
                                    deployment_scenario_path)
 
-    make_install_cmd = ['helm', 'install', CROSS_SUPPORT_JOB, '--namespace',
-                        user_config.get('namespace'),
-                        '-f', os.path.join(deployment_scenario_path,
-                                           'MyValues.yaml'),
-                        '--name', user_config.get('helmDeploymentName')]
+    my_values_path = os.path.join(deployment_scenario_path, 'MyValues.yaml')
+    custom_config_path = os.path.join(deployment_scenario_path,
+                                      'CustomConfig.yaml')
+    helm_install_cmd = helm.cmd_install(CROSS_SUPPORT_JOB, [my_values_path,
+                                                            custom_config_path])
 
-    make_install_cmd += ['-f', os.path.join(deployment_scenario_path,
-                                            'CustomConfig.yaml')]
+    if debug:
+        helm_install_cmd.extend(['--debug'])
+    if dry_run:
+        helm_install_cmd.extend(['--dry-run'])
 
     if env_cfg.get('sources'):
         config_generator.generate_configs(base_sources_cfg,
                                           base_sources_cfg_path,
                                           scenario_key, deployment_dir)
 
-        make_install_cmd += ['-f', base_sources_cfg_path]
+        helm_install_cmd.extend(['-f', base_sources_cfg_path])
 
-    subprocess.check_call(make_install_cmd, cwd=os.path.join(
+    subprocess.check_call(helm_install_cmd, cwd=os.path.join(
             deployment_charts_path, STABLE_PATH), stderr=subprocess.STDOUT)
 
     rsync_sources(deployment_dir, deployment_logdir_path)

@@ -26,60 +26,81 @@ SIGINT = 128 + int(signal.SIGINT)
 
 
 def cmd_delete_jobs():
-    return ['kubectl', 'delete', 'jobs', '--all']
+    return ['kubectl', '--namespace', user_config.get_current_namespace(),
+            'delete', 'jobs', '--all']
 
 
 def cmd_delete_pods():
-    return ['kubectl', 'delete', 'pod', '--all']
+    return ['kubectl', '--namespace', user_config.get_current_namespace(),
+            'delete', 'pod', '--all']
 
 
 def cmd_exec(pod, command):
     if isinstance(command, list):
-        return ['kubectl', 'exec', '-it', pod, '--'] + command
+        return ['kubectl', '--namespace', user_config.get_current_namespace(),
+                'exec', '-it', pod, '--'] + command
     else:
-        return ['kubectl', 'exec', '-it', pod, '--', command]
+        return ['kubectl', '--namespace', user_config.get_current_namespace(),
+                'exec', '-it', pod, '--', command]
 
 
 def cmd_logs(pod, follow=False):
     if follow:
-        return ['kubectl', 'logs', '-f', pod]
+        return ['kubectl', '--namespace', user_config.get_current_namespace(),
+                'logs', '-f', pod]
     else:
-        return ['kubectl', 'logs', pod]
+        return ['kubectl', '--namespace', user_config.get_current_namespace(),
+                'logs', pod]
 
 
 def cmd_desc_stateful_set():
-    return ['kubectl', 'describe', 'statefulset']
+    return ['kubectl', '--namespace', user_config.get_current_namespace(),
+            'describe', 'statefulset']
 
 
 def cmd_copy_to_pod(pod, source, destination):
-    return ['kubectl', 'cp', source,
-            '{}/{}:{}'.format(user_config.get('namespace'), pod, destination)]
+    return ['kubectl', '--namespace', user_config.get_current_namespace(), 'cp',
+            source, '{}/{}:{}'.format(user_config.get('namespace'), pod,
+                                      destination)]
 
 
 def cmd_copy_from_pod(pod, source, destination):
-    return ['kubectl', 'cp',
+    return ['kubectl', '--namespace', user_config.get_current_namespace(), 'cp',
             '{}/{}:{}'.format(user_config.get('namespace'), pod, source),
             destination]
 
 
 def cmd_rsync(source_path, destination_path):
+    namespace = user_config.get_current_namespace()
+
     if ':' in source_path:
         pod_name, parsed_source_path = source_path.split(':')
         console.info('Rsyncing from pod {}: {} -> {} '.format(pod_name,
                                                               parsed_source_path,
                                                               destination_path))
-        rsync_cmd = ['rsync -av --rsync-path={} --blocking-io --rsh=\'kubectl '
-                     'exec {} -i -- \' rsync:. {}'.format(parsed_source_path,
-                                                          pod_name, destination_path)]
+        if namespace:
+            rsh = 'kubectl --namespace {} exec {} -i -- '.format(namespace,
+                                                                 pod_name)
+        else:
+            rsh = 'kubectl exec {} -i -- '.format(pod_name)
+
+        rsync_cmd = ['rsync --info=progress2 -a --rsync-path={} --blocking-io '
+                     '--rsh=\'{}\' rsync:. {}'.format(parsed_source_path, rsh,
+                                                      destination_path)]
         return rsync_cmd
     else:
         pod_name, parsed_destination_path = destination_path.split(':')
         console.info('Rsyncing to pod {}: {} -> {} '.format(pod_name,
                                                             source_path,
                                                             parsed_destination_path))
-        rsync_cmd = ['rsync -av --rsync-path={} --blocking-io --rsh=\'kubectl '
-                     'exec {} -i -- \' {} rsync:.'.format(parsed_destination_path,
-                                                          pod_name, source_path)]
+        if namespace:
+            rsh = 'kubectl --namespace {} exec {} -i -- '.format(namespace,
+                                                                 pod_name)
+        else:
+            rsh = 'kubectl exec {} -i -- '.format(pod_name)
+        rsync_cmd = ['rsync --info=progress2 -a --rsync-path={} --blocking-io '
+                     '--rsh=\'{}\' {} rsync:.'.format(parsed_destination_path,
+                                                      rsh, source_path)]
         return rsync_cmd
 
 
@@ -155,7 +176,7 @@ def list_pods_and_jobs():
     urllib3.disable_warnings()
     config.load_kube_config()
     kube = client.CoreV1Api()
-    namespace = user_config.get('namespace')
+    namespace = user_config.get_current_namespace()
     return kube.list_namespaced_pod(namespace).items
 
 

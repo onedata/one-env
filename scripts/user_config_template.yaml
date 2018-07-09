@@ -13,7 +13,24 @@ maxPersistentHistory: 50
 
 # Name that will be used for helm deployment. Only one concurrent deployment is
 # supported by the one-env tool.
-helmDeploymentName: dev
+defaultHelmDeploymentName: dev
+
+# Name for current helm deployment. The value for currentHelmDeploymentName
+# is determined in following way:
+# 1) If --release-name option was used in up script, then currentHelmDeploymentName
+# will be equal to provided value.
+# 2) In other case currentHelmDeploymentName will be equal to defaultHelmDeploymentName.
+currentHelmDeploymentName: dev
 
 # Kubernetes namespace in which all pods will be run.
-namespace: default
+defaultNamespace: default
+
+# Kubernetes namespace for current deployment. The value for currentNamespace
+# is determined in following way:
+# 1) If --kube-config option was used in up script, then currentNamespace will be
+# empty. Thanks to that namespace from kube-config file will be used.
+# 2) If --namespace option was used in up script, then currentNamespace will be
+# equal to provided value.
+# 3) In other case currentNamespace will be equal to defaultNamespace.
+currentNamespace: default
+

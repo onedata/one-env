@@ -82,12 +82,13 @@ def pod_status(pod, multiple=False, indent=''):
     else:
         print('{}name: {}'.format(indent, pods.get_name(pod)))
 
-    print('{}name: {}'.format(indent, pods.get_service_name(pod)))
-    print('{}service-type: {}'.format(indent, pods.get_service_type(pod)))
-    print('{}hostname: {}'.format(indent, pods.get_hostname(pod)))
-    print('{}domain: {}'.format(indent, pods.get_domain(pod)))
-    print('{}ip: {}'.format(indent, pods.get_ip(pod)))
-    print('{}container_id: {}'.format(indent, pods.get_container_id(pod)))
+    print('{}name: {}'.format(indent, pods.get_service_name(pod)),
+          '{}service-type: {}'.format(indent, pods.get_service_type(pod)),
+          '{}hostname: {}'.format(indent, pods.get_hostname(pod)),
+          '{}domain: {}'.format(indent, pods.get_domain(pod)),
+          '{}ip: {}'.format(indent, pods.get_ip(pod)),
+          '{}container_id: {}'.format(indent, pods.get_container_id(pod)),
+          sep='\n')
 
 
 def pod_ip(pod, multiple=False):

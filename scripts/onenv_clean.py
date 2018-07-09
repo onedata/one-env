@@ -20,12 +20,13 @@ parser = argparse.ArgumentParser(
     description=SCRIPT_DESCRIPTION
 )
 
+args = parser.parse_args()
+
 user_config.ensure_exists()
 helm.ensure_deployment(exists=True, fail_with_error=False)
 
-args = parser.parse_args()
-
 helm.clean_deployment()
-pods.clean_jobs()
-pods.clean_pods()
+# TODO: is this really needed?
+# pods.clean_jobs()
+# pods.clean_pods()
 
