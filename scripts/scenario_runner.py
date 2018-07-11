@@ -66,9 +66,31 @@ def update_charts_dependencies(deployment_charts_path: str,
                               stderr=subprocess.STDOUT)
 
 
+def rsync_source(pod_name, source_path, log_file):
+    build_path = os.path.join(source_path, '_build')
+    destination_path = '{}:{}'.format(pod_name, source_path)
+
+    mkdir_cmd = ['bash', '-c', 'mkdir -p {}'.format(build_path)]
+
+    subprocess.call(pods.cmd_exec(pod_name, mkdir_cmd))
+    subprocess.call(pods.cmd_rsync(build_path, destination_path), shell=True,
+                    stdout=log_file)
+
+
+def copy_overlay_cfg(source_name, source_path, pod_name):
+    parsed_source_name = source_name.replace('-', '_')
+    overlay_cfg_path = '/etc/{}/overlay.config'.format(parsed_source_name)
+
+    destination_path = os.path.join(source_path, '_build/default/rel/{}/etc'.format(parsed_source_name))
+    cmd = ['bash', '-c', 'cp {} {}'.format(overlay_cfg_path, destination_path)]
+    console.info('Copying overlay.config from {} to {}'.format(overlay_cfg_path,
+                                                               destination_path))
+    subprocess.call(pods.cmd_exec(pod_name, cmd))
+
+
 def rsync_sources(deployment_dir: str, log_directory_path: str):
-    with open(os.path.join(deployment_dir, 'deployment_data.yml')) as \
-            deployment_data_file:
+    deployment_data_path = os.path.join(deployment_dir, 'deployment_data.yml')
+    with open(deployment_data_path, 'r') as deployment_data_file:
         deployment_data = yaml.load(deployment_data_file)
         log_file_path = os.path.join(log_directory_path, 'rsync_up.log')
 
@@ -77,31 +99,25 @@ def rsync_sources(deployment_dir: str, log_directory_path: str):
             pod = pods.match_pods(pod_name)[0]
             service_name = '-'.join(pods.get_service_name(pod).split('-')[1:])
             node_name = 'n{}'.format(pods.get_node_num(pod_name))
-            generated_app_config_path = os.path.join(deployment_dir,
-                                                     service_name,
-                                                     node_name,
-                                                     'app.config')
+            generated_app_cfg_path = os.path.join(deployment_dir, service_name,
+                                                  node_name, 'app.config')
             panel_name = 'oz_panel' if 'zone' in service_name else 'op_panel'
 
             pods.wait_for_pod(pod)
             pod_cfg = deployment_data.get('sources').get(pod_name).items()
+            console.info('Rsyncing sources for pod {}'.format(pod_name))
 
             with open(log_file_path, 'w') as log_file:
                 for source, source_path in pod_cfg:
-                    build_path = os.path.join(source_path, '_build')
-                    destination_path = '{}:{}'.format(pod_name, source_path)
-                    mkdir_cmd = ['bash', '-c', 'mkdir -p {}'.format(build_path)]
-                    subprocess.call(pods.cmd_exec(pod_name, mkdir_cmd))
-                    subprocess.call(pods.cmd_rsync(build_path, destination_path),
-                                    shell=True, stdout=log_file)
+                    rsync_source(pod_name, source_path, log_file)
+                    copy_overlay_cfg(source, source_path, pod_name)
 
                     if 'panel' in source:
-                        source_app_config_path = os.path.join(
-                            build_path, 'default/rel/{}/data'.format(panel_name))
-                        destination_path = '{}:{}'.format(pod_name,
-                                                          source_app_config_path)
-                        subprocess.call(pods.cmd_rsync(generated_app_config_path,
-                                                       destination_path),
+                        host_app_cfg_path = os.path.join(source_path, '_build/default/rel/{}/data'.format(panel_name))
+                        pod_app_cfg_path = '{}:{}'.format(pod_name,
+                                                          host_app_cfg_path)
+                        subprocess.call(pods.cmd_rsync(generated_app_cfg_path,
+                                                       pod_app_cfg_path),
                                         shell=True, stdout=log_file)
                         panel_from_sources = True
                         panel_path = source_path
@@ -109,7 +125,7 @@ def rsync_sources(deployment_dir: str, log_directory_path: str):
                 if not panel_from_sources:
                     destination_path = '{}:/var/lib/{}/app.config'.format(pod_name,
                                                                           panel_name)
-                    subprocess.call(pods.cmd_rsync(generated_app_config_path,
+                    subprocess.call(pods.cmd_rsync(generated_app_cfg_path,
                                                    destination_path),
                                     shell=True, stdout=log_file)
                     create_ready_file_cmd = ['bash', '-c', 'touch {}'
@@ -165,4 +181,6 @@ def run_scenario(deployment_dir: str, local: bool, debug: bool, dry_run: bool):
     subprocess.check_call(helm_install_cmd, cwd=os.path.join(
             deployment_charts_path, STABLE_PATH), stderr=subprocess.STDOUT)
 
-    rsync_sources(deployment_dir, deployment_logdir_path)
+    if env_cfg.get('sources'):
+        rsync_sources(deployment_dir, deployment_logdir_path)
+

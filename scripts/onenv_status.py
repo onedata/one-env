@@ -82,10 +82,11 @@ def pod_status(pod, multiple=False, indent=''):
     else:
         print('{}name: {}'.format(indent, pods.get_name(pod)))
 
+    # TODO: do we need hostname adn domain or only one of this?
     print('{}name: {}'.format(indent, pods.get_service_name(pod)),
           '{}service-type: {}'.format(indent, pods.get_service_type(pod)),
-          '{}hostname: {}'.format(indent, pods.get_hostname(pod)),
           '{}domain: {}'.format(indent, pods.get_domain(pod)),
+          '{}hostname: {}'.format(indent, pods.get_domain(pod)),
           '{}ip: {}'.format(indent, pods.get_ip(pod)),
           '{}container_id: {}'.format(indent, pods.get_container_id(pod)),
           sep='\n')

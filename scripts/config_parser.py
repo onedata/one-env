@@ -15,7 +15,7 @@ import config_generator
 
 def parse_node_name(node_name):
     """Parse node name in form 'node-1' to 'n1'"""
-    node_num = node_name.replace('node-', '')
+    node_num = parse_node_num(node_name)
     return 'n{}'.format(node_num)
 
 

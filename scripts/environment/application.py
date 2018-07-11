@@ -49,6 +49,7 @@ class Application:
 
         if not project_path:
             self.config = default_config(self.name)
+            self.release_path = None
             return
 
         self.project_path = os.path.join(host_home_dir, project_path)

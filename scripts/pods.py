@@ -19,6 +19,7 @@ import console
 import sources
 import user_config
 from names_and_paths import *
+import helm
 import subprocess
 
 
@@ -113,7 +114,9 @@ def get_name(pod):
 
 
 def get_service_name(pod):
-    return get_env_variable(pod, 'SERVICE_NAME')
+    # TODO: what if user change name of the zone?
+    return pod.metadata.labels.get('app')
+    # return get_env_variable(pod, 'SERVICE_NAME')
 
 
 def get_service_type(pod):
@@ -142,13 +145,18 @@ def get_env_variable(pod, env_name):
     return None
 
 
+def get_chart_name(pod):
+    return pod.metadata.labels.get('chart')
+
+
 def get_domain(pod):
-    return get_env_variable(pod, 'SERVICE_DOMAIN')
+    return '{}-{}.{}'.format(helm.deployment_name(), get_chart_name(pod),
+                             user_config.get_current_namespace())
 
 
-def get_hostname(pod):
-    return '{}.{}'.format(get_env_variable(pod, 'HOSTNAME'),
-                          get_domain(pod))
+# def get_hostname(pod):
+#     return '{}.{}'.format(get_env_variable(pod, 'HOSTNAME'),
+#                           get_domain(pod))
 
 
 def get_ip(pod):

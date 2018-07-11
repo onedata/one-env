@@ -1,8 +1,8 @@
 global:
   # TODO: Find a way to eliminate necessity for region and tld values
   # to make deployment cluster independent
-  region: dev
-  tld: onedata.uk.to
+  region: cluster
+  tld: local
   imagePullPolicy: Always
 
 oneprovider-krakow:
