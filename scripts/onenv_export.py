@@ -8,16 +8,19 @@ __copyright__ = "Copyright (C) 2018 ACK CYFRONET AGH"
 __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
-import argparse
-import shutil
+
 import os
+import shutil
+import argparse
+
+import cmd
 import pods
 import helm
-import deployments_dir
 import console
-import user_config
 import sources
-import cmd
+import user_config
+import argparse_utils
+import deployments_dir
 from names_and_paths import *
 
 SCRIPT_DESCRIPTION = 'Gathers all logs and relevant data from current ' \
@@ -29,7 +32,7 @@ POD_LOGS_DIR = 'pod-logs'
 
 parser = argparse.ArgumentParser(
     prog='onenv wait',
-    formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    formatter_class=argparse_utils.ArgumentsHelpFormatter,
     description=SCRIPT_DESCRIPTION
 )
 
@@ -37,7 +40,6 @@ parser.add_argument(
     type=str,
     nargs='?',
     action='store',
-    default=argparse.SUPPRESS,
     help='directory where deployment data should be stored - if not specified, '
          'it will be placed in deployments dir '
          '(~/.one-env/deployments/<timestamp>)',

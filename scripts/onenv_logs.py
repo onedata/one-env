@@ -8,19 +8,22 @@ __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
 import argparse
-import sys
 import pyperclip
+
 import pods
 import helm
-import user_config
 import console
+import user_config
+import argparse_utils
+from names_and_paths import *
+
 
 SCRIPT_DESCRIPTION = 'Displays logs of chosen pod - by default the output of ' \
                      'container entrypoint.'
 
 parser = argparse.ArgumentParser(
     prog='onenv logs',
-    formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    formatter_class=argparse_utils.ArgumentHelpFormatter,
     description=SCRIPT_DESCRIPTION
 )
 
@@ -28,67 +31,66 @@ parser.add_argument(
     type=str,
     nargs='?',
     action='store',
-    default=argparse.SUPPRESS,
     help='pod name (or matching pattern, use "-" for wildcard)',
     dest='pod')
 
-parser.add_argument(
+
+group = parser.add_mutually_exclusive_group()
+
+group.add_argument(
     '-f', '--follow',
     action='store_true',
-    default=False,
-    help='logs will be streamed',
-    dest='follow')
+    help='logs will be streamed')
+
+group.add_argument(
+    '-x', '--clipboard',
+    action='store_true',
+    help='copy the output to clipboard')
 
 parser.add_argument(
     '-i', '--infinity',
     action='store_true',
-    default=False,
     help='can be used with -f, the process will keep living waiting for logs '
-         'to appear, even between env restarts.',
-    dest='infinity')
+         'to appear, even between env restarts.')
 
-parser.add_argument(
+
+components_group = parser.add_mutually_exclusive_group()
+
+components_group.add_argument(
     '-w', '--worker',
-    action='store_true',
-    default=argparse.SUPPRESS,
+    action='store_const',
     help='display info level logs from (op|oz)-worker',
-    dest='worker')
+    const=APP_TYPE_WORKER,
+    dest='app_type')
 
-parser.add_argument(
+components_group.add_argument(
     '-p', '--panel',
     action='store_true',
-    default=argparse.SUPPRESS,
     help='display info level logs from (op|oz)-panel',
-    dest='panel')
+    const=APP_TYPE_PANEL,
+    dest='app_type')
 
-parser.add_argument(
+components_group.add_argument(
     '-c', '--cluster-manager',
     action='store_true',
-    default=argparse.SUPPRESS,
     help='display info level logs from cluster-manager',
-    dest='cluster_manager')
+    const=APP_TYPE_CLUSTER_MANAGER,
+    dest='app_type')
+
 
 parser.add_argument(
     '-l', '--log-file',
     type=str,
     action='store',
     default='info.log',
-    help='log file to be displayed (.log extension can be omitted)',
-    dest='logfile')
+    help='log file to be displayed (.log extension can be omitted)')
 
 parser.add_argument(
     '-s', '--show-log-files',
     action='store_true',
-    default=False,
     help='show available log files for given app',
     dest='show_logfiles')
 
-parser.add_argument(
-    '-x', '--clipboard',
-    action='store_true',
-    default=False,
-    help='copy the output to clipboard',
-    dest='clipboard')
 
 user_config.ensure_exists()
 args = parser.parse_args()
@@ -96,18 +98,11 @@ args = parser.parse_args()
 
 def logs(pod):
     interactive = not args.clipboard
+    app_type = args.app_type
 
-    if 'worker' in args:
-        res = pods.app_logs(pod, app_type='worker', logfile=args.logfile,
+    if app_type:
+        res = pods.app_logs(pod, app_type=app_type, logfile=args.logfile,
                             interactive=interactive,
-                            follow=args.follow, infinite=args.infinity)
-    elif 'panel' in args:
-        res = pods.app_logs(pod, app_type='panel', logfile=args.logfile,
-                            interactive=interactive,
-                            follow=args.follow, infinite=args.infinity)
-    elif 'cluster_manager' in args:
-        res = pods.app_logs(pod, app_type='cluster-manager',
-                            logfile=args.logfile, interactive=interactive,
                             follow=args.follow, infinite=args.infinity)
     else:
         res = pods.pod_logs(pod, interactive=interactive,
@@ -154,7 +149,7 @@ def main():
         pass
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
 
 

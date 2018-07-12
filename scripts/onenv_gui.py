@@ -11,10 +11,12 @@ __license__ = "This software is released under the MIT license cited in " \
 import argparse
 import webbrowser
 import pyperclip
+
 import pods
 import helm
 import user_config
 import console
+import argparse_utils
 
 SCRIPT_DESCRIPTION = 'Opens the GUI hosted by the service on given pod in ' \
                      'your default browser (uses the `open` command ' \
@@ -24,7 +26,7 @@ SCRIPT_DESCRIPTION = 'Opens the GUI hosted by the service on given pod in ' \
 
 parser = argparse.ArgumentParser(
     prog='onenv open',
-    formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    formatter_class=argparse_utils.ArgumentsHelpFormatter,
     description=SCRIPT_DESCRIPTION
 )
 
@@ -32,21 +34,18 @@ parser.add_argument(
     type=str,
     nargs='?',
     action='store',
-    default=argparse.SUPPRESS,
     help='pod name (or matching pattern, use "-" for wildcard)',
     dest='pod')
 
 parser.add_argument(
     '-p', '--panel',
     action='store_true',
-    default=argparse.SUPPRESS,
     help='open the GUI of onepanel',
     dest='panel')
 
 parser.add_argument(
     '-i', '--ip',
     action='store_true',
-    default=argparse.SUPPRESS,
     help='use pod\'s IP rather than domain - useful when kubernetes domains '
          'cannot be resolved from the host.',
     dest='ip')
@@ -54,37 +53,38 @@ parser.add_argument(
 parser.add_argument(
     '-x', '--clipboard',
     action='store_true',
-    default=argparse.SUPPRESS,
     help='copy the URL to clipboard and do not open it',
     dest='clipboard')
 
-user_config.ensure_exists()
-helm.ensure_deployment(exists=True, fail_with_error=True)
 
-args = parser.parse_args()
-if 'pod' not in args:
-    args.pod = None
+def main():
+    args = parser.parse_args()
 
-port = 443
-if 'panel' in args:
-    port = 9443
+    user_config.ensure_exists()
+    helm.ensure_deployment(exists=True, fail_with_error=True)
 
+    port = 443
+    if 'panel' in args:
+        port = 9443
 
-def open_fun(pod):
-    if 'ip' in args:
-        hostname = pods.get_ip(pod)
-    else:
-        hostname = pods.get_domain(pod)
-
-    if not hostname:
-        console.error('The pod is not ready yet')
-    else:
-        url = 'https://{}:{}'.format(hostname, port)
-        if 'clipboard' in args:
-            pyperclip.copy(url)
-            console.info('URL copied to clipboard ({})'.format(url))
+    def open_fun(pod):
+        if 'ip' in args:
+            hostname = pods.get_ip(pod)
         else:
-            webbrowser.open(url)
+            hostname = pods.get_domain(pod)
+
+        if not hostname:
+            console.error('The pod is not ready yet')
+        else:
+            url = 'https://{}:{}'.format(hostname, port)
+            if 'clipboard' in args:
+                pyperclip.copy(url)
+                console.info('URL copied to clipboard ({})'.format(url))
+            else:
+                webbrowser.open(url)
+
+    pods.match_pod_and_run(args.pod, open_fun)
 
 
-pods.match_pod_and_run(args.pod, open_fun)
+if __name__ == '__main__':
+    main()

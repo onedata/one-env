@@ -61,10 +61,10 @@ parser.add_argument(
     help='copy the output to clipboard',
     dest='clipboard')
 
+args = parser.parse_args()
+
 user_config.ensure_exists()
 helm.ensure_deployment(exists=True, fail_with_error=False)
-
-args = parser.parse_args()
 
 
 def deployment_status():

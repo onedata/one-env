@@ -7,26 +7,26 @@ __copyright__ = "Copyright (C) 2018 ACK CYFRONET AGH"
 __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
-import sys
 import argparse
-import console
+
+import pods
 import helm
-import user_config
+import console
 import env_config
+import user_config
 import deployments_dir
 import scenario_runner
-import pods
+import argparse_utils
 
 
 SCRIPT_DESCRIPTION = 'Sets up a onedata deployment on kubernetes cluster.'
 
 parser = argparse.ArgumentParser(
     prog='onenv up',
+    formatter_class=argparse_utils.ArgumentsHelpFormatter,
     description=SCRIPT_DESCRIPTION
 )
 
-
-#TODO: FIX DEFAULTS LATER
 parser.add_argument(
     type=str,
     nargs='?',
@@ -124,7 +124,7 @@ charts_group.add_argument(
     '-cp', '--chart-path',
     action='store',
     default='charts/stable',
-    help='Path to local charts (default: %(default)s)',
+    help='Path to local charts',
     dest='chart_path')
 
 

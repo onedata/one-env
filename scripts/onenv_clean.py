@@ -8,17 +8,20 @@ __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
 import argparse
+
 import helm
-import pods
 import user_config
+import argparse_utils
+
 
 SCRIPT_DESCRIPTION = 'Cleans current onedata deployment.'
 
 parser = argparse.ArgumentParser(
     prog='onenv clean',
-    formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    formatter_class=argparse_utils.ArgumentsHelpFormatter,
     description=SCRIPT_DESCRIPTION
 )
+
 
 args = parser.parse_args()
 

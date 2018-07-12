@@ -15,6 +15,7 @@ import contextlib
 import pods
 import helm
 import user_config
+import argparse_utils
 from names_and_paths import *
 
 
@@ -24,8 +25,7 @@ SCRIPT_DESCRIPTION = 'Attaches directly to erlang VM in chosen pod. By ' \
 
 parser = argparse.ArgumentParser(
     prog='onenv attach',
-    # TODO: create argumets formatter
-    # formatter_class=ArgumentsHelpFormatter
+    formatter_class=argparse_utils.ArgumentsHelpFormatter,
     description=SCRIPT_DESCRIPTION
 )
 
@@ -61,17 +61,21 @@ components_group.add_argument(
     dest='app_type')
 
 
-args = parser.parse_args()
-app_type = args.app_type
-if not app_type:
-    app_type = APP_TYPE_WORKER
+def main():
+    args = parser.parse_args()
+    app_type = args.app_type
+    if not app_type:
+        app_type = APP_TYPE_WORKER
 
-user_config.ensure_exists()
-helm.ensure_deployment(exists=True, fail_with_error=True)
+    user_config.ensure_exists()
+    helm.ensure_deployment(exists=True, fail_with_error=True)
+
+    if 'pod' not in args:
+        args.pod = None
+
+    with contextlib.suppress(KeyboardInterrupt):
+        pods.match_pod_and_run(args.pod, lambda pod: pods.attach(pod, app_type))
 
 
-if 'pod' not in args:
-    args.pod = None
-
-with contextlib.suppress(KeyboardInterrupt):
-    pods.match_pod_and_run(args.pod, lambda pod: pods.attach(pod, app_type))
+if __name__ == '__main__':
+    main()
