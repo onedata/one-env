@@ -44,10 +44,6 @@ def generate_app_config(app_name, node_name, node_config, service,
             host_home_dir = ROOT_PATH
             app_config['hostPath'] = source_path
 
-        for app in scenario_sources_cfg[service]['sources']:
-            if 'hostPath' not in app and app['name'] == app_name:
-                app['hostPath'] = app_config['hostPath']
-
     else:
         app_config['hostPath'] = ''
 
