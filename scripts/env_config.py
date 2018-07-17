@@ -36,6 +36,7 @@ def config_path(deployment_dir):
 
 def coalesce(output_path, env_config_path=None, scenario=None, sources=None,
              packages=None, onezone_image=None, oneprovider_image=None,
+             oneclient_image=None, rest_cli_image=None, luma_image=None,
              no_pull=None):
 
     default_config = load_yaml(config_template_path())
@@ -61,6 +62,15 @@ def coalesce(output_path, env_config_path=None, scenario=None, sources=None,
 
     if oneprovider_image:
         merged_config['oneproviderImage'] = oneprovider_image
+
+    if oneprovider_image:
+        merged_config['oneclientImage'] = oneclient_image
+
+    if oneprovider_image:
+        merged_config['restCliImage'] = rest_cli_image
+
+    if oneprovider_image:
+        merged_config['lumaImage'] = luma_image
 
     if no_pull:
         merged_config['forceImagePull'] = False

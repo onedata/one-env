@@ -7,13 +7,14 @@ __copyright__ = "Copyright (C) 2018 ACK CYFRONET AGH"
 __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
-import urllib3
-from kubernetes import client, config
+
 import re
 import signal
 import time
 import sys
 
+
+from kubernetes_utils import get_name, get_kube_client
 import cmd
 import console
 import sources
@@ -109,19 +110,9 @@ def get_node_num(pod_name: str):
     return pod_name.split('-')[-1]
 
 
-def get_name(pod):
-    return pod.metadata.name
-
-
-def get_service_name(pod):
-    # TODO: what if user change name of the zone?
-    return pod.metadata.labels.get('app')
-    # return get_env_variable(pod, 'SERVICE_NAME')
-
-
 def get_service_type(pod):
     # returns SERVICE_ONEZONE | SERVICE_ONEPROVIDER
-    return pod.metadata.labels.get('onedata-service')
+    return pod.metadata.labels.get('component')
 
 
 def get_container_id(pod):
@@ -137,6 +128,10 @@ def get_env_variables(pod):
     return pod.spec.containers[0].env
 
 
+def get_volumes(pod):
+    return pod.spec.volumes
+
+
 def get_env_variable(pod, env_name):
     envs = get_env_variables(pod)
     for env in envs:
@@ -145,18 +140,18 @@ def get_env_variable(pod, env_name):
     return None
 
 
+def get_service_config_map(pod):
+    for volume in get_volumes(pod):
+        if volume.config_map:
+            return volume.config_map.name
+
+
+def get_hostname(pod):
+    return pod.spec.hostname
+
+
 def get_chart_name(pod):
     return pod.metadata.labels.get('chart')
-
-
-def get_domain(pod):
-    return '{}-{}.{}'.format(helm.deployment_name(), get_chart_name(pod),
-                             user_config.get_current_namespace())
-
-
-# def get_hostname(pod):
-#     return '{}.{}'.format(get_env_variable(pod, 'HOSTNAME'),
-#                           get_domain(pod))
 
 
 def get_ip(pod):
@@ -169,7 +164,7 @@ def is_job(pod):
 
 def is_pod(pod):
     if pod.metadata.owner_references:
-        return pod.metadata.owner_references[0].kind == 'StatefulSet'
+        return pod.metadata.owner_references[0].kind != 'Job'
 
 
 def is_job_finished(pod):
@@ -181,9 +176,7 @@ def is_pod_running(pod):
 
 
 def list_pods_and_jobs():
-    urllib3.disable_warnings()
-    config.load_kube_config()
-    kube = client.CoreV1Api()
+    kube = get_kube_client()
     namespace = user_config.get_current_namespace()
     return kube.list_namespaced_pod(namespace).items
 
@@ -218,6 +211,15 @@ def wait_for_pod(pod):
 
 def clean_jobs():
     cmd.call(cmd_delete_jobs())
+
+
+def is_component(pod):
+    return bool(pod.metadata.labels.get('component'))
+
+
+def list_components():
+    return list(filter(lambda pod: is_component(pod),
+                       list_pods_and_jobs()))
 
 
 def list_pods():

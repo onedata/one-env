@@ -1,0 +1,2276 @@
+REVISION: 1
+RELEASED: Mon Jul 23 14:52:48 2018
+CHART: cross-support-job-3p-0.2.10-wip-1
+USER-SUPPLIED VALUES:
+allOneproviders:
+- krakow
+deployment_enabled: true
+global:
+  imagePullPolicy: IfNotPresent
+  region: cluster
+  tld: local
+groups: []
+keycloak:
+  enabled: false
+keycloakInstance:
+  appId: onedata
+  enabled: false
+  groups: []
+  idpName: rhea
+  init:
+    adminPassword: password
+    adminUsername: admin
+    clientName: onedata
+    enable: false
+    publishClientSecret: false
+    realmId: onedata
+  superGroup: vo:HNSciCloud-RHEA/rl:one-data-special-role
+  tokenPrefix: onedata
+  users:
+  - email: joe@example.com
+    firstName: Joe
+    idps:
+      onepanel:
+        enabled: true
+        type: regular
+    lastName: Morgan
+    name: joe
+    oneclient:
+    - krakow
+    password: password
+  - email: user@example.com
+    firstName: user
+    idps:
+      onepanel:
+        enabled: true
+        type: regular
+    lastName: user
+    name: user
+    oneclient: []
+    password: password
+  voGroupId: Onedata-Keycloak-1
+luma:
+  enabled: false
+oneclient:
+  enabled: true
+onedata-3p:
+  ceph_enabled: false
+  cli_image: onedata/rest-cli:18.02.0-rc7
+  enabled: true
+  external-storages:
+    BusyNullStorage:
+      insecure: true
+      latencyMax: 10
+      latencyMin: 1
+      readonly: true
+      timeoutProbability: 0.3
+      type: nulldevice
+    IdealNullStorage:
+      insecure: true
+      latencyMax: 0
+      latencyMin: 0
+      readonly: true
+      type: nulldevice
+    SlowNullStorage:
+      insecure: true
+      latencyMax: 15
+      latencyMin: 2
+      readonly: true
+      type: nulldevice
+  gluster_enabled: false
+  log_level: info
+  luma:
+    ceph:
+      enabled: false
+    enabled: false
+    gluster:
+      enabled: false
+    image: docker.onedata.org/luma:ID-8e2da56615
+    lumaApiKey: example_api_key
+    lumaCacheTimeout: 5
+    nfs:
+      enabled: false
+    posix:
+      enabled: false
+    s3:
+      enabled: false
+    swift:
+      enabled: false
+  luma_enabled: false
+  luma_image: docker.onedata.org/luma:ID-8e2da56615
+  nfs_enabled: false
+  oc_image: '&client-image'
+  oneclients_debug_mode_enabled: true
+  oneclients_enabled: false
+  onedata_anti_affinity_enabled: true
+  onedata_cli_enabled: false
+  onepanel_batch_mode_enabled: true
+  oneprovider-krakow:
+    batchConfig:
+      createUsers: "false"
+    cluster_config:
+      databases: []
+      managers: []
+      workers: []
+    cpu: 0.3
+    external-storages:
+      BusyNullStorage:
+        insecure: true
+        latencyMax: 10
+        latencyMin: 1
+        readonly: true
+        timeoutProbability: 0.3
+        type: nulldevice
+      IdealNullStorage:
+        insecure: true
+        latencyMax: 0
+        latencyMin: 0
+        readonly: true
+        type: nulldevice
+      SlowNullStorage:
+        insecure: true
+        latencyMax: 15
+        latencyMin: 2
+        readonly: true
+        type: nulldevice
+    generate-certificates:
+      enabled: false
+    geoLatitude: 50.0647
+    geoLongitude: 19.945
+    image: docker.onedata.org/oneprovider-dev:develop
+    imagePullPolicy: Always
+    log_level: info
+    luma:
+      ceph:
+        enabled: false
+      enabled: false
+      gluster:
+        enabled: false
+      image: docker.onedata.org/luma:ID-8e2da56615
+      lumaApiKey: example_api_key
+      lumaCacheTimeout: 5
+      nfs:
+        enabled: false
+      posix:
+        enabled: false
+      s3:
+        enabled: false
+      suffix: krakow
+      swift:
+        enabled: false
+    memory: 0.5Gi
+    nameOverride: oneprovider
+    nodes: {}
+    oneclient:
+      debug_mode: true
+      enabled: "true"
+      image: onedata/oneclient:18.02.0-rc7
+      onedata_cli:
+        image: onedata/rest-cli:18.02.0-rc7
+      suffix: krakow
+      users:
+      - email: joe@example.com
+        firstName: Joe
+        idps:
+          onepanel:
+            enabled: true
+            type: regular
+        lastName: Morgan
+        name: joe
+        oneclient:
+        - krakow
+        password: password
+      - email: user@example.com
+        firstName: user
+        idps:
+          onepanel:
+            enabled: true
+            type: regular
+        lastName: user
+        name: user
+        oneclient: []
+        password: password
+    onedata-cli:
+      enabled: false
+      image: onedata/rest-cli:18.02.0-rc7
+      suffix: krakow
+    onepanel_batch_mode_enabled: true
+    onepanel_generate_test_web_cert: true
+    onepanel_trust_test_ca: true
+    oneprovider_nodes_count: 1
+    onezone_service_url:
+      disableSuffix: true
+      type: auto-generate
+    panelOverlayConfig: '[{onepanel, [{connect_to_onezone_attempts, 30}]}].'
+    posix:
+      enabled: true
+      luma-enabled: false
+    suffix: krakow
+    volume-ceph:
+      enabled: false
+      luma-enabled: false
+      suffix: krakow
+    volume-data-sync:
+      enabled: false
+      volumes: []
+    volume-gluster:
+      enabled: false
+      luma-enabled: false
+      suffix: krakow
+    volume-nfs:
+      enabled: false
+      luma-enabled: false
+      suffix: krakow
+    volume-s3:
+      enabled: false
+      luma-enabled: false
+      suffix: krakow
+    volume-swift:
+      enabled: false
+      luma-enabled: false
+      suffix: krakow
+    wait-for-onezone: false
+    workerOverlayConfig: '[{op_worker, [{soft_quota_limit_size, 0}]}].'
+  oneprovider_cluster_configs:
+    databases: []
+    managers: []
+    workers: []
+  oneproviders_generate_certificates: false
+  oneproviders_nodes_count: 1
+  oneprovidersPanelOverlayConfig: '[{onepanel, [{connect_to_onezone_attempts, 30}]}].'
+  oneprovidersWorkerOverlayConfig: '[].'
+  onezone:
+    batchConfig:
+      createUsers: "false"
+    cluster_config:
+      databases: []
+      managers: []
+      workers: []
+    cpu: 0.3
+    generate-certificates:
+      enabled: false
+    image: docker.onedata.org/onezone-dev:develop
+    imagePullPolicy: Always
+    keycloak:
+      appId: onedata
+      enabled: false
+      groups: []
+      idpName: rhea
+      init:
+        adminPassword: password
+        adminUsername: admin
+        clientName: onedata
+        enable: false
+        publishClientSecret: false
+        realmId: onedata
+      superGroup: vo:HNSciCloud-RHEA/rl:one-data-special-role
+      tokenPrefix: onedata
+      users:
+      - email: joe@example.com
+        firstName: Joe
+        idps:
+          onepanel:
+            enabled: true
+            type: regular
+        lastName: Morgan
+        name: joe
+        oneclient:
+        - krakow
+        password: password
+      - email: user@example.com
+        firstName: user
+        idps:
+          onepanel:
+            enabled: true
+            type: regular
+        lastName: user
+        name: user
+        oneclient: []
+        password: password
+      voGroupId: Onedata-Keycloak-1
+    log_level: info
+    memory: 0.5Gi
+    nodes: {}
+    onepanel_batch_mode_enabled: true
+    onepanel_generate_test_web_cert: true
+    onepanel_trust_test_ca: true
+    onepanel_users:
+    - email: joe@example.com
+      firstName: Joe
+      idps:
+        onepanel:
+          enabled: true
+          type: regular
+      lastName: Morgan
+      name: joe
+      oneclient:
+      - krakow
+      password: password
+    - email: user@example.com
+      firstName: user
+      idps:
+        onepanel:
+          enabled: true
+          type: regular
+      lastName: user
+      name: user
+      oneclient: []
+      password: password
+    onezone_main_admin:
+      name: admin
+      password: password
+    onezone_nodes_count: 1
+    onezoneAdmin:
+      name: admin
+      password: password
+    panelOverlayConfig: '[].'
+    saml-idp:
+      enabled: false
+      generate-certificates:
+        enabled: false
+    workerOverlayConfig: '[].'
+  op_image: onedata/oneprovider:18.02.0-rc7
+  oz_image: onedata/onezone:18.02.0-rc7
+  posix_enabled: true
+  s3_enabled: false
+  swift_enabled: false
+  volume_data_sync_enabled: false
+  wait-for-onezone-enabled: false
+onedata-cli:
+  enabled: false
+oneprovider-krakow:
+  enabled: true
+oneprovider-lisbon:
+  enabled: false
+oneprovider-paris:
+  enabled: false
+saml-idp:
+  enabled: false
+spaces: []
+users:
+- email: joe@example.com
+  firstName: Joe
+  idps:
+    onepanel:
+      enabled: true
+      type: regular
+  lastName: Morgan
+  name: joe
+  oneclient:
+  - krakow
+  password: password
+- email: user@example.com
+  firstName: user
+  idps:
+    onepanel:
+      enabled: true
+      type: regular
+  lastName: user
+  name: user
+  oneclient: []
+  password: password
+volume-ceph:
+  enabled: false
+volume-data-sync:
+  enabled: false
+volume-gluster:
+  enabled: false
+volume-nfs:
+  enabled: false
+volume-s3:
+  enabled: false
+volume-swift:
+  enabled: false
+
+COMPUTED VALUES:
+affinity: {}
+allOneproviders:
+- krakow
+deployment_enabled: true
+global:
+  imagePullPolicy: IfNotPresent
+  region: cluster
+  tld: local
+groups: []
+image: onedata/rest-cli:18.02.0-rc2
+imagePullPolicy: IfNotPresent
+keycloak:
+  enabled: false
+keycloakInstance:
+  appId: onedata
+  enabled: false
+  groups: []
+  idpName: rhea
+  init:
+    adminPassword: password
+    adminUsername: admin
+    clientName: onedata
+    enable: false
+    publishClientSecret: false
+    realmId: onedata
+  superGroup: vo:HNSciCloud-RHEA/rl:one-data-special-role
+  tokenPrefix: onedata
+  users:
+  - email: joe@example.com
+    firstName: Joe
+    idps:
+      onepanel:
+        enabled: true
+        type: regular
+    lastName: Morgan
+    name: joe
+    oneclient:
+    - krakow
+    password: password
+  - email: user@example.com
+    firstName: user
+    idps:
+      onepanel:
+        enabled: true
+        type: regular
+    lastName: user
+    name: user
+    oneclient: []
+    password: password
+  voGroupId: Onedata-Keycloak-1
+luma:
+  enabled: false
+nodeSelector: {}
+oneclient:
+  enabled: true
+onedata-3p:
+  ceph_enabled: false
+  cli_image: onedata/rest-cli:18.02.0-rc7
+  enabled: true
+  external-storages:
+    BusyNullStorage:
+      insecure: true
+      latencyMax: 10
+      latencyMin: 1
+      readonly: true
+      timeoutProbability: 0.3
+      type: nulldevice
+    IdealNullStorage:
+      insecure: true
+      latencyMax: 0
+      latencyMin: 0
+      readonly: true
+      type: nulldevice
+    SlowNullStorage:
+      insecure: true
+      latencyMax: 15
+      latencyMin: 2
+      readonly: true
+      type: nulldevice
+  global:
+    imagePullPolicy: IfNotPresent
+    region: cluster
+    tld: local
+  gluster_enabled: false
+  log_level: info
+  luma:
+    ceph:
+      enabled: false
+      key: AQC1oSZZZfucFxAA34MekwoWBm7qpGd0A8u
+      pool_name: test
+      username: client.k8s
+    enabled: false
+    gluster:
+      enabled: false
+    image: docker.onedata.org/luma:ID-8e2da56615
+    lumaApiKey: example_api_key
+    lumaCacheTimeout: 5
+    nfs:
+      enabled: false
+      highest_uid: 65536
+      lowest_uid: 1000
+    posix:
+      enabled: false
+      highest_uid: 65536
+      lowest_uid: 1000
+    s3:
+      access_key: accessKey
+      enabled: false
+      secret_key: verySecretKey
+    swift:
+      enabled: false
+      password: swift
+      username: swift
+  luma_enabled: false
+  luma_image: docker.onedata.org/luma:ID-8e2da56615
+  nfs_enabled: false
+  oc_image: '&client-image'
+  oneclient:
+    enabled: true
+  oneclients_debug_mode_enabled: true
+  oneclients_enabled: false
+  onedata-cli:
+    enabled: true
+  onedata_anti_affinity_enabled: true
+  onedata_cli_enabled: false
+  onepanel_batch_mode_enabled: true
+  oneprovider-krakow:
+    adminEmail: getting-started@onedata.org
+    affinity: {}
+    batchConfig:
+      createUsers: "false"
+    cluster_config:
+      databases: []
+      managers: []
+      workers: []
+    cpu: 0.3
+    external-storages:
+      BusyNullStorage:
+        insecure: true
+        latencyMax: 10
+        latencyMin: 1
+        readonly: true
+        timeoutProbability: 0.3
+        type: nulldevice
+      IdealNullStorage:
+        insecure: true
+        latencyMax: 0
+        latencyMin: 0
+        readonly: true
+        type: nulldevice
+      SlowNullStorage:
+        insecure: true
+        latencyMax: 15
+        latencyMin: 2
+        readonly: true
+        type: nulldevice
+    generate-certificates:
+      enabled: false
+      image: onedata/certificate-init-container:8434eb0
+      imagePullPolicy: IfNotPresent
+    geoLatitude: 50.0647
+    geoLongitude: 19.945
+    global:
+      imagePullPolicy: IfNotPresent
+      region: cluster
+      tld: local
+    image: docker.onedata.org/oneprovider-dev:develop
+    imagePullPolicy: Always
+    log_level: info
+    luma:
+      ceph:
+        enabled: false
+        key: AQC1oSZZZfucFxAA34MekwoWBm7qpGd0A8u
+        pool_name: test
+        username: client.k8s
+      enabled: false
+      gluster:
+        enabled: false
+      image: docker.onedata.org/luma:ID-8e2da56615
+      lumaApiKey: example_api_key
+      lumaCacheTimeout: 5
+      nfs:
+        enabled: false
+        highest_uid: 65536
+        lowest_uid: 1000
+      posix:
+        enabled: false
+        highest_uid: 65536
+        lowest_uid: 1000
+      s3:
+        access_key: accessKey
+        enabled: false
+        secret_key: verySecretKey
+      suffix: krakow
+      swift:
+        enabled: false
+        password: swift
+        username: swift
+    memory: 0.5Gi
+    name: ""
+    nameOverride: oneprovider
+    nodeSelector: {}
+    nodes: {}
+    oneclient:
+      affinity: {}
+      debug_mode: true
+      enabled: "true"
+      global:
+        imagePullPolicy: IfNotPresent
+        region: cluster
+        tld: local
+      image: onedata/oneclient:18.02.0-rc7
+      imagePullPolicy: IfNotPresent
+      nodeSelector: {}
+      onedata_cli:
+        image: onedata/rest-cli:18.02.0-rc7
+      onezone_service_url:
+        disableSuffix: true
+        type: auto-generate
+      replicas: 1
+      suffix: krakow
+      token_dispenser_service_url:
+        disableSuffix: true
+        type: auto-generate
+      tolerations: {}
+      users:
+      - email: joe@example.com
+        firstName: Joe
+        idps:
+          onepanel:
+            enabled: true
+            type: regular
+        lastName: Morgan
+        name: joe
+        oneclient:
+        - krakow
+        password: password
+      - email: user@example.com
+        firstName: user
+        idps:
+          onepanel:
+            enabled: true
+            type: regular
+        lastName: user
+        name: user
+        oneclient: []
+        password: password
+      wait_for:
+        image: onedata/k8s-wait-for:v1.1
+        imagePullPolicy: IfNotPresent
+    onedata-chart-utils:
+      global:
+        imagePullPolicy: IfNotPresent
+        region: cluster
+        tld: local
+    onedata-cli:
+      enabled: false
+      image: onedata/rest-cli:18.02.0-rc7
+      onezone_service_url:
+        disableSuffix: true
+        type: auto-generate
+      suffix: krakow
+    onedata_anti_affinity_enabled: false
+    onepanel_admin_users:
+    - login: admin
+      password: password
+    onepanel_batch_mode_enabled: true
+    onepanel_debug_mode: false
+    onepanel_generate_test_web_cert: true
+    onepanel_generated_cert_domain: ""
+    onepanel_trust_test_ca: true
+    onepanel_users:
+    - login: user
+      password: password
+    oneprovider_nodes_count: 1
+    onezone_service_url:
+      disableSuffix: true
+      type: auto-generate
+    panelOverlayConfig: '[{onepanel, [{connect_to_onezone_attempts, 30}]}].'
+    posix:
+      enabled: true
+      luma-enabled: false
+      readOnly: false
+    serviceType: ClusterIP
+    sources_cfg:
+      enabled: false
+      nodes:
+        n0:
+          sources:
+          - name: op-panel
+          - name: op-worker
+          - name: cluster-manager
+    suffix: krakow
+    tolerations: {}
+    volume-ceph:
+      enabled: false
+      insecure: true
+      luma-enabled: false
+      readOnly: false
+      suffix: krakow
+    volume-data-sync:
+      enabled: false
+      volumes: []
+    volume-gluster:
+      enabled: false
+      insecure: true
+      luma-enabled: false
+      readOnly: false
+      suffix: krakow
+    volume-nfs:
+      container_mount_path: /volumes/nfs
+      enabled: false
+      luma-enabled: false
+      mount_options: soft,intr,timeo=10
+      readOnly: false
+      storage_claim: 1T
+      suffix: krakow
+    volume-s3:
+      enabled: false
+      insecure: true
+      luma-enabled: false
+      readOnly: false
+      suffix: krakow
+    volume-swift:
+      containerName: test
+      enabled: false
+      insecure: true
+      luma-enabled: false
+      password: testing
+      readOnly: false
+      suffix: krakow
+      tenantName: test
+      username: tester
+    wait-for-onezone: false
+    wait_for:
+      image: onedata/k8s-wait-for:v1.1
+      imagePullPolicy: IfNotPresent
+    workerOverlayConfig: '[{op_worker, [{soft_quota_limit_size, 0}]}].'
+  oneprovider-lisbon:
+    cluster_config:
+      databases: []
+      managers: []
+      workers: []
+    generate-certificates:
+      enabled: false
+    geoLatitude: 38.7223
+    geoLongitude: -9.1393
+    image: onedata/oneprovider:18.02.0-rc4
+    log_level: info
+    luma:
+      ceph:
+        enabled: false
+        key: AQC1oSZZZfucFxAA34MekwoWBm7qpGd0A8u
+        pool_name: test
+        username: client.k8s
+      enabled: false
+      gluster:
+        enabled: false
+      lumaApiKey: example_api_key
+      lumaCacheTimeout: 5
+      nfs:
+        enabled: false
+        highest_uid: 65536
+        lowest_uid: 1000
+      posix:
+        enabled: true
+        highest_uid: 65536
+        lowest_uid: 1000
+      s3:
+        access_key: accessKey
+        enabled: false
+        secret_key: verySecretKey
+      suffix: lisbon
+      swift:
+        enabled: false
+        password: swift
+        username: swift
+    nameOverride: oneprovider
+    oneclient:
+      debug_mode: false
+      enabled: true
+      image: onedata/oneclient:18.02.0-rc4
+      onedata_cli:
+        image: onedata/rest-cli:18.02.0-rc2
+      suffix: lisbon
+    onedata-cli:
+      enabled: true
+      image: onedata/rest-cli:18.02.0-rc2
+      suffix: lisbon
+    onedata_anti_affinity_enabled: false
+    onepanel_batch_mode_enabled: true
+    oneprovider_nodes_count: 1
+    onezone_service_url:
+      disableSuffix: true
+      type: auto-generate
+    panelOverlayConfig: '[].'
+    posix:
+      enabled: true
+      luma-enabled: true
+    suffix: lisbon
+    volume-ceph:
+      enabled: false
+      luma-enabled: false
+      suffix: lisbon
+    volume-data-sync:
+      enabled: false
+    volume-gluster:
+      enabled: false
+      luma-enabled: false
+      suffix: lisbon
+    volume-nfs:
+      enabled: false
+      luma-enabled: false
+      suffix: lisbon
+    volume-s3:
+      enabled: false
+      luma-enabled: false
+      suffix: lisbon
+    volume-swift:
+      enabled: false
+      luma-enabled: false
+      suffix: lisbon
+    workerOverlayConfig: '[].'
+  oneprovider-paris:
+    cluster_config:
+      databases: []
+      managers: []
+      workers: []
+    generate-certificates:
+      enabled: false
+    geoLatitude: 48.8566
+    geoLongitude: 2.3522
+    image: onedata/oneprovider:18.02.0-rc4
+    log_level: info
+    luma:
+      ceph:
+        enabled: false
+        key: AQC1oSZZZfucFxAA34MekwoWBm7qpGd0A8u
+        pool_name: test
+        username: client.k8s
+      enabled: false
+      gluster:
+        enabled: false
+      lumaApiKey: example_api_key
+      lumaCacheTimeout: 5
+      nfs:
+        enabled: false
+        highest_uid: 65536
+        lowest_uid: 1000
+      posix:
+        enabled: true
+        highest_uid: 65536
+        lowest_uid: 1000
+      s3:
+        access_key: accessKey
+        enabled: false
+        secret_key: verySecretKey
+      suffix: paris
+      swift:
+        enabled: false
+        password: swift
+        username: swift
+    nameOverride: oneprovider
+    oneclient:
+      debug_mode: false
+      enabled: true
+      image: onedata/oneclient:18.02.0-rc4
+      onedata_cli:
+        image: onedata/rest-cli:18.02.0-rc2
+      suffix: paris
+    onedata-cli:
+      enabled: true
+      image: onedata/rest-cli:18.02.0-rc2
+      suffix: paris
+    onedata_anti_affinity_enabled: false
+    onepanel_batch_mode_enabled: true
+    oneprovider_nodes_count: 1
+    onezone_service_url:
+      disableSuffix: true
+      type: auto-generate
+    panelOverlayConfig: '[].'
+    posix:
+      enabled: true
+      luma-enabled: true
+    suffix: paris
+    volume-ceph:
+      enabled: false
+      luma-enabled: false
+      suffix: paris
+    volume-data-sync:
+      enabled: false
+    volume-gluster:
+      enabled: false
+      luma-enabled: false
+      suffix: paris
+    volume-nfs:
+      enabled: false
+      luma-enabled: false
+      suffix: paris
+    volume-s3:
+      enabled: false
+      luma-enabled: false
+      suffix: paris
+    volume-swift:
+      enabled: false
+      luma-enabled: false
+      suffix: paris
+    workerOverlayConfig: '[].'
+  oneprovider_cluster_configs:
+    databases: []
+    managers: []
+    workers: []
+  oneproviders_generate_certificates: false
+  oneproviders_nodes_count: 1
+  oneprovidersPanelOverlayConfig: '[{onepanel, [{connect_to_onezone_attempts, 30}]}].'
+  oneprovidersWorkerOverlayConfig: '[].'
+  onezone:
+    affinity: {}
+    batchConfig:
+      createUsers: "false"
+    cluster_config:
+      databases: []
+      managers: []
+      workers: []
+    cpu: 0.3
+    generate-certificates:
+      enabled: false
+      image: onedata/certificate-init-container:8434eb0
+      imagePullPolicy: IfNotPresent
+    global:
+      imagePullPolicy: IfNotPresent
+      region: cluster
+      tld: local
+    image: docker.onedata.org/onezone-dev:develop
+    imagePullPolicy: Always
+    keycloak:
+      appId: onedata
+      enabled: false
+      groups: []
+      idpName: rhea
+      init:
+        adminPassword: password
+        adminUsername: admin
+        clientName: onedata
+        enable: false
+        publishClientSecret: false
+        realmId: onedata
+      superGroup: vo:HNSciCloud-RHEA/rl:one-data-special-role
+      tokenPrefix: onedata
+      users:
+      - email: joe@example.com
+        firstName: Joe
+        idps:
+          onepanel:
+            enabled: true
+            type: regular
+        lastName: Morgan
+        name: joe
+        oneclient:
+        - krakow
+        password: password
+      - email: user@example.com
+        firstName: user
+        idps:
+          onepanel:
+            enabled: true
+            type: regular
+        lastName: user
+        name: user
+        oneclient: []
+        password: password
+      voGroupId: Onedata-Keycloak-1
+    log_level: info
+    memory: 0.5Gi
+    name: ""
+    nodeSelector: {}
+    nodes: {}
+    onedata-chart-utils:
+      global:
+        imagePullPolicy: IfNotPresent
+        region: cluster
+        tld: local
+    onedata_anti_affinity_enabled: false
+    onedata_cli:
+      image: onedata/rest-cli:18.02.0-rc2
+      imagePullPolicy: IfNotPresent
+    onepanel_batch_mode_enabled: true
+    onepanel_debug_mode: false
+    onepanel_generate_test_web_cert: true
+    onepanel_generated_cert_domain: xx
+    onepanel_trust_test_ca: true
+    onepanel_users:
+    - email: joe@example.com
+      firstName: Joe
+      idps:
+        onepanel:
+          enabled: true
+          type: regular
+      lastName: Morgan
+      name: joe
+      oneclient:
+      - krakow
+      password: password
+    - email: user@example.com
+      firstName: user
+      idps:
+        onepanel:
+          enabled: true
+          type: regular
+      lastName: user
+      name: user
+      oneclient: []
+      password: password
+    onepanelAdminUsers: []
+    onezone_main_admin:
+      name: admin
+      password: password
+    onezone_nodes_count: 1
+    onezoneAdmin:
+      name: admin
+      password: password
+    panelOverlayConfig: '[].'
+    saml-idp:
+      enabled: false
+      generate-certificates:
+        enabled: false
+    serviceType: ClusterIP
+    sources_cfg:
+      enabled: false
+      nodes:
+        n0:
+          sources:
+          - name: oz-panel
+          - name: oz-worker
+          - name: cluster-manager
+    token-dispenser:
+      affinity: {}
+      config:
+        keycloak-rhea:
+          name: rhea
+          tokenPrefix: onedata
+          type: keycloak
+        onepanel:
+          type: onepanel
+      enabled: true
+      global:
+        imagePullPolicy: IfNotPresent
+        region: cluster
+        tld: local
+      image: onedata/token-dispenser:54a9538
+      imagePullPolicy: IfNotPresent
+      nodeSelector: {}
+      serviceType: ClusterIP
+      tolerations: {}
+    tolerations: {}
+    wait_for:
+      image: onedata/k8s-wait-for:v1.1
+      imagePullPolicy: IfNotPresent
+    workerOverlayConfig: '[].'
+  op_image: onedata/oneprovider:18.02.0-rc7
+  oz_image: onedata/onezone:18.02.0-rc7
+  posix_enabled: true
+  s3_enabled: false
+  saml-idp:
+    enabled: true
+  swift_enabled: false
+  volume-ceph:
+    enabled: false
+  volume-data-sync:
+    enabled: false
+  volume-gluster:
+    enabled: false
+  volume-nfs:
+    enabled: false
+  volume-s3:
+    enabled: false
+  volume-swift:
+    enabled: false
+  volume_data_sync_enabled: false
+  wait-for-onezone-enabled: false
+onedata-chart-utils:
+  global:
+    imagePullPolicy: IfNotPresent
+    region: cluster
+    tld: local
+onedata-cli:
+  enabled: false
+oneprovider:
+- oneprovider-krakow
+- oneprovider-paris
+- oneprovider-lisbon
+oneprovider-krakow:
+  enabled: true
+oneprovider-lisbon:
+  enabled: false
+oneprovider-paris:
+  enabled: false
+saml-idp:
+  enabled: false
+spaces: []
+tolerations: {}
+users:
+- email: joe@example.com
+  firstName: Joe
+  idps:
+    onepanel:
+      enabled: true
+      type: regular
+  lastName: Morgan
+  name: joe
+  oneclient:
+  - krakow
+  password: password
+- email: user@example.com
+  firstName: user
+  idps:
+    onepanel:
+      enabled: true
+      type: regular
+  lastName: user
+  name: user
+  oneclient: []
+  password: password
+volume-ceph:
+  enabled: false
+volume-data-sync:
+  enabled: false
+volume-gluster:
+  enabled: false
+volume-nfs:
+  enabled: false
+volume-s3:
+  enabled: false
+volume-swift:
+  enabled: false
+wait_for:
+  image: onedata/k8s-wait-for:v1.1
+  imagePullPolicy: IfNotPresent
+
+HOOKS:
+MANIFEST:
+
+---
+# Source: cross-support-job-3p/charts/onedata-3p/charts/oneprovider-krakow/charts/oneclient/templates/config-map.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dev-oneclient-krakow-config
+  labels:
+    app: dev-oneclient-krakow
+    chart: oneclient
+    release: dev
+    heritage: Tiller
+    component: oneclient
+  annotations:
+    version: "0.2.10"
+data:
+  oneclient-mount.sh:
+    
+    mount_joe() {
+      
+      idp=onepanel;
+      
+      export ONEZONE_API_KEY=$(curl -k -u joe:password http://dev-token-dispenser/api/v1.0/token/$idp);
+      echo "Got token for $idp user=joe, token=$ONEZONE_API_KEY" ;
+      mkdir -p "/mnt/oneclient/joe";
+      oneclient -t $ONEZONE_API_KEY "/mnt/oneclient/joe";
+      echo "Mounted oneclient in '/mnt/oneclient/joe' for user=joe, from idp=$idp, using TOKEN=$ONEZONE_API_KEY";
+    }
+    
+    mount_user() {
+      
+      idp=onepanel;
+      
+      export ONEZONE_API_KEY=$(curl -k -u user:password http://dev-token-dispenser/api/v1.0/token/$idp);
+      echo "Got token for $idp user=user, token=$ONEZONE_API_KEY" ;
+      mkdir -p "/mnt/oneclient/user";
+      oneclient -t $ONEZONE_API_KEY "/mnt/oneclient/user";
+      echo "Mounted oneclient in '/mnt/oneclient/user' for user=user, from idp=$idp, using TOKEN=$ONEZONE_API_KEY";
+    }
+---
+# Source: cross-support-job-3p/charts/onedata-3p/charts/oneprovider-krakow/templates/config-map.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dev-oneprovider-krakow-config
+  labels:
+    app: dev-oneprovider-krakow
+    chart: oneprovider-krakow
+    release: dev
+    heritage: Tiller
+    component: "oneprovider"
+  annotations:
+    version: "0.2.12"
+data:
+  panel-overlay.config: '[{onepanel, [{connect_to_onezone_attempts, 30}]}].'
+
+  worker-overlay.config: '[{op_worker, [{soft_quota_limit_size, 0}]}].'
+
+  ONEPROVIDER_CONFIG: |-
+    cluster:
+      domainName: "dev-oneprovider-krakow.default.svc.cluster.local"
+      nodes:
+        n0: 
+          hostname: dev-oneprovider-krakow-0
+      managers:
+        mainNode: n0 
+        nodes:
+          - n0
+      workers:
+        nodes:
+          - n0
+      databases:
+        nodes:
+          - n0
+      storages:
+        posix:
+          type: posix
+          mountPoint: /volumes/storage
+          readonly: false
+        BusyNullStorage:
+          insecure: true
+          latencyMax: 10
+          latencyMin: 1
+          readonly: true
+          timeoutProbability: 0.3
+          type: nulldevice
+        IdealNullStorage:
+          insecure: true
+          latencyMax: 0
+          latencyMin: 0
+          readonly: true
+          type: nulldevice
+        SlowNullStorage:
+          insecure: true
+          latencyMax: 15
+          latencyMin: 2
+          readonly: true
+          type: nulldevice
+        
+    oneprovider:
+      register: true
+      name: dev-oneprovider-krakow
+      # Depending on Onedata version, one of 2 keys below will be used
+      redirectionPoint: https://dev-oneprovider-krakow.default.svc.cluster.local
+      domain: dev-oneprovider-krakow.default.svc.cluster.local # OR IP ADDRESS
+      # Subdomain feature is currently not supported in k8s
+      subdomainDelegation: false
+      adminEmail: getting-started@onedata.org
+      geoLatitude: 50.0647
+      geoLongitude: 19.945
+    # TODO: make it possible for onedata services to communicate using 
+    # system configured DNS. this will allow to put here just service name
+    # instead of FQDN
+    onezone:
+      domainName: dev-onezone.default.svc.cluster.local
+    onepanel:
+      users:
+        admin:
+          password: password
+          userRole: admin
+        user:
+          password: password
+          userRole: regular
+---
+# Source: cross-support-job-3p/charts/onedata-3p/charts/onezone/charts/token-dispenser/templates/config-map.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dev-token-dispenser-config
+  labels:
+    app: dev-token-dispenser
+    chart: token-dispenser
+    release: dev
+    heritage: Tiller
+  annotations:
+    version: "0.1.0"
+data:
+  db.yaml: |-
+    idps:
+      keycloak-rhea:
+        name: rhea
+        onezoneUrl: "https://dev-onezone.default.svc.cluster.local"
+        url: "http://dev-keycloak.default.svc.cluster.local"
+        tokenPrefix: onedata
+        type: keycloak
+      onepanel: 
+        url: "https://dev-onezone.default.svc.cluster.local"
+        type: onepanel
+---
+# Source: cross-support-job-3p/charts/onedata-3p/charts/onezone/templates/config-map.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dev-onezone-config
+  labels:
+    app: dev-onezone
+    chart: onezone
+    release: dev
+    heritage: Tiller
+    component: onezone
+  annotations:
+    version: "0.2.12"
+data:
+  panel-overlay.config: '[].'
+
+  worker-overlay.config: '[].'
+
+  ONEZONE_CONFIG: |-
+    cluster:
+      domainName: "dev-onezone.default.svc.cluster.local"
+      nodes:
+        n0: 
+          hostname: dev-onezone-0
+      managers:
+        mainNode: n0 
+        nodes:
+          - n0
+      workers:
+        nodes:
+          - n0
+      databases:
+        nodes:
+          - n0
+    onezone:
+      name: dev-onezone
+      domainName: dev-onezone.default.svc.cluster.local
+    onepanel:
+      users:
+        admin:
+          password: password
+          userRole: admin
+        joe:
+          password: password
+          userRole: regular
+        user:
+          password: password
+          userRole: regular
+
+  auth.config: |-
+    [
+        % Currently Basic Auth (login/password) has no configuration options.
+        % Just leave the tuple below to enable or remove it to disable Basic Auth.
+        {basicAuth, []}
+        
+        % Currently other authentication options are disabled by default, because
+        % they require cumbersome configuration per each OpenID provider.
+    ].
+---
+# Source: cross-support-job-3p/charts/onedata-3p/charts/oneprovider-krakow/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: dev-oneprovider-krakow
+  labels:
+    app: dev-oneprovider-krakow
+    chart: "oneprovider-krakow"
+    release: "dev"
+    heritage: "Tiller"
+    onedata-service: "oneprovider"
+  annotations:
+    version: "0.2.12"
+spec:
+  type: "ClusterIP"
+  clusterIP: None
+  ports:
+    - name: dns
+      port: 53
+    - name: http
+      port: 80
+    - name: https
+      port: 443
+    - name: oneclient
+      port: 5555
+    - name: oneprovider-to-oneproviders
+      port: 5556
+    - name: rtransfer-data-1
+      port: 6665
+    - name: rtransfer-data-2
+      port: 6666
+    - name: oneprovider-to-oneozne-metadata
+      port: 7443
+    - name: rest-cdmi
+      port: 8443
+    - name: rtransfer-porotcol-1
+      port: 8876
+    - name: rtransfer-porotcol-2
+      port: 8877
+    - name: onepanel
+      port: 9443
+  selector:
+    app: dev-oneprovider-krakow
+---
+# Source: cross-support-job-3p/charts/onedata-3p/charts/onezone/charts/token-dispenser/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: dev-token-dispenser
+  labels:
+    app: dev-token-dispenser
+    chart: token-dispenser
+    release: dev
+    heritage: Tiller
+  annotations:
+    version: "0.1.0"
+spec:
+  type: ClusterIP
+  ports:
+    - name: token-dispenser
+      port: 80
+  selector:
+    app: dev-token-dispenser
+---
+# Source: cross-support-job-3p/charts/onedata-3p/charts/onezone/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: dev-onezone
+  labels:
+    app: dev-onezone
+    chart: "onezone"
+    release: "dev"
+    heritage: "Tiller"
+    onedata-service: "onezone"
+  annotations:
+    version: "0.2.12"
+spec:
+  type: "ClusterIP"
+  clusterIP: None
+  ports:
+    - name: dns
+      port: 53
+    - name: http
+      port: 80
+    - name: https
+      port: 443
+    - name: oneclient
+      port: 5555
+    - name: oneprovider-to-oneproviders
+      port: 5556
+    - name: rtransfer-data-1
+      port: 6665
+    - name: rtransfer-data-2
+      port: 6666
+    - name: oneprovider-to-oneozne-metadata
+      port: 7443
+    - name: rest-cdmi
+      port: 8443
+    - name: rtransfer-porotcol-1
+      port: 8876
+    - name: rtransfer-porotcol-2
+      port: 8877
+    - name: onepanel
+      port: 9443
+  selector:
+    app: dev-onezone
+---
+# Source: cross-support-job-3p/charts/onedata-3p/charts/oneprovider-krakow/charts/oneclient/templates/deployment.yaml
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: dev-oneclient-krakow
+  labels:
+    app: dev-oneclient-krakow
+    chart: "oneclient"
+    release: "dev"
+    heritage: "Tiller"
+    component: oneclient
+  annotations:
+    version: "0.2.10"
+spec:
+  template:
+    metadata:
+      labels:
+        app: dev-oneclient-krakow
+        chart: "oneclient"
+        release: "dev"
+        heritage: "Tiller"
+        component: oneclient
+      annotations:
+        version: "0.2.10"
+    spec:
+      hostname: oneclient
+      subdomain: dev-oneclient-krakow
+      hostNetwork: false
+      replicas: 1
+      imagePullSecrets: []
+      volumes:
+      - name: shared
+        emptyDir: {}
+      initContainers:
+        - name: wait-for-onezone
+          image: onedata/k8s-wait-for:v1.1
+          imagePullPolicy: IfNotPresent
+          args:
+            - "job"
+            - "dev-onezone-ready-check"
+        - name: wait-for-token-dispenser
+          image: onedata/k8s-wait-for:v1.1
+          imagePullPolicy: IfNotPresent
+          args:
+            - "pod"
+            - >
+              -lapp=dev-token-dispenser
+        - name: wait-for-oneprovider
+          image: onedata/k8s-wait-for:v1.1
+          imagePullPolicy: IfNotPresent
+          args:
+            - "job"
+            - "dev-oneprovider-krakow-ready-check" 
+      containers:
+      - name: oneclient
+        image: onedata/oneclient:18.02.0-rc7
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: ONECLIENT_INSECURE
+            value: "true"
+          - name: ONECLIENT_ACCESS_TOKEN
+            value: "supplied_at_runtime"
+          - name: ONECLIENT_PROVIDER_HOST
+            value: "dev-oneprovider-krakow"
+        command:
+         - "sh"
+         - "-c"
+         - >
+           echo "source /oneclient-mount.sh" >> ~/.bashrc ;
+           idp=onepanel;
+           ONECLIENT_ACCESS_TOKEN=$(curl --silent -k -u joe:password http://dev-token-dispenser/api/v1.0/token/$idp);
+           mount_dir="/mnt/oneclient/joe";
+           mkdir -p "$mount_dir";
+           echo "Mounting oneclient in $mount_dir for user=joe, from idp=$idp, using TOKEN=$ONECLIENT_ACCESS_TOKEN.";
+           oneclient -t $ONECLIENT_ACCESS_TOKEN "$mount_dir";
+           while ! mount | grep -q "$mount_dir" ; do
+           i=1;
+           max_i=30;
+           while ! mount| grep -q "$mount_dir" && [ $i -le $max_i ] ; do echo "Wainting ${i}/${max_i} time for mount $mount_dir. Sleeping for 2 seconds." ; i=$((i+1)) ; sleep 2 ; done ;
+           if mount | grep -q /mnt/oneclient/meg ; then break ; else echo "Failed to mount $mount_dir retrying to run oneclient for dir=$mount_dir" ; fi  ;
+           done ;
+           echo "Success, mounted $mount_dir." ;
+           echo "All clients have been mounted." ;
+           touch /all_oneclients_mounted ;
+           sleep infinity ;
+        readinessProbe:
+          exec:
+            command:
+             - cat 
+             - /all_oneclients_mounted
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /shared
+          name: shared
+        volumeMounts:
+          - mountPath: /oneclient-mount.sh
+            subPath: oneclient-mount.sh
+            name: oneclient-mount
+            readOnly: true
+      volumes:
+      - name: oneclient-mount
+        configMap:
+          name: dev-oneclient-krakow-config
+          items:
+          - key: oneclient-mount.sh
+            path: oneclient-mount.sh
+---
+# Source: cross-support-job-3p/charts/onedata-3p/charts/onezone/charts/token-dispenser/templates/deployment.yaml
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: dev-token-dispenser
+  labels:
+    app: dev-token-dispenser
+    chart: token-dispenser
+    release: dev
+    heritage: Tiller
+  annotations:
+    version: "0.1.0"
+spec:
+  template:
+    metadata:
+      labels:
+        app: dev-token-dispenser
+        chart: token-dispenser
+        release: dev
+        heritage: Tiller
+      annotations:
+        version: "0.1.0"
+    spec:
+      hostname: token-dispenser
+      subdomain: dev-token-dispenser
+      hostNetwork: false
+      imagePullSecrets: []
+      containers:
+      - name: token-dispenser
+        image: onedata/token-dispenser:54a9538
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 80
+        readinessProbe:
+          tcpSocket:
+            port: 80
+          initialDelaySeconds: 1
+          periodSeconds: 2
+        livenessProbe:
+          tcpSocket:
+            port: 80
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        volumeMounts:
+          - mountPath: /db.yaml
+            subPath: db.yaml
+            name: db-config
+            readOnly: true
+      volumes:
+      - name: db-config
+        configMap:
+          name: dev-token-dispenser-config
+          items:
+          - key: db.yaml
+            path: db.yaml
+---
+# Source: cross-support-job-3p/charts/onedata-3p/charts/oneprovider-krakow/templates/deployment.yaml
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: dev-oneprovider-krakow
+  labels:
+    app: dev-oneprovider-krakow
+    chart: oneprovider-krakow
+    release: dev
+    heritage: Tiller
+    component: "oneprovider"
+  annotations:
+    version: "0.2.12"
+spec:
+  serviceName: dev-oneprovider-krakow
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: dev-oneprovider-krakow
+        chart: oneprovider-krakow
+        release: dev
+        heritage: Tiller
+        component: "oneprovider"
+      annotations:
+        version: "0.2.12"
+    spec:
+      subdomain: dev-oneprovider-krakow
+      hostNetwork: false
+      terminationGracePeriodSeconds: 0
+      imagePullSecrets: []
+      initContainers:
+      containers:
+      - name: oneprovider-krakow
+        image: docker.onedata.org/oneprovider-dev:develop
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: 0.3
+            memory: 0.5Gi
+        ports:
+          - containerPort: 53
+          - containerPort: 80
+          - containerPort: 443
+          - containerPort: 5555
+          - containerPort: 5556
+          - containerPort: 6665
+          - containerPort: 6666
+          - containerPort: 7443
+          - containerPort: 8443
+          - containerPort: 8876
+          - containerPort: 8877
+          - containerPort: 9443
+        command:
+          - "/bin/bash"
+          - "-c"
+          - >
+            echo dev-oneprovider-krakow-0 ;
+            if [[ "$HOSTNAME" != dev-oneprovider-krakow-0 ]]; then export ONEPANEL_BATCH_MODE="false" ; fi ;
+            env ;
+            /root/oneprovider.sh ;
+            cat /var/log/op_panel/info.log ;
+            exit 1 ;
+        lifecycle:
+          preStop:
+            exec:
+              command:
+                - "sh"
+                - "-c"
+                - >
+                  op_panel stop ;
+                  op_worker stop ;
+                  cluster_manager stop ;
+                  /etc/init.d/couchbase-server stop ;
+                  pkill -f oneprovider.py ;
+        readinessProbe:
+          exec:
+            command:
+              - "/bin/bash"
+              - "-c"
+              - >
+                onepanel_ready() { sleep 5 ; exit 0 ; } ;
+                if [[ "$HOSTNAME" == dev-oneprovider-krakow-0 ]]; then exit 0 ; else onepanel_ready ; fi ;
+        env:
+          - name: ONEPANEL_DEBUG_MODE
+            value: "false"
+          - name: ONEPANEL_LOG_LEVEL
+            value: "info"
+          - name: ONEPANEL_GENERATE_TEST_WEB_CERT
+            value: "true"
+          - name: ONEPANEL_GENERATED_CERT_DOMAIN
+            value: "dev-oneprovider-krakow.default.svc.cluster.local"
+          - name: ONEPANEL_TRUST_TEST_CA
+            value: "true"
+          - name: ONEPANEL_BATCH_MODE
+            value: "true"
+          - name: ONEPROVIDER_CONFIG
+            valueFrom:
+              configMapKeyRef:
+                name: dev-oneprovider-krakow-config
+                key: ONEPROVIDER_CONFIG
+        volumeMounts:
+          - name: config-map
+            mountPath: /etc/op_panel/overlay.config
+            subPath: panel-overlay.config
+          - name: config-map
+            mountPath: /etc/op_worker/overlay.config
+            subPath:  worker-overlay.config
+      volumes:
+      - name: config-map
+        configMap:
+          name: dev-oneprovider-krakow-config
+---
+# Source: cross-support-job-3p/charts/onedata-3p/charts/onezone/templates/deployment.yaml
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: dev-onezone
+  labels:
+    app: dev-onezone
+    chart: onezone
+    release: dev
+    heritage: Tiller
+    component: onezone
+  annotations:
+    version: "0.2.12"
+spec:
+  serviceName: dev-onezone
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: dev-onezone
+        chart: onezone
+        release: dev
+        heritage: Tiller
+        component: onezone
+      annotations:
+        version: "0.2.12"
+    spec:
+      subdomain: dev-onezone
+      hostNetwork: false
+      terminationGracePeriodSeconds: 0
+      imagePullSecrets: []
+      initContainers:
+        - name: wait-token-dispenser
+          image: onedata/k8s-wait-for:v1.1
+          imagePullPolicy: IfNotPresent
+          args:
+            - "pod"
+            - "-lapp=dev-token-dispenser"
+      containers:
+      - name: onezone
+        image: docker.onedata.org/onezone-dev:develop
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: 0.3
+            memory: 0.5Gi
+        ports:
+          - containerPort: 53
+          - containerPort: 80
+          - containerPort: 443
+          - containerPort: 5555
+          - containerPort: 5556
+          - containerPort: 6665
+          - containerPort: 6666
+          - containerPort: 7443
+          - containerPort: 8443
+          - containerPort: 8876
+          - containerPort: 8877
+          - containerPort: 9443
+        command:
+          - "/bin/bash"
+          - "-c"
+          - >
+            echo dev-onezone-0 ;
+            if [[ "$HOSTNAME" != dev-onezone-0 ]]; then export ONEPANEL_BATCH_MODE="false" ; fi ;
+            env ;
+            /root/onezone.sh ;
+            cat /var/log/oz_panel/info.log ;
+            exit 1 ;
+        lifecycle:
+          preStop:
+            exec:
+              command:
+                - "sh"
+                - "-c"
+                - >
+                  oz_panel stop ;
+                  oz_worker stop ;
+                  cluster_manager stop ;
+                  /etc/init.d/couchbase-server stop ;
+                  echo 1 > /monitor/onezone-exit ;
+                  pkill -f onezone.py ;
+        readinessProbe:
+          initialDelaySeconds: 0
+          periodSeconds: 1
+          exec:
+            # A hack, that makes sure that a pod reports ready when onezone has really started
+            command:
+              - "/bin/bash"
+              - "-c"
+              - >
+                onepanel_ready() { sleep 5 ; exit 0 ; } ;
+                if [[ "$HOSTNAME" == dev-onezone-0 ]]; then exit 0 ; else onepanel_ready ; fi ;
+        env:
+          - name: ONEPANEL_DEBUG_MODE
+            value: "false"
+          - name: ONEPANEL_LOG_LEVEL
+            value: "info"
+          - name: ONEPANEL_GENERATE_TEST_WEB_CERT
+            value: "true"
+          - name: ONEPANEL_GENERATED_CERT_DOMAIN
+            value: "dev-onezone.default.svc.cluster.local"
+          - name: ONEPANEL_TRUST_TEST_CA
+            value: "true"
+          - name: ONEPANEL_BATCH_MODE
+            value: "true"
+          - name: ONEZONE_CONFIG
+            valueFrom:
+              configMapKeyRef:
+                name: dev-onezone-config
+                key: ONEZONE_CONFIG
+        volumeMounts:
+          - name: config-map
+            mountPath: /etc/oz_panel/overlay.config
+            subPath: panel-overlay.config
+          - name: config-map
+            mountPath: /etc/oz_worker/overlay.config
+            subPath:  worker-overlay.config
+          - mountPath: /etc/oz_worker/auth.config
+            subPath: auth.config
+            name: config-map
+            readOnly: true
+      volumes:
+      - name: config-map
+        configMap:
+          name: dev-onezone-config
+---
+# Source: cross-support-job-3p/charts/onedata-3p/charts/oneprovider-krakow/templates/ready-check-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dev-oneprovider-krakow-ready-check
+  labels:
+    app: dev-oneprovider-krakow
+    chart: oneprovider-krakow
+    release: dev
+    heritage: Tiller
+  annotations:
+    version: "0.2.12"
+spec:
+  template:
+    metadata:
+      labels:
+        app: dev-oneprovider-krakow
+        chart: oneprovider-krakow
+        release: dev
+        heritage: Tiller
+      annotations:
+        version: "0.2.12"
+    spec:
+      restartPolicy: Never
+      hostNetwork: false
+      imagePullSecrets: []
+      initContainers:
+      - name: wait-for-oneprovider-krakow
+        image: byrnedo/alpine-curl
+        imagePullPolicy: IfNotPresent
+        command:
+          - "/bin/sh"
+          - "-c"
+          - >
+            user="" ;
+            while [ "$user" = "" ] ; do user="$(curl -k -u admin:password -sS --tlsv1.2 -X GET 'https://dev-oneprovider-krakow:9443/api/v3/onepanel/users/user')"; echo "Waiting for https://dev-oneprovider-krakow:9443/api/v3/onepanel/users/user to return something..." ; echo "$user" ; sleep 2 ; done ;
+      containers:
+      - name: oneprovider-ready-check
+        image: alpine:3.6
+        imagePullPolicy: IfNotPresent
+        command:
+          - "sh"
+          - "-c"
+          - >
+            echo 'all ok, exiting' ;
+---
+# Source: cross-support-job-3p/charts/onedata-3p/charts/onezone/templates/ready-check-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dev-onezone-ready-check
+  labels:
+    app: dev-onezone
+    chart: onezone
+    release: dev
+    heritage: Tiller
+  annotations:
+    version: "0.2.12"
+spec:
+  template:
+    metadata:
+      labels:
+        app: dev-onezone
+        chart: onezone
+        release: dev
+        heritage: Tiller
+      annotations:
+        version: "0.2.12"
+    spec:
+      restartPolicy: Never
+      hostNetwork: false
+      imagePullSecrets: []
+      initContainers:
+      - name: wait-for-onezone
+        image: byrnedo/alpine-curl
+        imagePullPolicy: IfNotPresent
+        command:
+          - "/bin/sh"
+          - "-c"
+          - >
+            user="" ;
+            while [ "$user" = "" ] ; do user="$(curl -k -u admin:password -sS --tlsv1.2 -X GET 'https://dev-onezone:9443/api/v3/onepanel/users/user')"; echo "Waiting for https://dev-onezone:9443/api/v3/onepanel/users/user to return something..." ; echo "$user" ; sleep 2 ; done ;
+      containers:
+      - name: onezone-ready-check
+        image: onedata/rest-cli:18.02.0-rc2
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: ONEZONE_API_KEY
+            value: "supplied_at_runtime"
+          - name: ONEZONE_HOST
+            value: "https://dev-onezone"
+          - name: ONEPANEL_HOST
+            value: "https://dev-onezone:9443"
+          - name: TERM # otherwise zsh and bash autocompletion used in this container tends to go crazy
+            value: "xterm-256color"
+        command:
+          - "bash"
+          - "-c"
+          - >
+            echo "-k" > ~/.curlrc ; echo "-f" >> ~/.curlrc ;
+            echo "Getting token:" ;
+            export ONEZONE_API_KEY="$(curl -k -u $ONEPANEL_BASIC_AUTH -X POST -d '' -H 'content-type: application/json' $ONEZONE_HOST/api/v3/onezone/user/client_tokens | jq -r .token)" ;
+            echo "Curl output:" ; 
+            echo "ONEZONE_HOST=$ONEZONE_HOST" ;
+            echo "ONEZONE_API_KEY=$ONEZONE_API_KEY" ;
+          
+            onezone-rest-cli -w "'%{http_code}'" -u joe:password getUser ;
+            onezone-rest-cli -w "'%{http_code}'" -u user:password getUser ;
+            exit 0 ;
+---
+# Source: cross-support-job-3p/templates/job-groups.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dev-cross-support-job-3p-groups
+  labels:
+    app: dev-cross-support-job-3p
+    chart: "cross-support-job-3p"
+    release: "dev"
+    heritage: "Tiller"
+    job: dev-cross-support-job-3p-groups
+  annotations:
+    version: "0.2.10-wip-1"
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      name: "dev"
+      labels:
+        app: dev-cross-support-job-3p
+        chart: "cross-support-job-3p"
+        release: "dev"
+        heritage: "Tiller"
+        job: dev-cross-support-job-3p-groups
+      annotations:
+        version: "0.2.10-wip-1"
+    spec:
+      hostNetwork: false
+      initContainers:
+        - name: wait-for-groups
+          image: onedata/k8s-wait-for:v1.1
+          imagePullPolicy: IfNotPresent
+          args:
+            - "job"
+            - "dev-cross-support-job-3p-users"
+      imagePullSecrets: []
+      restartPolicy: Never
+      containers:
+      - name: cross-support-job-3p
+        image: onedata/rest-cli:18.02.0-rc2
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: ONEZONE_HOST
+            value: "https://dev-onezone"
+          - name: ONEZONE_API_KEY
+            value: "supplied_at_runtime"
+          - name: ONEPANEL_BASIC_AUTH
+            value: "admin:password"
+          - name: ONEPROVIDER_HOST
+            value: "https://dev-oneprovider"
+          - name: ONEPANEL_HOST
+            value: "https://dev-onezone:9443"
+          - name: TERM # otherwise zsh and bash autocompletion used in this container tends to go crazy
+            value: "xterm-256color"
+        command:
+          - "bash"
+          - "-c"
+          - >
+            set -e;
+            echo "-k" > ~/.curlrc ; echo "-f" >> ~/.curlrc ;
+            echo "Getting token:" ;
+            export ONEZONE_API_KEY="$(curl --silent -k -u $ONEPANEL_BASIC_AUTH -X POST -d '' -H 'content-type: application/json' $ONEZONE_HOST/api/v3/onezone/user/client_tokens)" ;
+            echo "Curl output:" ;
+            echo "$ONEZONE_API_KEY" ;
+            export ONEZONE_API_KEY="$(echo "$ONEZONE_API_KEY" | jq -r .token)" ;
+            echo "ONEZONE_HOST=$ONEZONE_HOST" ;
+            echo "ONEPANEL_BASIC_AUTH=$ONEPANEL_BASIC_AUTH" ;
+            echo "ONEZONE_API_KEY=$ONEZONE_API_KEY" ;
+            idp=onepanel;userId=$(curl --silent -k -u joe:password http://dev-token-dispenser/api/v1.0/onezone/uid/$idp) ;
+            idp=onepanel;userId=$(curl --silent -k -u user:password http://dev-token-dispenser/api/v1.0/onezone/uid/$idp) ;
+---
+# Source: cross-support-job-3p/templates/job-luma.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dev-cross-support-job-3p-luma
+  labels:
+    app: dev-cross-support-job-3p
+    chart: "cross-support-job-3p"
+    release: "dev"
+    heritage: "Tiller"
+    job: dev-cross-support-job-3p-luma
+  annotations:
+    version: "0.2.10-wip-1"
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      name: "dev"
+      labels:
+        app: dev-cross-support-job-3p
+        chart: "cross-support-job-3p"
+        release: "dev"
+        heritage: "Tiller"
+        job: dev-cross-support-job-3p-luma
+      annotations:
+        version: "0.2.10-wip-1"
+    spec:
+      hostNetwork: false
+      initContainers:
+        - name: wait-for-spaces
+          image: onedata/k8s-wait-for:v1.1
+          imagePullPolicy: IfNotPresent
+          args:
+            - "job"
+            - >
+              -ljob=dev-cross-support-job-3p-spaces
+      imagePullSecrets: []
+      restartPolicy: Never
+      containers:
+      - name: cross-support-job-3p
+        image: onedata/rest-cli:18.02.0-rc2
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: ONEZONE_HOST
+            value: "https://dev-onezone"
+          - name: ONEZONE_API_KEY
+            value: "supplied_at_runtime"
+          - name: ONEPANEL_BASIC_AUTH
+            value: "admin:password"
+          - name: ONEPROVIDER_HOST
+            value: "https://dev-oneprovider"
+          - name: ONEPANEL_HOST
+            value: "https://dev-onezone:9443"
+          - name: LUMA_HOST
+            value: "supplied_at_runtime"
+          - name: TERM # otherwise zsh and bash autocompletion used in this container tends to go crazy
+            value: "xterm-256color"
+            # add users
+            # add users credentials:
+            #  per provider (not luma)
+            #  per storage
+
+            # add groups
+            #   per user
+            #   per provider (not luma)
+            #   per space
+        command:
+          - "bash"
+          - "-c"
+          - >
+            set -e; 
+            echo "-k" > ~/.curlrc ; echo "-f" >> ~/.curlrc ;
+            echo "Curl output:" ; 
+            echo "ONEZONE_HOST=$ONEZONE_HOST" ;
+            echo "ONEPANEL_BASIC_AUTH=$ONEPANEL_BASIC_AUTH" ;
+---
+# Source: cross-support-job-3p/templates/job-spaces.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dev-cross-support-job-3p-spaces
+  labels:
+    app: dev-cross-support-job-3p
+    chart: "cross-support-job-3p"
+    release: "dev"
+    heritage: "Tiller"
+    job: dev-cross-support-job-3p-spaces
+  annotations:
+    version: "0.2.10-wip-1"
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      name: "dev"
+      labels:
+        app: dev-cross-support-job-3p
+        chart: "cross-support-job-3p"
+        release: "dev"
+        heritage: "Tiller"
+        job: dev-cross-support-job-3p-spaces
+      annotations:
+        version: "0.2.10-wip-1"
+    spec:
+      hostNetwork: false
+      initContainers:
+        - name: wait-for-groups
+          image: onedata/k8s-wait-for:v1.1
+          imagePullPolicy: IfNotPresent
+          args:
+            - "job"
+            - "dev-cross-support-job-3p-groups"
+      imagePullSecrets: []
+      restartPolicy: Never
+      containers:
+      - name: cross-support-job-3p
+        image: onedata/rest-cli:18.02.0-rc2
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: ONEZONE_HOST
+            value: "https://dev-onezone.default.svc.cluster.local"
+          - name: ONEZONE_API_KEY
+            value: "supplied_at_runtime"
+        args:
+          - "-c"
+          - >
+            set -e;
+            echo "-k" > ~/.curlrc ; echo "-f" >> ~/.curlrc ;
+            echo "ONEZONE_HOST=$ONEZONE_HOST" ;
+---
+# Source: cross-support-job-3p/templates/job-supports.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dev-cross-support-job-3p-supports
+  labels:
+    app: dev-cross-support-job-3p
+    chart: "cross-support-job-3p"
+    release: "dev"
+    heritage: "Tiller"
+    job: dev-cross-support-job-3p-supports
+  annotations:
+    version: "0.2.10-wip-1"
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      name: "dev"
+      labels:
+        app: dev-cross-support-job-3p
+        chart: "cross-support-job-3p"
+        release: "dev"
+        heritage: "Tiller"
+        job: dev-cross-support-job-3p-supports
+      annotations:
+        version: "0.2.10-wip-1"
+    spec:
+      hostNetwork: false
+      initContainers:
+        - name: wait-for-luma
+          image: onedata/k8s-wait-for:v1.1
+          imagePullPolicy: IfNotPresent
+          args:
+            - "job"
+            - "dev-cross-support-job-3p-luma"
+      imagePullSecrets: []
+      restartPolicy: Never
+      containers:
+      - name: cross-support-job-3p
+        image: onedata/rest-cli:18.02.0-rc2
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: ONEZONE_HOST
+            value: "https://dev-onezone.default.svc.cluster.local"
+          - name: ONEPANEL_BASIC_AUTH
+            value: "admin:password"
+          - name: ONEZONE_API_KEY
+            value: "supplied_at_runtime"
+        args:
+          - "-c"
+          - >
+            set -e;
+            echo "-k" > ~/.curlrc ; echo "-f" >> ~/.curlrc ;
+            echo "ONEZONE_HOST=$ONEZONE_HOST" ;
+            echo "ONEPANEL_BASIC_AUTH=$ONEPANEL_BASIC_AUTH" ;
+---
+# Source: cross-support-job-3p/templates/job-users.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dev-cross-support-job-3p-users
+  labels:
+    app: dev-cross-support-job-3p
+    chart: "cross-support-job-3p"
+    release: "dev"
+    heritage: "Tiller"
+    job: dev-cross-support-job-3p-users
+  annotations:
+    version: "0.2.10-wip-1"
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      name: "dev"
+      labels:
+        app: dev-cross-support-job-3p
+        chart: "cross-support-job-3p"
+        release: "dev"
+        heritage: "Tiller"
+        job: dev-cross-support-job-3p-users
+      annotations:
+        version: "0.2.10-wip-1"
+    spec:
+      hostNetwork: false
+      initContainers:
+        - name: wait-for-release
+          image: onedata/k8s-wait-for:v1.1
+          imagePullPolicy: IfNotPresent
+          args:
+            - "pod"
+            - >
+              -l release in (dev), chart notin (cross-support-job-3p)
+      imagePullSecrets: []
+      restartPolicy: Never
+      containers:
+      - name: cross-support-job-3p
+        image: onedata/rest-cli:18.02.0-rc2
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: ONEZONE_HOST
+            value: "https://dev-onezone"
+          - name: ONEZONE_API_KEY
+            value: "supplied_at_runtime"
+          - name: ONEPANEL_BASIC_AUTH
+            value: "admin:password"
+          - name: ONEPROVIDER_HOST
+            value: "https://dev-oneprovider"
+          - name: ONEPANEL_HOST
+            value: "https://dev-onezone:9443"
+          - name: KEYCLOAK_HOST
+            value: "http://dev-keycloak.default.svc.cluster.local"
+          - name: TERM # otherwise zsh and bash autocompletion used in this container tends to go crazy
+            value: "xterm-256color"
+        command:
+          - "bash"
+          - "-c"
+          - >
+            set -e;
+            echo "-k" > ~/.curlrc ; echo "-f" >> ~/.curlrc ;
+            exit 0;

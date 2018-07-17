@@ -6,6 +6,7 @@ scenario: "scenario-1oz-1op"
 # to be found in CWD (from where the 'up' script was run) or one dir above.
 sources: false
 
+# TODO: add information that image has to be -dev
 # Onezone image to use. Note that if 'sources' option is enabled, it must
 # be based off onedata/worker image (it contains all the machinery to run the
 # application from sources).
@@ -20,3 +21,5 @@ oneproviderImage: "docker.onedata.org/oneprovider-dev:develop"
 forceImagePull: false
 
 createSpaces: false
+
+oneclients: true

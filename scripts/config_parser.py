@@ -10,6 +10,7 @@ __license__ = "This software is released under the MIT license cited in " \
 
 import config.writers as writers
 import os
+import yaml
 import config_generator
 
 
@@ -58,6 +59,7 @@ def parse_env_config(env_cfg, base_sources_cfg, scenario_key, scenario_path):
     force_image_pull = env_cfg.get('forceImagePull')
     oneprovider_image = env_cfg.get('oneproviderImage')
     onezone_image = env_cfg.get('onezoneImage')
+    oneclient_image = env_cfg.get('oneclientImage')
 
     spaces_cfg = env_cfg.get('createSpaces')
     parse_spaces_cfg(spaces_cfg, parsed_env_cfg)
@@ -72,8 +74,8 @@ def parse_env_config(env_cfg, base_sources_cfg, scenario_key, scenario_path):
 
     for service in base_sources_cfg[scenario_key].keys():
         parse_service_cfg(parsed_env_cfg, env_cfg, service, scenario_key,
-                          onezone_image, oneprovider_image, force_image_pull,
-                          base_sources_cfg)
+                          onezone_image, oneprovider_image, oneclient_image,
+                          force_image_pull, base_sources_cfg)
 
     writer = writers.ConfigWriter(parsed_env_cfg, 'yaml')
     with open(os.path.join(scenario_path, 'CustomConfig.yaml'), "w") as f:
@@ -85,8 +87,8 @@ def parse_env_config(env_cfg, base_sources_cfg, scenario_key, scenario_path):
 
 
 def parse_service_cfg(parsed_env_cfg, env_cfg, service, scenario_key,
-                      onezone_image, oneprovider_image, force_image_pull,
-                      base_sources_cfg):
+                      onezone_image, oneprovider_image, oneclient_image,
+                      force_image_pull, base_sources_cfg):
     service_type = 'onezone' if 'onezone' in service else 'oneprovider'
 
     parsed_env_cfg[scenario_key][service] = \
@@ -128,7 +130,7 @@ def parse_service_cfg(parsed_env_cfg, env_cfg, service, scenario_key,
     if isinstance(custom_sources_cfg, dict):
         parse_node_sources(base_sources_cfg, custom_sources_cfg, scenario_key,
                            service)
-        nodes = base_sources_cfg[scenario_key][service]['nodes']
+        nodes = base_sources_cfg[scenario_key][service]['sources_cfg']['nodes']
 
     set_nodes_num(parsed_env_cfg, service_type, scenario_key, service, nodes)
 
@@ -138,23 +140,23 @@ def parse_node_sources(base_sources_cfg, custom_sources_cfg, scenario_key,
     parsed_nodes_cfg = {}
 
     # clean default configuration
-    for node_name in base_sources_cfg[scenario_key].get(service).get('nodes').keys():
+    for node_name in base_sources_cfg[scenario_key].get(service).get('sources_cfg').get('nodes').keys():
         parsed_nodes_cfg[node_name] = {}
 
-    base_sources_cfg[scenario_key][service]['nodes'] = parsed_nodes_cfg
+    base_sources_cfg[scenario_key][service]['sources_cfg']['nodes'] = parsed_nodes_cfg
 
     if custom_sources_cfg.get(providers_mapping(service)):
         # parse custom configuration
         for node_name, node_sources in custom_sources_cfg[providers_mapping(service)].items():
             node_name = parse_node_name(node_name)
             node = {'sources': [{'name': source} for source in node_sources]}
-            base_sources_cfg[scenario_key][service]['nodes'][node_name] = node
+            base_sources_cfg[scenario_key][service]['sources_cfg']['nodes'][node_name] = node
 
 
 def add_sources_for_nodes(nodes_list, base_sources_cfg, scenario_key, service):
     for node_name in nodes_list:
-        base_sources_cfg[scenario_key][service]['nodes'][node_name] = \
-            base_sources_cfg[scenario_key][service]['nodes']['n1']
+        base_sources_cfg[scenario_key][service]['sources_cfg']['nodes'][node_name] = \
+            base_sources_cfg[scenario_key][service]['sources_cfg']['nodes']['n0']
 
 
 def parse_spaces_cfg(spaces_cfg, new_env_cfg):

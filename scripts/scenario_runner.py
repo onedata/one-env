@@ -29,10 +29,13 @@ CROSS_SUPPORT_JOB = 'cross-support-job-3p'
 
 
 def get_scenario_key(deployment_charts_path: str):
-    requirements = readers.ConfigReader(
-        os.path.join(deployment_charts_path, STABLE_PATH, CROSS_SUPPORT_JOB,
-                     'requirements.yaml')
-    ).load()
+    requirements_path = os.path.join(deployment_charts_path, STABLE_PATH,
+                                     CROSS_SUPPORT_JOB, 'requirements.yaml')
+    try:
+        requirements = readers.ConfigReader(requirements_path).load()
+    except FileNotFoundError:
+        console.error('File {} not found. Please make sure that submodules '
+                      'are inited and updated.'.format(requirements_path))
 
     scenario_key = ''
 
@@ -97,7 +100,7 @@ def rsync_sources(deployment_dir: str, log_directory_path: str):
         for pod_name in deployment_data.get('sources'):
             panel_from_sources = False
             pod = pods.match_pods(pod_name)[0]
-            service_name = '-'.join(pods.get_service_name(pod).split('-')[1:])
+            service_name = pods.get_chart_name(pod)
             node_name = 'n{}'.format(pods.get_node_num(pod_name))
             generated_app_cfg_path = os.path.join(deployment_dir, service_name,
                                                   node_name, 'app.config')

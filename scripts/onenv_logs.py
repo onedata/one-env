@@ -23,7 +23,7 @@ SCRIPT_DESCRIPTION = 'Displays logs of chosen pod - by default the output of ' \
 
 parser = argparse.ArgumentParser(
     prog='onenv logs',
-    formatter_class=argparse_utils.ArgumentHelpFormatter,
+    formatter_class=argparse_utils.ArgumentsHelpFormatter,
     description=SCRIPT_DESCRIPTION
 )
 
@@ -65,14 +65,14 @@ components_group.add_argument(
 
 components_group.add_argument(
     '-p', '--panel',
-    action='store_true',
+    action='store_const',
     help='display info level logs from (op|oz)-panel',
     const=APP_TYPE_PANEL,
     dest='app_type')
 
 components_group.add_argument(
     '-c', '--cluster-manager',
-    action='store_true',
+    action='store_const',
     help='display info level logs from cluster-manager',
     const=APP_TYPE_CLUSTER_MANAGER,
     dest='app_type')

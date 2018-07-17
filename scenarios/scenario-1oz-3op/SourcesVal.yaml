@@ -1,32 +1,32 @@
 onedata-3p:
   onezone:
-    nodes:
-      n0:
-        sources:
+    sources:
+      nodes:
+        n0:
           - name: oz-panel
           - name: oz-worker
           - name: cluster-manager
 
   oneprovider-krakow:
-    nodes:
-      n0:
-        sources:
+    sources:
+      nodes:
+        n0:
           - name: op-panel
           - name: op-worker
           - name: cluster-manager
 
   oneprovider-paris:
-    nodes:
-      n0:
-        sources:
+    sources:
+      nodes:
+        n0:
           - name: op-panel
           - name: op-worker
           - name: cluster-manager
 
   oneprovider-lisbon:
-    nodes:
-      n0:
-        sources:
+    sources:
+      nodes:
+        n0:
           - name: op-panel
           - name: op-worker
           - name: cluster-manager

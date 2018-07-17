@@ -1,9 +1,13 @@
 global:
   # TODO: Find a way to eliminate necessity for region and tld values
   # to make deployment cluster independent
-  region: cluster
-  tld: local
-  imagePullPolicy: Always
+#   region: dev
+#   tld: onedata.uk.to
+   region: cluster
+   tld: local
+   imagePullPolicy: IfNotPresent
+
+
 
 oneprovider-krakow:
   enabled: true
@@ -120,7 +124,7 @@ users: &all_users
     password: password
     email: joe@example.com
     oneclient: *allOneproviders
-    luma: []
+  #    luma: []
 #      - name: krakow
 #        storages:
 #        - name: posix
@@ -129,7 +133,7 @@ users: &all_users
 #        - name: volume-data-sync-rw-luma
 #          uid: 40001
 #          gid: 42001
-    groups: []
+#    groups: []
 #      - group: *group_alpha
 #        # comment out 'privileges' to make onezone
 #        # assign default privileges
@@ -287,13 +291,13 @@ users: &all_users
 
 spaces:
   # Proper spaces
-  - name: "krk-3"
+  - name: "krk-p"
     # TODO: change to owner
     user: *user_joe
     # TODO: change to supportedby
     supports:
       - provider: "krakow"
-        storage_name: "ceph"
+        storage_name: "posix"
         size: '1073741824'
 #  - name: "par-n"
 #    user: *user_joe
@@ -568,7 +572,7 @@ onedata-3p:
   enabled: *deployment_enabled
   oz_image: &oz_image onedata/onezone:18.02.0-rc7
   op_image: &op_image onedata/oneprovider:18.02.0-rc7
-  oc_image: &oc_image onedata/oneclient:18.02.0-rc7
+  oc_image: &oc_image docker.onedata.org/oneclient:ID-0d2dfcc193
   cli_image: &cli_image onedata/rest-cli:18.02.0-rc7
   luma_image: &luma_image docker.onedata.org/luma:ID-8e2da56615
 
@@ -698,6 +702,10 @@ onedata-3p:
         realmId: onedata
         clientName: onedata
         publishClientSecret: false
+
+    # TODO: HOW TO HANDLE THIS - WE NEED THIS IN ONECLIENT BUT DO WE NEED IT ALWAYS?
+    token-dispenser:
+      enabled: true
 
   # What follows are the providers configurations for providers designated as:
   # krakow, paris, and lisbon
