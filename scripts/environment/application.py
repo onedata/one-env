@@ -25,6 +25,7 @@ def default_config(name):
     }
 
     cmds = {
+        'cmd': "service {}".format(name),
         'start_cmd': "service {} start".format(name),
         'stop_cmd': "service {} stop".format(name),
         'status_cmd': "service {} ping".format(name)
@@ -69,6 +70,7 @@ class Application:
             'cacerts_dir': 'etc/cacerts/',
             'protocol_key_file': 'etc/certs/protocol_key.pem',
             'protocol_cert_file': 'etc/certs/protocol_cert.pem',
+            'cmd': 'bin/{}'.format(self.name),
             'start_cmd': 'bin/{} start'.format(self.name),
             'stop_cmd': 'bin/{} stop'.format(self.name),
             'status_cmd': 'bin/{} ping'.format(self.name)
