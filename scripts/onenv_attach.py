@@ -70,7 +70,7 @@ def main():
     user_config.ensure_exists()
     helm.ensure_deployment(exists=True, fail_with_error=True)
 
-    if 'pod' not in args:
+    if not args.pod:
         args.pod = None
 
     with contextlib.suppress(KeyboardInterrupt):

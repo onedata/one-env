@@ -17,6 +17,7 @@ import helm
 import user_config
 import console
 import argparse_utils
+import config_maps
 
 SCRIPT_DESCRIPTION = 'Opens the GUI hosted by the service on given pod in ' \
                      'your default browser (uses the `open` command ' \
@@ -64,20 +65,22 @@ def main():
     helm.ensure_deployment(exists=True, fail_with_error=True)
 
     port = 443
-    if 'panel' in args:
+    if args.panel:
         port = 9443
 
     def open_fun(pod):
-        if 'ip' in args:
+        if args.ip:
             hostname = pods.get_ip(pod)
         else:
-            hostname = pods.get_domain(pod)
+            config_map_name = pods.get_service_config_map(pod)
+            config_map = config_maps.match_config_map(config_map_name)
+            hostname = config_maps.get_domain(config_map)
 
         if not hostname:
             console.error('The pod is not ready yet')
         else:
             url = 'https://{}:{}'.format(hostname, port)
-            if 'clipboard' in args:
+            if args.clipboard:
                 pyperclip.copy(url)
                 console.info('URL copied to clipboard ({})'.format(url))
             else:

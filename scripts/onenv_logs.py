@@ -83,7 +83,8 @@ parser.add_argument(
     type=str,
     action='store',
     default='info.log',
-    help='log file to be displayed (.log extension can be omitted)')
+    help='log file to be displayed (.log extension can be omitted)',
+    dest='log_file')
 
 parser.add_argument(
     '-s', '--show-log-files',
@@ -101,7 +102,7 @@ def logs(pod):
     app_type = args.app_type
 
     if app_type:
-        res = pods.app_logs(pod, app_type=app_type, logfile=args.logfile,
+        res = pods.app_logs(pod, app_type=app_type, logfile=args.log_file,
                             interactive=interactive,
                             follow=args.follow, infinite=args.infinity)
     else:
@@ -114,11 +115,11 @@ def logs(pod):
 
 
 def show_logfiles(pod):
-    if 'worker' in args:
+    if args.worker:
         pods.list_logfiles(pod, app_type='worker')
-    elif 'panel' in args:
+    elif args.panel:
         pods.list_logfiles(pod, app_type='panel')
-    elif 'cluster_manager' in args:
+    elif args.cluster_manager:
         pods.list_logfiles(pod, app_type='cluster-manager')
     else:
         console.error(
@@ -137,7 +138,7 @@ def main():
     if not args.follow:
         helm.ensure_deployment(exists=True, fail_with_error=True)
 
-    if 'pod' not in args:
+    if not args.pod:
         args.pod = None
 
     try:
