@@ -38,6 +38,7 @@ CONFIG_MAP_PARAM_FUN_MAPPING = {
 MIXED_PARAM_MAPPING = {
     'hostname': get_hostname
 }
+DEFAULT_PARAMS = ['service-type', 'ip', 'container-id']
 SERVICES_PARAMS = {
     'onezone': (list(CONFIG_MAP_PARAM_FUN_MAPPING.keys()) +
                 ['service-type', 'ip', 'container-id'] +
@@ -113,7 +114,7 @@ def service_status(pod, config_map, multiple=False, indent=''):
         print('{}name: {}'.format(indent, pods.get_name(pod)))
 
     service_type = pods.get_service_type(pod)
-    service_params = SERVICES_PARAMS.get(service_type, [])
+    service_params = SERVICES_PARAMS.get(service_type, DEFAULT_PARAMS)
 
     for param in service_params:
         if POD_PARAM_FUN_MAPPING.get(param):

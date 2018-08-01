@@ -14,6 +14,42 @@ import yaml
 import config_generator
 
 
+<<<<<<< Updated upstream
+=======
+# TODO: remove after keys in one-env cfg and chart will be the same
+IMAGE_KEY_MAPPING = {
+    'onezoneImage': 'oz_image',
+    'oneclientImage': 'oc_image',
+    'oneproviderImage': 'op_image',
+    'onedataCliImage': 'cli_image',
+    'lumaImage': 'luma_image'
+}
+
+
+def parse_my_values(my_values_path, env_cfg):
+    with open(my_values_path, 'a') as f:
+        f.write('\n')
+        for env_cfg_key, chart_key in IMAGE_KEY_MAPPING.items():
+            image = env_cfg.get(env_cfg_key)
+            if image:
+                f.write('{0}: &{0} {1}\n'.format(chart_key, image))
+
+        if env_cfg.get('luma'):
+            f.write('{0}: &{0} true\n'.format('luma_enabled'))
+
+        if env_cfg.get('oneclients'):
+            f.write('{0}: &{0} true\n'.format('oneclients_enabled'))
+
+        if env_cfg.get('onedataCli'):
+            f.write('{0}: &{0} true\n'.format('onedata_cli_enabled'))
+
+        storages = env_cfg.get('storages')
+        if env_cfg.get('storages'):
+            for storage in storages:
+                f.write('{0}_enabled: &{0}_enabled true\n'.format(storage))
+
+
+>>>>>>> Stashed changes
 def parse_node_name(node_name):
     """Parse node name in form 'node-1' to 'n1'"""
     node_num = parse_node_num(node_name)

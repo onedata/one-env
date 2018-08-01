@@ -107,7 +107,7 @@ def cmd_rsync(source_path, destination_path):
 
 
 def get_client_provider_host(pod):
-    get_env_variable(pod, 'ONECLIENT_PROVIDER_HOST')
+    return get_env_variable(pod, 'ONECLIENT_PROVIDER_HOST')
 
 
 def get_node_num(pod_name: str):
@@ -163,7 +163,8 @@ def get_ip(pod):
 
 
 def is_job(pod):
-    return pod.metadata.owner_references[0].kind == 'Job'
+    if pod.metadata.owner_references:
+        return pod.metadata.owner_references[0].kind == 'Job'
 
 
 def is_pod(pod):
