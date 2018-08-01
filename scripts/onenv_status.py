@@ -19,6 +19,34 @@ import user_config
 import argparse_utils
 from kubernetes_utils import get_chart_name
 
+
+def get_hostname(pod, config_map):
+    return '{}.{}'.format(pods.get_hostname(pod),
+                          config_maps.get_domain(config_map))
+
+
+POD_PARAM_FUN_MAPPING = {
+    'service-type': pods.get_service_type,
+    'ip': pods.get_ip,
+    'container-id':  pods.get_container_id,
+    'provider-host': pods.get_client_provider_host
+}
+CONFIG_MAP_PARAM_FUN_MAPPING = {
+    'name': config_maps.get_service_name,
+    'domain': config_maps.get_domain
+}
+MIXED_PARAM_MAPPING = {
+    'hostname': get_hostname
+}
+SERVICES_PARAMS = {
+    'onezone': (list(CONFIG_MAP_PARAM_FUN_MAPPING.keys()) +
+                ['service-type', 'ip', 'container-id'] +
+                list(MIXED_PARAM_MAPPING.keys())),
+    'oneprovider': (list(CONFIG_MAP_PARAM_FUN_MAPPING.keys()) +
+                    ['service-type', 'ip', 'container-id'] +
+                    list(MIXED_PARAM_MAPPING.keys())),
+    'oneclient': ['service-type', 'ip', 'container-id', 'provider-host'],
+}
 SCRIPT_DESCRIPTION = 'Displays the status of current onedata deployment.'
 
 parser = argparse.ArgumentParser(
@@ -84,20 +112,19 @@ def service_status(pod, config_map, multiple=False, indent=''):
     else:
         print('{}name: {}'.format(indent, pods.get_name(pod)))
 
-    if not config_maps.get_service_name(config_map):
-        print('{}service-type: {}'.format(indent, pods.get_service_type(pod)),
-              '{}ip: {}'.format(indent, pods.get_ip(pod)),
-              '{}container_id: {}'.format(indent, pods.get_container_id(pod)),
-              sep='\n')
-    else:
-        print('{}name: {}'.format(indent, config_maps.get_service_name(config_map)),
-              '{}service-type: {}'.format(indent, pods.get_service_type(pod)),
-              '{}domain: {}'.format(indent, config_maps.get_domain(config_map)),
-              '{}hostname: {}.{}'.format(indent, pods.get_hostname(pod),
-                                         config_maps.get_domain(config_map)),
-              '{}ip: {}'.format(indent, pods.get_ip(pod)),
-              '{}container_id: {}'.format(indent, pods.get_container_id(pod)),
-              sep='\n')
+    service_type = pods.get_service_type(pod)
+    service_params = SERVICES_PARAMS.get(service_type)
+
+    for param in service_params:
+        if POD_PARAM_FUN_MAPPING.get(param):
+            fun = POD_PARAM_FUN_MAPPING.get(param)
+            print('{}{}: {}'.format(indent, param, fun(pod)))
+        elif CONFIG_MAP_PARAM_FUN_MAPPING.get(param):
+            fun = CONFIG_MAP_PARAM_FUN_MAPPING.get(param)
+            print('{}{}: {}'.format(indent, param, fun(config_map)))
+        else:
+            fun = MIXED_PARAM_MAPPING.get(param)
+            print('{}{}: {}'.format(indent, param, fun(pod, config_map)))
 
 
 def pod_ip(pod, multiple=False):

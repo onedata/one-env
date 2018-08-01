@@ -106,6 +106,10 @@ def cmd_rsync(source_path, destination_path):
         return rsync_cmd
 
 
+def get_client_provider_host(pod):
+    get_env_variable(pod, 'ONECLIENT_PROVIDER_HOST')
+
+
 def get_node_num(pod_name: str):
     return pod_name.split('-')[-1]
 
