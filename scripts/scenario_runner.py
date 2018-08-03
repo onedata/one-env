@@ -185,10 +185,11 @@ def run_scenario(deployment_dir: str, local: bool, debug: bool, dry_run: bool):
     update_charts_dependencies(deployment_charts_path, deployment_logdir_path,
                                local)
 
-    config_parser.parse_env_config(env_cfg, base_sources_cfg, scenario_key,
-                                   deployment_scenario_path)
-
     my_values_path = os.path.join(deployment_scenario_path, 'MyValues.yaml')
+
+    config_parser.parse_env_config(env_cfg, base_sources_cfg, scenario_key,
+                                   deployment_scenario_path, my_values_path)
+
     custom_config_path = os.path.join(deployment_scenario_path,
                                       'CustomConfig.yaml')
     helm_install_cmd = helm.cmd_install(CROSS_SUPPORT_JOB, [my_values_path,
@@ -207,6 +208,8 @@ def run_scenario(deployment_dir: str, local: bool, debug: bool, dry_run: bool):
                                                       deployment_dir)
 
         helm_install_cmd.extend(['-f', base_sources_cfg_path])
+
+    print(helm_install_cmd)
 
     subprocess.check_call(helm_install_cmd, cwd=os.path.join(
             deployment_charts_path, STABLE_PATH), stderr=subprocess.STDOUT)
