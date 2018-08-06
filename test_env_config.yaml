@@ -25,8 +25,8 @@ onedataCliImage: "docker.onedata.org/rest-cli:ID-e5fb6602e4"
 # Luma image to use.
 lumaImage: "docker.onedata.org/luma:ID-8e2da56615"
 
-luma: true
-oneclients: true
+luma: false
+oneclients: false
 
 
 # When enabled, onezoneImage and oneproviderImage will be pulled before every
