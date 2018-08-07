@@ -1,9 +1,9 @@
 global:
   # TODO: Find a way to eliminate necessity for region and tld values
   # to make deployment cluster independent
-  region: cluster
-  tld: local
-  imagePullPolicy: Always
+   region: cluster
+   tld: local
+   imagePullPolicy: IfNotPresent
 
 oneprovider-krakow:
   enabled: true
@@ -94,7 +94,7 @@ groups: &all_groups []
 #  - group_set_privileges
 #  - group_update
 #  - group_view
-
+#
 #all_space_privileges: &all_space_privileges
 #  - space_delete
 #  - space_invite_group
@@ -255,18 +255,6 @@ users: &all_users
 #        - name: posix
 #          uid: 50002
 #          gid: 51002
-  # TODO: to remove this user, change how reddiness of onezone is detected
-  - &user_user
-    name: user
-    firstName: user
-    lastName: user
-    idps:
-      onepanel:
-        type: regular
-        enabled: true
-    password: password
-    email: user@example.com
-    oneclient: []
 
 #groups_graph:
 #  - parent: *group_alpha
@@ -286,16 +274,16 @@ users: &all_users
 #    privileges: *all_group_privileges
 #    children: [ *group_un ]
 
-spaces:
-  # Proper spaces
-  - name: "krk-3"
-    # TODO: change to owner
-    user: *user_joe
-    # TODO: change to supportedby
-    supports:
-      - provider: "krakow"
-        storage_name: "ceph"
-        size: '1073741824'
+spaces: []
+#  # Proper spaces
+#  - name: "krk-3"
+#    # TODO: change to owner
+#    user: *user_joe
+#    # TODO: change to supportedby
+#    supports:
+#      - provider: "krakow"
+#        storage_name: "s3"
+#        size: '1073741824'
 #  - name: "par-n"
 #    user: *user_joe
 #    supports:
@@ -542,10 +530,12 @@ spaces:
 
 # Those variables are the unfortunate necessity of an issue discussed here:
 # https://github.com/kubernetes/helm/issues/2479]
+token-dispenser:
+  enabled: *token_dispenser_enabled
 saml-idp:
   enabled: *idp_enabled
 keycloak:
- enabled: *keycloak_enabled
+  enabled: *keycloak_enabled
 luma:
   enabled: *luma_enabled
 oneclient:
@@ -683,6 +673,9 @@ onedata-3p:
 
     onepanel_users: *all_users
 
+    token-dispenser:
+      enabled: &token_dispenser_enabled true
+
     keycloak: &keycloak
       enabled: &keycloak_enabled false
       users: *all_users
@@ -693,30 +686,32 @@ onedata-3p:
       voGroupId: Onedata-Keycloak-1
       superGroup: vo:HNSciCloud-RHEA/rl:one-data-special-role
       init:
-        enable: false
+        enabled: true
         adminUsername: admin
         adminPassword: password
         realmId: onedata
         clientName: onedata
-        publishClientSecret: false
+        publishClientSecret: true
 
-  # What follows are the providers configurations for providers designated as:
-  # krakow, paris, and lisbon
+  # What follows is the provider configuration for provider designated as:
+  # krakow
   oneprovider-krakow:
+    memory: 0.5Gi
+    cpu: 0.3
+
     suffix: &op1s krakow
     geoLatitude: 50.0647
     geoLongitude: 19.9450
     onepanel_generate_test_web_cert: true
     onepanel_trust_test_ca: true
 
-    memory: 0.5Gi
-    cpu: 0.3
-
     image: *op_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
     log_level: *log_level
     nameOverride: oneprovider
     wait-for-onezone: *wait-for-onezone-enabled
+
+    onedata_anti_affinity_enabled: *onedata_anti_affinity_enabled
 
     oneprovider_nodes_count: *oneproviders_nodes_count
     cluster_config: *oneprovider_cluster_configs
@@ -735,39 +730,45 @@ onedata-3p:
       suffix: *op1s
       << : *luma_global
 
+
     volume-data-sync:
-      enabled: false #*volume_data_sync_enabled
-      volumes: []
-#      - name: volume-data-sync-rw
-#        luma-enabled: *luma_enabled_posix
-#        image: onedata/eo-data-mock:Landsat-5-sample-latest
-#        imagePullPolicy: IfNotPresent
-#        dataPath: /data
-#        readOnly: false
-#      - name: volume-data-sync-ro
-#        luma-enabled: *luma_enabled_posix
-#        image: onedata/eo-data-mock:Landsat-5-sample-latest
-#        imagePullPolicy: IfNotPresent
-#        dataPath: /data
-#        readOnly: true
-#      - name: volume-data-sync-rw-luma
-#        luma-enabled: *luma_enabled_posix
-#        image: onedata/eo-data-mock:Landsat-5-sample-latest
-#        imagePullPolicy: IfNotPresent
-#        dataPath: /data
-#        readOnly: false
-#        chowns:
-#        # chown -R command parameters
-#        # the root of the path is dataPath
-#          - path: Landsat-5
-#            user: 40001 #admin
-#            group: 42001 #alpha
-#          - path: Landsat-5/TM/L1T/2010/06/13
-#            user: 40001 #user
-#            group: 42001 #beta
-#          - path: Landsat-5/TM/L1T/2010/06/21
-#            user: 40001 #user
-#            group: 42001 #gamma
+      enabled: false
+      volumes:
+      - name: volume-data-sync-rw
+        luma-enabled: false
+        image: onedata/eo-data-mock:Landsat-5-sample-latest
+        imagePullPolicy: IfNotPresent
+        dataPath: /data
+        readOnly: false
+        permissions:
+          - path: Landsat-5
+            # chmod -R command parameters
+            # the root of the path is dataPath
+            mask: 777
+      - name: volume-data-sync-ro
+        luma-enabled: false
+        image: onedata/eo-data-mock:Landsat-5-sample-latest
+        imagePullPolicy: IfNotPresent
+        dataPath: /data
+        readOnly: true
+      - name: volume-data-sync-rw-luma
+        luma-enabled: *luma_enabled_posix
+        image: onedata/eo-data-mock:Landsat-5-sample-latest
+        imagePullPolicy: IfNotPresent
+        dataPath: /data
+        readOnly: false
+        permissions:
+          - path: Landsat-5
+            # chown -R command parameters
+            # the root of the path is dataPath
+            user: 40001 #admin
+            group: 42001 #alpha
+          - path: Landsat-5/TM/L1T/2010/06/13
+            user: 40001 #user
+            group: 42001 #beta
+          - path: Landsat-5/TM/L1T/2010/06/21
+            user: 40001 #user
+            group: 42001 #gamma
 
     oneclient:
       image: *oc_image
@@ -783,7 +784,7 @@ onedata-3p:
       suffix: *op1s
     posix:
       enabled: *posix_enabled
-      luma-enabled: false #*luma_enabled_posix
+      luma-enabled: *luma_enabled_posix
     volume-s3:
       enabled: *s3_enabled
       suffix: *op1s
@@ -808,21 +809,25 @@ onedata-3p:
     external-storages:
       << : *external-storages
 
+  # What follows is the provider configuration for provider designated as:
+  # paris
   oneprovider-paris:
+    memory: 0.5Gi
+    cpu: 0.3
+
     suffix: &op2s paris
     geoLatitude: 48.8566
     geoLongitude: 2.3522
     onepanel_generate_test_web_cert: true
     onepanel_trust_test_ca: true
 
-    memory: 0.5Gi
-    cpu: 0.3
-
     image: *op_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
     log_level: *log_level
     nameOverride: oneprovider
     wait-for-onezone: *wait-for-onezone-enabled
+
+    onedata_anti_affinity_enabled: *onedata_anti_affinity_enabled
 
     oneprovider_nodes_count: *oneproviders_nodes_count
     cluster_config: *oneprovider_cluster_configs
@@ -841,9 +846,45 @@ onedata-3p:
       suffix: *op2s
       << : *luma_global
 
+
     volume-data-sync:
-      enabled: false #*volume_data_sync_enabled
-      volumes: []
+      enabled: false
+      volumes:
+      - name: volume-data-sync-rw
+        luma-enabled: false
+        image: onedata/eo-data-mock:Landsat-5-sample-latest
+        imagePullPolicy: IfNotPresent
+        dataPath: /data
+        readOnly: false
+        permissions:
+          - path: Landsat-5
+            # chmod -R command parameters
+            # the root of the path is dataPath
+            mask: 777
+      - name: volume-data-sync-ro
+        luma-enabled: false
+        image: onedata/eo-data-mock:Landsat-5-sample-latest
+        imagePullPolicy: IfNotPresent
+        dataPath: /data
+        readOnly: true
+      - name: volume-data-sync-rw-luma
+        luma-enabled: *luma_enabled_posix
+        image: onedata/eo-data-mock:Landsat-5-sample-latest
+        imagePullPolicy: IfNotPresent
+        dataPath: /data
+        readOnly: false
+        permissions:
+          - path: Landsat-5
+            # chown -R command parameters
+            # the root of the path is dataPath
+            user: 40001 #admin
+            group: 42001 #alpha
+          - path: Landsat-5/TM/L1T/2010/06/13
+            user: 40001 #user
+            group: 42001 #beta
+          - path: Landsat-5/TM/L1T/2010/06/21
+            user: 40001 #user
+            group: 42001 #gamma
 
     oneclient:
       image: *oc_image
@@ -883,73 +924,3 @@ onedata-3p:
 
     external-storages:
       << : *external-storages
-#
-#  oneprovider-lisbon:
-#    suffix: &op3s lisbon
-#    geoLatitude: 38.7223
-#    geoLongitude: -9.1393
-#
-#    image: *op_image
-#    onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
-#    log_level: *log_level
-#    nameOverride: oneprovider
-#    wait-for-onezone: *wait-for-onezone-enabled
-#
-#    oneprovider_nodes_count: *oneproviders_nodes_count
-#    cluster_config: *oneprovider_cluster_configs
-#
-#    panelOverlayConfig: *oneprovidersPanelOverlayConfig
-#    workerOverlayConfig: *oneprovidersWorkerOverlayConfig
-#
-#    onezone_service_url:
-#      type: auto-generate
-#      disableSuffix: true
-#
-#    generate-certificates:
-#      enabled: *oneproviders_generate_certificates
-#
-#    luma:
-#      suffix: *op3s
-#      << : *luma_global
-#
-#    volume-data-sync:
-#      enabled: *volume_data_sync_enabled
-#
-#    oneclient:
-#      image: *oc_image
-#      debug_mode: *oneclients_debug_mode_enabled
-#      enabled: *oneclients_enabled
-#      suffix: *op3s
-#      users: *all_users
-#      onedata_cli:
-#        image: *cli_image
-#    onedata-cli:
-#      image: *cli_image
-#      enabled: *onedata_cli_enabled
-#      suffix: *op3s
-#    posix:
-#      enabled: *posix_enabled
-#      luma-enabled: *luma_enabled_posix
-#    volume-s3:
-#      enabled: *s3_enabled
-#      suffix: *op3s
-#      luma-enabled: *luma_enabled_s3
-#    volume-ceph:
-#      enabled: *ceph_enabled
-#      suffix: *op3s
-#      luma-enabled: *luma_enabled_ceph
-#    volume-nfs:
-#      enabled: *nfs_enabled
-#      suffix: *op3s
-#      luma-enabled: *luma_enabled_nfs
-#    volume-gluster:
-#      enabled: *gluster_enabled
-#      suffix: *op3s
-#      luma-enabled: *luma_enabled_gluster
-#    volume-swift:
-#      enabled: *swift_enabled
-#      suffix: *op3s
-#      luma-enabled: *luma_enabled_swift
-#
-#    external-storages:
-#      << : *external-storages
