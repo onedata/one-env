@@ -46,21 +46,24 @@ args = parser.parse_args()
 
 
 class Handler(FileSystemEventHandler):
-    def __init__(self, pod_name, source_path):
+    def __init__(self, pod, source_path):
         super().__init__()
-        self.pod_name = pod_name
+        self.pod = pod
         self.source_path = source_path
 
     def on_any_event(self, event):
-        update_sources_in_pod(self.pod_name)
+        update_sources_in_pod(self.pod)
 
 
-def run(pod_name, path):
+def run(pod, path):
     observer = Observer()
-    event_handler = Handler(pod_name, path)
+    event_handler = Handler(pod, path)
 
     observer.schedule(event_handler, path, recursive=True)
     observer.start()
+
+    # update sources to have up-to-date version
+    update_sources_in_pod(pod)
 
     try:
         while True:
@@ -85,7 +88,7 @@ def watch_pod_sources(pod):
             for source, source_path in pod_cfg:
                 console.info('Starting watcher for directory {}'.format(
                     source_path))
-                t = threading.Thread(target=run, args=(pod_name, source_path))
+                t = threading.Thread(target=run, args=(pod, source_path))
                 t.start()
     except FileNotFoundError:
         console.error('File {} containing deployment data not found. '
