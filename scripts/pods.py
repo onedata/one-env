@@ -60,16 +60,16 @@ def cmd_desc_stateful_set():
             'describe', 'statefulset']
 
 
-def cmd_copy_to_pod(pod, source, destination):
+def cmd_copy_to_pod(source_path, destination):
+    pod_name, parsed_source_path = source_path.split(':')
     return ['kubectl', '--namespace', user_config.get_current_namespace(), 'cp',
-            source, '{}/{}:{}'.format(user_config.get('namespace'), pod,
-                                      destination)]
+            parsed_source_path, '{}:{}'.format(pod_name, destination)]
 
 
-def cmd_copy_from_pod(pod, source, destination):
+def cmd_copy_from_pod(source_path, destination):
+    pod_name, parsed_source_path = source_path.split(':')
     return ['kubectl', '--namespace', user_config.get_current_namespace(), 'cp',
-            '{}/{}:{}'.format(user_config.get('namespace'), pod, source),
-            destination]
+            '{}:{}'.format(pod_name, parsed_source_path), destination]
 
 
 def cmd_rsync(source_path, destination_path):

@@ -4,50 +4,72 @@ scenario: "scenario-1oz-1op"
 # Determines if onedata components should be started from pre-compiled sources
 # or pre-installed packages inside dockers. When enabled, sources are expected
 # to be found in CWD (from where the 'up' script was run) or one dir above.
+#
+# To use sources for all possible components just set value for this key to true.
+#
+# Example configuration:
+# sources:
+#   onezone:
+#     node-1:
+#       - oz-panel
+#     node-2:
+#       - cluster-manager
+#   oneprovider-1:
+#     node-1:
+#       - op-panel
+#
 sources: false
-
-# Determines if spaces should be created. It can be either boolean value or
-# list of spaces that should be created.
-# Example list of spaces:
-# createSpaces:
-#   - name: "krk-c"                 # space name
-#     supports:                     # list of supporting providers:
-#       - provider: "krakow"          # provider name
-#         storage_name: "posix"       # storage name
-#         size: "1000000000"          # size of providers support [B]
-createSpaces: true
 
 # Onezone image to use. Note that if 'sources' option is enabled, it must
 # be based off onedata/worker image (it contains all the machinery to run the
-# application from sources).
+# application from sources - images based off onedata-worker are images with
+# -dev suffix).
 onezoneImage: "docker.onedata.org/onezone-dev:develop"
 
 # Oneprovider image to use. Note that if 'sources' option is enabled, it must
-# be based off onedata/worker image.
+# be based off onedata/worker image (images based off onedata-worker are
+# images with -dev suffix).
 oneproviderImage: "docker.onedata.org/oneprovider-dev:develop"
 
-# When enabled, onezoneImage and oneproviderImage will be pulled before every
-# deployment. If disabled, they will only be pulled if not existent.
-forceImagePull: false
 
-# Onzone config
-onezone:
-  batchConfig:
 
-    # Determines if users should be created. It can be either boolean value or
-    # lists of admin and regular users that should be created.
-    # Example lists of users:
-    # createUsers:
-    #   adminUsers:
-    #     - login: admin2
-    #       password: password2
-    #   regularUsers:
-    #     - login: user2
-    #       password: password2
-    createUsers:
-      adminUsers:
-        - login: admin2
-          password: password2
-      regularUsers:
-        - login: user2
-          password: password2
+
+
+
+## When enabled, onezoneImage and oneproviderImage will be pulled before every
+## deployment. If disabled, they will only be pulled if not existent.
+#forceImagePull: false
+#
+#
+## Determines if spaces should be created. It can be either boolean value or
+## list of spaces that should be created.
+## Example list of spaces:
+## createSpaces:
+##   - name: "krk-c"                 # space name
+##     supports:                     # list of supporting providers:
+##       - provider: "krakow"          # provider name
+##         storage_name: "posix"       # storage name
+##         size: "1000000000"          # size of providers support [B]
+#createSpaces: true
+#
+## Onzone config
+#onezone:
+#  batchConfig:
+#
+#    # Determines if users should be created. It can be either boolean value or
+#    # lists of admin and regular users that should be created.
+#    # Example lists of users:
+#    # createUsers:
+#    #   adminUsers:
+#    #     - login: admin2
+#    #       password: password2
+#    #   regularUsers:
+#    #     - login: user2
+#    #       password: password2
+#    createUsers:
+#      adminUsers:
+#        - login: admin2
+#          password: password2
+#      regularUsers:
+#        - login: user2
+#          password: password2

@@ -32,6 +32,7 @@ groups: &all_groups []
 #          - name: volume-data-sync-rw-luma
 #            gid: 42001
 #          - name: posix
+#          - name:
 #            gid: 42001
 #  - &group_beta
 #    name: beta

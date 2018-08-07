@@ -1,5 +1,4 @@
 import os
-import shutil
 
 
 def default_config(name):

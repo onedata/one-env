@@ -58,7 +58,7 @@ def generate_app_config(app_name, node_name, node_config, service,
 
 
 def generate_nodes_config(scenario_sources_cfg, service, host_home_dir,
-                          service_dir_path, env_config_dir_path):
+                          service_dir_path, env_config_dir_path, nodes_cfg):
     new_nodes_config = {}
     override_prefix = False
 
@@ -76,8 +76,8 @@ def generate_nodes_config(scenario_sources_cfg, service, host_home_dir,
                                    node_sources_conf, scenario_sources_cfg):
                 override_prefix = True
 
-        node.change_node_app_config(env_config_dir_path, service,
-                                    node_name, node_apps)
+        nodes_cfg[service][node_name] = node.Node(node_name, node_apps,
+                                                  service, env_config_dir_path)
         new_nodes_config[node_name] = {'sources': node_sources_conf}
 
     if override_prefix:
@@ -93,24 +93,32 @@ def generate_nodes_config(scenario_sources_cfg, service, host_home_dir,
 
 def generate_configs(sources_cfg: dict, sources_cfg_path: str,
                      scenario_key: str, deployment_dir: str):
-    scenario_sources_cfg = sources_cfg[scenario_key]
-    host_home_dir = user_config.get('hostHomeDir')
-    kube_host_home_dir = user_config.get('kubeHostHomeDir')
+    sources_cfg = sources_cfg[scenario_key]
+    home_dir_path = user_config.get('hostHomeDir')
+    kube_home_dir_path = user_config.get('kubeHostHomeDir')
+    nodes_cfg = {}
 
-    for service in scenario_sources_cfg:
-        scenario_sources_cfg[service]['hostPathPrefix'] = host_home_dir
-        scenario_sources_cfg[service]['vmPathPrefix'] = kube_host_home_dir
-        scenario_sources_cfg[service]['deploymentDir'] = os.path.relpath(
-            deployment_dir, host_home_dir)
+    for service in sources_cfg:
+        sources_cfg[service]['hostPathPrefix'] = home_dir_path
+        sources_cfg[service]['vmPathPrefix'] = kube_home_dir_path
+        sources_cfg[service]['deploymentDir'] = os.path.relpath(
+            deployment_dir, home_dir_path)
 
         service_dir_path = os.path.join(deployment_dir, service)
         os.mkdir(service_dir_path)
 
-        node_cfg = generate_nodes_config(scenario_sources_cfg, service,
-                                         host_home_dir, service_dir_path,
-                                         deployment_dir)
-        scenario_sources_cfg[service]['sources_cfg']['nodes'] = node_cfg
+        nodes_cfg[service] = {}
+        service_nodes_cfg = generate_nodes_config(sources_cfg, service,
+                                                  home_dir_path,
+                                                  service_dir_path,
+                                                  deployment_dir,
+                                                  nodes_cfg)
+        sources_cfg[service]['sources_cfg']['nodes'] = service_nodes_cfg
+
+    sources_cfg = {scenario_key: sources_cfg}
 
     writer = writers.ConfigWriter(sources_cfg, 'yaml')
     with open(sources_cfg_path, 'w') as f:
         f.write(writer.dump())
+
+    return nodes_cfg
