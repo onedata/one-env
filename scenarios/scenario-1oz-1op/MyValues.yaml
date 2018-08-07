@@ -660,6 +660,7 @@ onedata-3p:
 
     onepanel_generate_test_web_cert: true
     onepanel_trust_test_ca: true
+    onepanel_debug_mode: true
     image: *oz_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
     log_level: *log_level
@@ -713,6 +714,7 @@ onedata-3p:
     suffix: &op1s krakow
     geoLatitude: 50.0647
     geoLongitude: 19.9450
+    onepanel_debug_mode: true
     onepanel_generate_test_web_cert: true
     onepanel_trust_test_ca: true
 

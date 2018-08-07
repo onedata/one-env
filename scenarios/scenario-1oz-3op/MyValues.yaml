@@ -648,6 +648,7 @@ onedata-3p:
 
     onepanel_generate_test_web_cert: true
     onepanel_trust_test_ca: true
+    onepanel_debug_mode: true
     image: *oz_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
     log_level: *log_level
@@ -705,6 +706,7 @@ onedata-3p:
     geoLongitude: 19.9450
     onepanel_generate_test_web_cert: true
     onepanel_trust_test_ca: true
+    onepanel_debug_mode: true
 
     image: *op_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
@@ -821,6 +823,7 @@ onedata-3p:
     geoLongitude: 2.3522
     onepanel_generate_test_web_cert: true
     onepanel_trust_test_ca: true
+    onepanel_debug_mode: true
 
     image: *op_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
@@ -937,6 +940,7 @@ onedata-3p:
     geoLongitude: -9.1393
     onepanel_generate_test_web_cert: true
     onepanel_trust_test_ca: true
+    onepanel_debug_mode: true
 
     image: *op_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled

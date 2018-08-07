@@ -166,7 +166,7 @@ def parse_service_cfg(parsed_env_cfg, env_cfg, service, scenario_key,
     if isinstance(custom_sources_cfg, dict):
         parse_node_sources(base_sources_cfg, custom_sources_cfg, scenario_key,
                            service)
-        nodes = base_sources_cfg[scenario_key][service]['sources_cfg']['nodes']
+        nodes = base_sources_cfg[scenario_key][service]['deployFromSources']['nodes']
 
     set_nodes_num(parsed_env_cfg, service_type, scenario_key, service, nodes)
 
@@ -176,23 +176,23 @@ def parse_node_sources(base_sources_cfg, custom_sources_cfg, scenario_key,
     parsed_nodes_cfg = {}
 
     # clean default configuration
-    for node_name in base_sources_cfg[scenario_key].get(service).get('sources_cfg').get('nodes').keys():
+    for node_name in base_sources_cfg[scenario_key].get(service).get('deployFromSources').get('nodes').keys():
         parsed_nodes_cfg[node_name] = {}
 
-    base_sources_cfg[scenario_key][service]['sources_cfg']['nodes'] = parsed_nodes_cfg
+    base_sources_cfg[scenario_key][service]['deployFromSources']['nodes'] = parsed_nodes_cfg
 
     if custom_sources_cfg.get(providers_mapping(service)):
         # parse custom configuration
         for node_name, node_sources in custom_sources_cfg[providers_mapping(service)].items():
             node_name = parse_node_name(node_name)
             node = {'sources': [{'name': source} for source in node_sources]}
-            base_sources_cfg[scenario_key][service]['sources_cfg']['nodes'][node_name] = node
+            base_sources_cfg[scenario_key][service]['deployFromSources']['nodes'][node_name] = node
 
 
 def add_sources_for_nodes(nodes_list, base_sources_cfg, scenario_key, service):
     for node_name in nodes_list:
-        base_sources_cfg[scenario_key][service]['sources_cfg']['nodes'][node_name] = \
-            base_sources_cfg[scenario_key][service]['sources_cfg']['nodes']['n0']
+        base_sources_cfg[scenario_key][service]['deployFromSources']['nodes'][node_name] = \
+            base_sources_cfg[scenario_key][service]['deployFromSources']['nodes']['n0']
 
 
 def parse_spaces_cfg(spaces_cfg, new_env_cfg):

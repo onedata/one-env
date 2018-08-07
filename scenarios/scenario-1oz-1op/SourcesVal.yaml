@@ -1,6 +1,6 @@
 onedata-3p:
   onezone:
-    sources_cfg:
+    deployFromSources:
       enabled: true
       nodes:
         n0:
@@ -10,7 +10,7 @@ onedata-3p:
             - name: cluster-manager
 
   oneprovider-krakow:
-    sources_cfg:
+    deployFromSources:
       enabled: true
       nodes:
         n0:

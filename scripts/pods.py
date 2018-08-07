@@ -204,7 +204,7 @@ def all_pods_running():
     return True
 
 
-def wait_for_pod(pod):
+def wait_for_pod_to_be_running(pod):
     pod_name = get_name(pod)
     pod_ready = is_pod_running(pod)
 
@@ -356,7 +356,9 @@ def app_logs(pod, app_type=APP_TYPE_WORKER, logfile='info.log',
              follow=False, infinite=False):
     try:
         pod_name = get_name(pod)
+        print(pod_name)
         service = get_service_type(pod)
+        print(service)
         app = service_and_app_type_to_app(service, app_type)
         log_file = sources.logs_file(app, pod_name, logfile)
         if follow:

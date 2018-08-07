@@ -10,8 +10,10 @@ __license__ = "This software is released under the MIT license cited in " \
 
 import re
 import os
+import time
 import yaml
 import shutil
+import threading
 import subprocess
 
 import helm
@@ -115,6 +117,62 @@ def modify_source_app_config(node_cfg, source_path, panel_name, pod_name):
                     shell=True)
 
 
+def wait_for_pod(pod_name, timeout=60):
+    start_time = time.time()
+
+    while int(time.time() - start_time) <= timeout:
+        if pods.match_pods(pod_name):
+            return
+        time.sleep(1)
+
+    console.error('Timeout while waiting for pod {} to be present'.format(
+        pod_name))
+
+
+def rsync_sources_for_pod(pod_name: str, nodes_cfg: dict, deployment_data: dict,
+                          log_file_path: str):
+    wait_for_pod(pod_name)
+    pod = pods.match_pods(pod_name)[0]
+    service_name = pods.get_chart_name(pod)
+    node_name = 'n{}'.format(pods.get_node_num(pod_name))
+
+    panel_name = 'oz_panel' if 'zone' in service_name else 'op_panel'
+    node_cfg = nodes_cfg[service_name][node_name]
+
+    pods.wait_for_pod_to_be_running(pod)
+    pod_sources_cfg = deployment_data.get('sources').get(pod_name).items()
+
+    console.info('Rsyncing sources for pod {}'.format(pod_name))
+
+    with open(log_file_path, 'w') as log_file:
+        panel_from_sources = True if any('panel' in s for s, _
+                                         in pod_sources_cfg) else False
+
+        for source, source_path in pod_sources_cfg:
+            rsync_source(pod_name, source_path, log_file)
+            copy_overlay_cfg(source, source_path, pod_name)
+
+            if 'panel' in source:
+                modify_source_app_config(node_cfg, source_path,
+                                         panel_name, pod_name)
+                panel_path = source_path
+
+        if not panel_from_sources:
+            modify_package_app_config(pod_name, panel_name, node_cfg)
+            create_ready_file_cmd = [
+                'bash', '-c', 'touch {}'.format(SOURCES_READY_FILE_PATH)]
+            subprocess.call(pods.cmd_exec(pod_name,
+                                          create_ready_file_cmd))
+        else:
+            create_ready_file_cmd = [
+                'bash', '-c', 'echo {} >> {}'.format(panel_path,
+                                                     SOURCES_READY_FILE_PATH)]
+            subprocess.call(pods.cmd_exec(pod_name,
+                                          create_ready_file_cmd))
+        console.info('Rsyncing sources for pod {} done'
+                     .format(pod_name))
+
+
 def rsync_sources(deployment_dir: str, log_directory_path: str,
                   nodes_cfg: dict):
     deployment_data_path = os.path.join(deployment_dir, 'deployment_data.yml')
@@ -124,45 +182,12 @@ def rsync_sources(deployment_dir: str, log_directory_path: str,
         log_file_path = os.path.join(log_directory_path, 'rsync_up.log')
 
         for pod_name in deployment_data.get('sources'):
-            pod = pods.match_pods(pod_name)[0]
-            service_name = pods.get_chart_name(pod)
-            node_name = 'n{}'.format(pods.get_node_num(pod_name))
-
-            panel_name = 'oz_panel' if 'zone' in service_name else 'op_panel'
-            node_cfg = nodes_cfg[service_name][node_name]
-
-            pods.wait_for_pod(pod)
-            pod_sources_cfg = deployment_data.get('sources').get(pod_name).items()
-
-            console.info('Rsyncing sources for pod {}'.format(pod_name))
-
-            with open(log_file_path, 'w') as log_file:
-                panel_from_sources = True if any('panel' in s for s, _
-                                                 in pod_sources_cfg) else False
-
-                for source, source_path in pod_sources_cfg:
-                    rsync_source(pod_name, source_path, log_file)
-                    copy_overlay_cfg(source, source_path, pod_name)
-
-                    if 'panel' in source:
-                        modify_source_app_config(node_cfg, source_path,
-                                                 panel_name, pod_name)
-                        panel_path = source_path
-
-                if not panel_from_sources:
-                    modify_package_app_config(pod_name, panel_name, node_cfg)
-                    create_ready_file_cmd = [
-                        'bash', '-c', 'touch {}'.format(SOURCES_READY_FILE_PATH)]
-                    subprocess.call(pods.cmd_exec(pod_name,
-                                                  create_ready_file_cmd))
-                else:
-                    create_ready_file_cmd = [
-                        'bash', '-c', 'echo {} >> {}'.format(panel_path,
-                                                             SOURCES_READY_FILE_PATH)]
-                    subprocess.call(pods.cmd_exec(pod_name,
-                                                  create_ready_file_cmd))
-                console.info('Rsyncing sources for pod {} done'
-                             .format(pod_name))
+            rsync_sources_for_pod(pod_name, nodes_cfg, deployment_data,
+                                  log_file_path)
+            # t = threading.Thread(target=rsync_sources_for_pod,
+            #                      args=(pod_name, nodes_cfg, deployment_data,
+            #                            log_file_path))
+            # t.start()
 
 
 def run_scenario(deployment_dir: str, local: bool, debug: bool, dry_run: bool):

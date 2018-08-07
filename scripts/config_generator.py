@@ -67,7 +67,7 @@ def generate_nodes_config(scenario_sources_cfg, service, host_home_dir,
     else:
         service_apps = oneprovider_apps()
 
-    for node_name, node_config in scenario_sources_cfg[service]['sources_cfg']['nodes'].items():
+    for node_name, node_config in scenario_sources_cfg[service]['deployFromSources']['nodes'].items():
         node_apps = []
         node_sources_conf = []
         for app_name in service_apps:
@@ -113,7 +113,7 @@ def generate_configs(sources_cfg: dict, sources_cfg_path: str,
                                                   service_dir_path,
                                                   deployment_dir,
                                                   nodes_cfg)
-        sources_cfg[service]['sources_cfg']['nodes'] = service_nodes_cfg
+        sources_cfg[service]['deployFromSources']['nodes'] = service_nodes_cfg
 
     sources_cfg = {scenario_key: sources_cfg}
 
