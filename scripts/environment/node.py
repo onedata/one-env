@@ -50,5 +50,4 @@ class Node:
                         self.rel_dir)
 
         for app in self.apps:
-            if app.release_path:
-                modify_app_config(app, self.app_config_path)
+            modify_app_config(app, self.app_config_path)
