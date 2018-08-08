@@ -98,8 +98,10 @@ for pod in pods.list_pods():
 
     if 'onezone' in service_type:
         service_apps = onezone_apps()
-    else:
+    elif 'oneprovider' in service_type:
         service_apps = oneprovider_apps()
+    else:
+        continue
 
     for app in service_apps:
         app_dir = os.path.join(this_pod_logs_dir, app)
@@ -118,7 +120,7 @@ for pod in pods.list_pods():
 
 
 # If requested, copy it to an output location
-if 'path' in args:
+if args.path:
     if os.path.isdir(args.path):
         console.warning(
             'Directory {} exists, exporting anyway.'.format(args.path))
