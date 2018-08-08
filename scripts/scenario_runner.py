@@ -28,6 +28,7 @@ from config import readers, writers
 STABLE_PATH = 'stable'
 SOURCES_READY_FILE_PATH = '/tmp/sources_ready.txt'
 CROSS_SUPPORT_JOB = 'cross-support-job-3p'
+ONEDATA_CHART_REPO = 'https://onedata.github.io/charts/'
 
 
 def get_scenario_key(deployment_charts_path: str):
@@ -66,6 +67,11 @@ def update_charts_dependencies(deployment_charts_path: str,
     with open(log_file_path, 'w') as log_file:
         if local:
             change_requirements(log_file, deployment_charts_path)
+        else:
+            console.info('Adding {} repo to helm repositories'.format(
+                ONEDATA_CHART_REPO))
+            cmd = ['helm', 'repo', 'add', 'onedata', ONEDATA_CHART_REPO]
+            subprocess.call(cmd, stdout=log_file, stderr=subprocess.STDOUT)
         subprocess.check_call(make_charts_cmd, cwd=os.path.join(
             deployment_charts_path, STABLE_PATH), stdout=log_file,
                               stderr=subprocess.STDOUT)
@@ -233,8 +239,6 @@ def run_scenario(deployment_dir: str, local: bool, debug: bool, dry_run: bool):
                                                       deployment_dir)
 
         helm_install_cmd.extend(['-f', base_sources_cfg_path])
-
-    print(helm_install_cmd)
 
     subprocess.check_call(helm_install_cmd, cwd=os.path.join(
             deployment_charts_path, STABLE_PATH), stderr=subprocess.STDOUT)
