@@ -32,6 +32,7 @@ def locate(app, service, node_name):
     dirs_to_check = release_dirs_to_check(app)
     paths_to_check = [join_path(cwd, p) for p in dirs_to_check]
     paths_to_check.extend([join_path(cwd, '../', p) for p in dirs_to_check])
+    paths_to_check.extend([join_path(cwd, '../../', p) for p in dirs_to_check])
     location = None
     for path in paths_to_check:
         if os.path.isdir(path):
