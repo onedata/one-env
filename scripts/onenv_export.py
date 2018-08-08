@@ -40,7 +40,7 @@ parser.add_argument(
     type=str,
     nargs='?',
     action='store',
-    help='directory where deployment data should be stored - if not specified, '
+    help='Directory where deployment data should be stored - if not specified, '
          'it will be placed in deployments dir '
          '(~/.one-env/deployments/<timestamp>)',
     dest='path')
@@ -129,6 +129,6 @@ if args.path:
         console.warning('File {} exists, overwriting.'.format(args.path))
         os.remove(args.path)
 
-    copytree_no_overwrite(deployment_path, args.path)
+    copytree_no_overwrite(pod_logs_dir, args.path)
 else:
     console.info('Deployment data was placed in {}'.format(deployment_path))
