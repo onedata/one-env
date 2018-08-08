@@ -113,7 +113,8 @@ for pod in pods.list_pods():
                             'deleted'.format(app_dir))
             shutil.rmtree(app_dir)
 
-        cmd.call(pods.cmd_copy_from_pod(pod_name, log_dir, app_dir))
+        cmd.call(pods.cmd_copy_from_pod('{}:{}'.format(pod_name, log_dir),
+                                        app_dir))
 
 
 # If requested, copy it to an output location
