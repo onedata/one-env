@@ -1,7 +1,7 @@
 onedata-3p:
   onezone:
     deployFromSources:
-      enabled: true
+      enabled: false
       nodes:
         n0:
           sources:
@@ -11,7 +11,7 @@ onedata-3p:
 
   oneprovider-krakow:
     deployFromSources:
-      enabled: true
+      enabled: false
       nodes:
         n0:
           sources:
