@@ -79,6 +79,7 @@ def update_charts_dependencies(deployment_charts_path: str,
 
 def rsync_source(pod_name, source_path, log_file):
     build_path = os.path.join(source_path, '_build')
+    priv_path = os.path.join(source_path, 'priv')
     destination_path = '{}:{}'.format(pod_name, source_path)
 
     mkdir_cmd = ['bash', '-c', 'mkdir -p {}'.format(build_path)]
@@ -86,6 +87,9 @@ def rsync_source(pod_name, source_path, log_file):
     subprocess.call(pods.cmd_exec(pod_name, mkdir_cmd))
     subprocess.call(pods.cmd_rsync(build_path, destination_path), shell=True,
                     stdout=log_file)
+    if os.path.exists(priv_path):
+        subprocess.call(pods.cmd_rsync(priv_path, destination_path),
+                        shell=True, stdout=log_file)
 
 
 def copy_overlay_cfg(source_name, source_path, pod_name):

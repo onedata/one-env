@@ -136,6 +136,10 @@ def parse_service_cfg(parsed_env_cfg, env_cfg, service, scenario_key,
     nodes = {}
 
     custom_sources_cfg = env_cfg.get('sources')
+    if isinstance(custom_sources_cfg, bool) and custom_sources_cfg:
+        base_sources_cfg[scenario_key][service]['deployFromSources'][
+            'enabled'] = True
+
     service_cfg = env_cfg.get(providers_mapping(service))
     if service_cfg:
         # Get all nodes specified in clusterConfig part
@@ -147,7 +151,6 @@ def parse_service_cfg(parsed_env_cfg, env_cfg, service, scenario_key,
 
         # Add sources for additional nodes
         if isinstance(custom_sources_cfg, bool) and custom_sources_cfg:
-            base_sources_cfg[scenario_key][service]['deployFromSources']['enabled'] = True
             add_sources_for_nodes(parsed_env_cfg[scenario_key][service]['nodes'],
                                   base_sources_cfg, scenario_key, service)
 
