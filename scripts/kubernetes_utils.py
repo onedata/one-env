@@ -18,7 +18,7 @@ def get_chart_name(component):
     return component.metadata.labels.get('chart')
 
 
-def match_component(substring: str, list_components):
+def match_component(substring, list_components):
     components_list = list_components()
 
     pattern = '.*{}.*'.format(substring.replace('-', '.*'))

@@ -68,6 +68,10 @@ case "${1}" in
         SCRIPT="onenv_watch.py"
         ;;
 
+    patch)
+        SCRIPT="onenv_patch.py"
+        ;;
+
     *)
         usage_and_exit
         ;;

@@ -13,10 +13,11 @@ import user_config
 import console
 
 
-def cmd_install(chart_path: str, values_paths: list):
+def cmd_install(chart_path: str, values_paths: list,
+                release_name=user_config.get_current_release_name()):
     helm_install_cmd = ['helm', 'install', chart_path, '--namespace',
                         user_config.get_current_namespace(),
-                        '--name', user_config.get_current_release_name()]
+                        '--name', release_name]
 
     for values_path in values_paths:
         helm_install_cmd.extend(['-f', values_path])
@@ -39,8 +40,8 @@ def deployment_exists():
     return 0 == cmd.check_return_code(GET_DEPLOYMENT(deployment_name()))
 
 
-def clean_deployment():
-    cmd.call(DELETE_DEPLOYMENT(deployment_name()))
+def clean_deployment(deployment_name=deployment_name()):
+    cmd.call(DELETE_DEPLOYMENT(deployment_name))
 
 
 def ensure_deployment(exists=True, fail_with_error=False):

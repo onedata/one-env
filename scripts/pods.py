@@ -27,14 +27,49 @@ import subprocess
 SIGINT = 128 + int(signal.SIGINT)
 
 
-def cmd_delete_jobs():
-    return ['kubectl', '--namespace', user_config.get_current_namespace(),
-            'delete', 'jobs', '--all']
+def cmd_get_pods(pod_name=None, output=None):
+    command = ['kubectl', '--namespace', user_config.get_current_namespace(),
+               'get', 'pod']
+
+    if output:
+        command.extend(['-o', output])
+
+    if pod_name:
+        command.append(pod_name)
+
+    return command
 
 
-def cmd_delete_pods():
-    return ['kubectl', '--namespace', user_config.get_current_namespace(),
-            'delete', 'pod', '--all']
+def cmd_delete_jobs(all=True, label=None, include_uninitialized=False):
+    command = ['kubectl', '--namespace', user_config.get_current_namespace(),
+               'delete', 'job']
+
+    if all:
+        command.append('--all')
+
+    if label:
+        command.extend(['-l', label])
+
+    if include_uninitialized:
+        command.append('--include-uninitialized')
+
+    return command
+
+
+def cmd_delete_pods(all=True, label=None, include_uninitialized=False):
+    command = ['kubectl', '--namespace', user_config.get_current_namespace(),
+               'delete', 'pod']
+
+    if all:
+        command.append('--all')
+
+    if label:
+        command.extend(['-l', label])
+
+    if include_uninitialized:
+        command.append('--include-uninitialized')
+
+    return command
 
 
 def cmd_exec(pod, command):
@@ -110,7 +145,7 @@ def get_client_provider_host(pod):
     return get_env_variable(pod, 'ONECLIENT_PROVIDER_HOST')
 
 
-def get_node_num(pod_name: str):
+def get_node_num(pod_name):
     return pod_name.split('-')[-1]
 
 

@@ -25,6 +25,11 @@ SERVICE_ONEPROVIDER = 'oneprovider'
 
 NODE_NAME = 'n'
 
+ONEDATA_CHART_REPO = 'https://onedata.github.io/charts/'
+CROSS_SUPPORT_JOB = 'cross-support-job-3p'
+CROSS_SUPPORT_JOB_REPO_PATH = 'onedata/cross-support-job-3p'
+ONEDATA_3P = 'onedata-3p'
+
 
 def gen_pod_name(service, node_name):
     node_num = node_name.split(NODE_NAME)[1]
