@@ -172,9 +172,9 @@ def parse_service_cfg(parsed_env_cfg, env_cfg, service, scenario_key,
         if providers_mapping(service) in custom_sources_cfg:
             base_sources_cfg[scenario_key][service]['deployFromSources'][
                 'enabled'] = True
-        parse_node_sources(base_sources_cfg, custom_sources_cfg, scenario_key,
-                           service)
-        nodes = base_sources_cfg[scenario_key][service]['deployFromSources']['nodes']
+            parse_node_sources(base_sources_cfg, custom_sources_cfg,
+                               scenario_key, service)
+            nodes = base_sources_cfg[scenario_key][service]['deployFromSources']['nodes']
 
     set_nodes_num(parsed_env_cfg, service_type, scenario_key, service, nodes)
 
