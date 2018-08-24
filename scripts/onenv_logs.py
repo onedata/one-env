@@ -115,11 +115,7 @@ def logs(pod):
 
 
 def show_logfiles(pod):
-    if args.worker:
-        pods.list_logfiles(pod, app_type='worker')
-    elif args.panel:
-        pods.list_logfiles(pod, app_type='panel')
-    elif args.cluster_manager:
+    if args.app_type:
         pods.list_logfiles(pod, app_type='cluster-manager')
     else:
         console.error(

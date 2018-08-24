@@ -83,13 +83,14 @@ def watch_pod_sources(pod):
             deployment_data = yaml.load(deployment_data_file)
 
             pod_name = kubernetes_utils.get_name(pod)
-            pod_cfg = deployment_data.get('sources').get(pod_name).items()
+            pod_cfg = deployment_data.get('sources').get(pod_name)
 
-            for source, source_path in pod_cfg:
-                console.info('Starting watcher for directory {}'.format(
-                    source_path))
-                t = threading.Thread(target=run, args=(pod, source_path))
-                t.start()
+            if pod_cfg:
+                for source, source_path in pod_cfg.items():
+                    console.info('Starting watcher for directory {}'.format(
+                        source_path))
+                    t = threading.Thread(target=run, args=(pod, source_path))
+                    t.start()
     except FileNotFoundError:
         console.error('File {} containing deployment data not found. '
                       'Is service started from sources?')

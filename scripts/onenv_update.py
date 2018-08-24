@@ -39,11 +39,13 @@ args = parser.parse_args()
 
 
 def update_sources_for_component(pod_name, source_path):
-    build_path = os.path.join(source_path, '_build')
-    destination_path = '{}:{}'.format(pod_name, source_path)
+    for subdir in ['_build', 'src', 'include']:
+        subdir_path = os.path.join(source_path, subdir)
+        destination_path = '{}:{}'.format(pod_name, source_path)
 
-    subprocess.call(pods.cmd_rsync(build_path, destination_path),
-                    shell=True)
+        if os.path.exists(subdir_path):
+            subprocess.call(pods.cmd_rsync(subdir_path, destination_path),
+                            shell=True)
 
 
 def update_sources_in_pod(pod):
