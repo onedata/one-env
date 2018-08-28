@@ -148,7 +148,8 @@ def parse_service_cfg(parsed_env_cfg, env_cfg, service, scenario_key,
 
         cluster_cfg = service_cfg.get('clusterConfig')
         parse_cluster_config(cluster_cfg, parsed_env_cfg[scenario_key][service])
-        service_cfg.pop('clusterConfig')
+        if cluster_cfg:
+            service_cfg.pop('clusterConfig')
 
         # Add sources for additional nodes
         if isinstance(custom_sources_cfg, bool) and custom_sources_cfg:
