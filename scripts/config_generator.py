@@ -29,11 +29,12 @@ def oneprovider_apps():
 
 def generate_app_config(app_name, node_name, node_config, service,
                         service_dir_path, host_home_dir, node_apps,
-                        node_sources_conf, scenario_sources_cfg):
+                        node_sources_conf, deploy_from_sources):
     override_prefix = False
     app_config = {'name': app_name}
 
-    if app_name in [a['name'] for a in node_config.get('sources', [])]:
+    if (deploy_from_sources and
+            app_name in [a['name'] for a in node_config.get('sources', [])]):
         source_path = os.path.abspath(sources.locate(app_name,
                                                      service, node_name))
 
@@ -70,10 +71,11 @@ def generate_nodes_config(scenario_sources_cfg, service, host_home_dir,
     for node_name, node_config in scenario_sources_cfg[service]['deployFromSources']['nodes'].items():
         node_apps = []
         node_sources_conf = []
+        deploy_from_sources = scenario_sources_cfg[service]['deployFromSources']['enabled']
         for app_name in service_apps:
             if generate_app_config(app_name, node_name, node_config, service,
                                    service_dir_path, host_home_dir, node_apps,
-                                   node_sources_conf, scenario_sources_cfg):
+                                   node_sources_conf, deploy_from_sources):
                 override_prefix = True
 
         nodes_cfg[service][node_name] = node.Node(node_name, node_apps,
