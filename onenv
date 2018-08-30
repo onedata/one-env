@@ -13,6 +13,8 @@ usage_and_exit() {
     echo "      gui    - opens the GUI hosted on given pod in default browser"
     echo "      export - gathers all logs and data from current deployment and"
     echo "               places them in desired location"
+    echo "      update - update sources for current deployment or given pod"
+    echo "      watch  - starts watcher for current deployment or given pod"
     echo "      clean  - removes current onedata deployment and cleans up"
     echo ""
     echo "run '${0} <command> -h' to get more detailed help"
