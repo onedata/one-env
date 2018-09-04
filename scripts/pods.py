@@ -155,8 +155,8 @@ def get_service_type(pod):
 
 
 def get_container_id(pod):
-    container_id = pod.status.container_statuses[0].container_id
     try:
+        container_id = pod.status.container_statuses[0].container_id
         container_id = container_id.split('/')[-1]
     except Exception:
         container_id = None
