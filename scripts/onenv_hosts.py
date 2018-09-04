@@ -9,7 +9,9 @@ __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
 
+import os
 import yaml
+import inspect
 import argparse
 
 import argparse_utils
@@ -34,17 +36,25 @@ def main():
     onenv_ip_map = {}
     new_hosts_content = ''
 
-    status = yaml.load(deployment_status())
+    origin_username = (os.environ['SUDO_USER'] if 'SUDO_USER' in os.environ
+                       else os.environ['USER'])
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    onenv_path = os.path.join(script_dir, '../onenv')
 
-    for pod in status['pods'].values():
-        domain = pod.get('domain')
-        ip = pod.get('ip')
-        hostname = pod.get('hostname')
+    onenv_status_cmd = 'sudo -u {} {} status'.format(origin_username,
+                                                     onenv_path)
+    with os.popen(onenv_status_cmd) as onenv_status:
+        status = yaml.load(onenv_status)
 
-        if domain and ip:
-            onenv_ip_map[domain] = ip
-        if hostname and ip:
-            onenv_ip_map[hostname] = ip
+        for pod in status['pods'].values():
+            domain = pod.get('domain')
+            ip = pod.get('ip')
+            hostname = pod.get('hostname')
+
+            if domain and ip:
+                onenv_ip_map[domain] = ip
+            if hostname and ip:
+                onenv_ip_map[hostname] = ip
 
     onenv_domains = onenv_ip_map.keys()
 

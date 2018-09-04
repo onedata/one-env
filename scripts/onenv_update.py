@@ -8,6 +8,7 @@ __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
 import os
+import glob
 import yaml
 import console
 import argparse
@@ -19,6 +20,9 @@ import deployments_dir
 
 
 SCRIPT_DESCRIPTION = 'Update sources in given pod.'
+DIRS_TO_SYNC = ['_build/default/rel/*/data/gui_static', '_build/default/lib',
+                'src', 'include']
+
 
 parser = argparse.ArgumentParser(
     prog='onenv update',
@@ -39,13 +43,15 @@ args = parser.parse_args()
 
 
 def update_sources_for_component(pod_name, source_path):
-    for subdir in ['_build', 'src', 'include']:
-        subdir_path = os.path.join(source_path, subdir)
-        destination_path = '{}:{}'.format(pod_name, source_path)
+    for dir in DIRS_TO_SYNC:
+        dir_path = os.path.join(source_path, dir)
+        for expanded_path in glob.glob(dir_path):
+            destination_path = '{}:{}'.format(pod_name,
+                                              os.path.dirname(expanded_path))
 
-        if os.path.exists(subdir_path):
-            subprocess.call(pods.cmd_rsync(subdir_path, destination_path),
-                            shell=True)
+            if os.path.exists(expanded_path):
+                subprocess.call(pods.cmd_rsync(expanded_path, destination_path),
+                                shell=True)
 
 
 def update_sources_in_pod(pod):
