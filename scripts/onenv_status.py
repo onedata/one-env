@@ -47,6 +47,8 @@ SERVICES_PARAMS = {
                     ['service-type', 'ip', 'container-id'] +
                     list(MIXED_PARAM_MAPPING.keys())),
     'oneclient': ['service-type', 'ip', 'container-id', 'provider-host'],
+    'onedata-cli': DEFAULT_PARAMS,
+    'luma': DEFAULT_PARAMS
 }
 SCRIPT_DESCRIPTION = 'Displays the status of current onedata deployment.'
 
@@ -90,87 +92,124 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-user_config.ensure_exists()
-helm.ensure_deployment(exists=True, fail_with_error=False)
-
 
 def deployment_status():
     component_list = pods.list_components()
-    print('ready: {}'.format(pods.all_jobs_succeeded()))
-    print('pods:')
+    status = 'ready: {}\n'.format(pods.all_jobs_succeeded())
+    status += 'pods:\n'
+
     for component in component_list:
+        config_map = None
         config_map_name = pods.get_service_config_map(component)
 
         if config_map_name:
             config_map = config_maps.match_config_map(config_map_name)
-            service_status(component, config_map, multiple=True, indent='    ')
+
+        service_type = pods.get_service_type(component)
+        service_params = SERVICES_PARAMS.get(service_type, [])
+
+        if service_params:
+            status += service_status(component, config_map, multiple=True,
+                                     indent='    ')
+
+    return status
 
 
-def service_status(pod, config_map, multiple=False, indent=''):
+def service_status(pod, config_map=None, multiple=False, indent=''):
+    status = ''
+
     if multiple:
-        print('{}{}:'.format(indent, pods.get_name(pod)))
+        status += '{}{}:\n'.format(indent, pods.get_name(pod))
         indent = indent + '    '
     else:
-        print('{}name: {}'.format(indent, pods.get_name(pod)))
+        status += '{}name: {}\n'.format(indent, pods.get_name(pod))
 
     service_type = pods.get_service_type(pod)
-    service_params = SERVICES_PARAMS.get(service_type, DEFAULT_PARAMS)
+    service_params = SERVICES_PARAMS.get(service_type, [])
 
     for param in service_params:
         if POD_PARAM_FUN_MAPPING.get(param):
             fun = POD_PARAM_FUN_MAPPING.get(param)
-            print('{}{}: {}'.format(indent, param, fun(pod)))
+            status += '{}{}: {}\n'.format(indent, param, fun(pod))
         elif CONFIG_MAP_PARAM_FUN_MAPPING.get(param):
             fun = CONFIG_MAP_PARAM_FUN_MAPPING.get(param)
-            print('{}{}: {}'.format(indent, param, fun(config_map)))
+            status += '{}{}: {}\n'.format(indent, param, fun(config_map))
         else:
             fun = MIXED_PARAM_MAPPING.get(param)
-            print('{}{}: {}'.format(indent, param, fun(pod, config_map)))
+            status += '{}{}: {}\n'.format(indent, param, fun(pod, config_map))
+    return status
 
 
 def pod_ip(pod, multiple=False):
     ip = pods.get_ip(pod)
     if multiple:
-        print('{}: {}'.format(pods.get_name(pod), ip))
+        return '{}: {}'.format(pods.get_name(pod), ip)
     else:
-        print(ip)
+        return ip
 
 
 def pod_hostname(pod, multiple=False):
     hostname = pods.get_hostname(pod)
     if multiple:
-        print('{}: {}'.format(pods.get_name(pod), hostname))
+        return '{}: {}'.format(pods.get_name(pod), hostname)
     else:
-        print(hostname)
+        return hostname
 
 
 def pod_domain(pod, multiple=False):
-    domain = pods.get_domain(pod)
+    service_type = pods.get_service_type(pod)
+
+    if service_type not in ['onezone', 'oneprovider']:
+        if multiple:
+            return '{}: not supported'.format(pods.get_name(pod))
+        else:
+            print('Domain attribute is supported only for provider and zone '
+                  'pods')
+
+    config_map_name = pods.get_service_config_map(pod)
+    config_map = config_maps.match_config_map(config_map_name)
+    domain = config_maps.get_domain(config_map)
+
     if multiple:
-        print('{}: {}'.format(pods.get_name(pod), domain))
+        return '{}: {}'.format(pods.get_name(pod), domain)
     else:
-        print(domain)
+        return domain
+
+
+def print_pods_info(pod, fun):
+    matching_pods = pods.match_pods(pod)
+    for pod in matching_pods:
+        print(fun(pod, multiple=True))
 
 
 def main():
+    user_config.ensure_exists()
+    helm.ensure_deployment(exists=True, fail_with_error=False)
+
     string_stdout = None
     if args.clipboard:
         sys.stdout = string_stdout = StringIO()
 
     if args.ip:
         pod = args.pod if args.pod else '-'
-        pods.match_pod_and_run(pod, pod_ip, allow_multiple=True)
+        print_pods_info(pod, pod_ip)
     elif args.hostname:
         pod = args.pod if args.pod else '-'
-        pods.match_pod_and_run(pod, pod_hostname, allow_multiple=True)
+        print_pods_info(pod, pod_hostname)
     elif args.domain:
         pod = args.pod if args.pod else '-'
-        pods.match_pod_and_run(pod, pod_domain, allow_multiple=True)
+        print_pods_info(pod, pod_domain)
     else:
         if args.pod:
-            pods.match_pod_and_run(args.pod, service_status, allow_multiple=True)
+            matching_pods = pods.match_pods(args.pod)
+            for pod in matching_pods:
+                config_map_name = pods.get_service_config_map(pod)
+                if config_map_name:
+                    config_map = config_maps.match_config_map(config_map_name)
+
+                    print(service_status(pod, config_map, multiple=True))
         else:
-            deployment_status()
+            print(deployment_status())
 
     if args.clipboard:
         sys.stdout = sys.__stdout__

@@ -13,7 +13,9 @@ usage_and_exit() {
     echo "      gui    - opens the GUI hosted on given pod in default browser"
     echo "      export - gathers all logs and data from current deployment and"
     echo "               places them in desired location"
-    echo "      update - update sources for current deployment or given pod"
+    echo "      update - updates sources for current deployment or given pod"
+    echo "      hosts  - adds entries in /etc/hosts for all nodes in current
+                         deployment"
     echo "      watch  - starts watcher for current deployment or given pod"
     echo "      clean  - removes current onedata deployment and cleans up"
     echo ""
@@ -64,6 +66,10 @@ case "${1}" in
 
     update)
         SCRIPT="onenv_update.py"
+        ;;
+
+    hosts)
+        SCRIPT="onenv_hosts.py"
         ;;
 
     watch)
