@@ -12,6 +12,7 @@ __license__ = "This software is released under the MIT license cited in " \
 import os
 import shutil
 import argparse
+import subprocess
 
 import cmd
 import pods
@@ -73,6 +74,20 @@ def copytree_no_overwrite(src, dst):
             shutil.copy2(s, d)
 
 
+def export_command_logs(command, logfile_name, append=False):
+    command_logfile_path = os.path.join(pod_logs_dir, logfile_name)
+
+    mode = 'a' if append else 'w'
+
+    try:
+        with open(command_logfile_path, mode) as command_logfile:
+            subprocess.call(command, stdout=command_logfile,
+                            stderr=command_logfile)
+    except subprocess.CalledProcessError:
+        print('Error during exporting logs for command: {}. '
+              'See {} for more details.'.format(command, command_logfile_path))
+
+
 # Accumulate all the data in deployment dir
 deployment_path = deployments_dir.current_deployment_dir()
 
@@ -85,14 +100,29 @@ try:
 except FileExistsError:
     pass
 
+export_command_logs(pods.cmd_get_pods(), 'k8s_get_pods.log')
+export_command_logs(pods.cmd_get_pods(output='yaml'), 'k8s_get_pods.log',
+                    append=True)
+export_command_logs(pods.cmd_describe_pods(), 'k8s_describe_pods.log')
+
 for pod in pods.list_pods():
-    this_pod_logs_dir = os.path.join(pod_logs_dir, pods.get_name(pod))
+    pod_name = pods.get_name(pod)
+    this_pod_logs_dir = os.path.join(pod_logs_dir, pod_name)
+
     try:
         os.mkdir(this_pod_logs_dir)
     except FileExistsError:
         pass
-    with open(os.path.join(this_pod_logs_dir, 'entrypoint.log'), 'w+') as f:
-        f.write(pods.pod_logs(pod))
+
+    entrypoint_logfile_path = os.path.join(this_pod_logs_dir, 'entrypoint.log')
+    with open(entrypoint_logfile_path, 'w+') as f:
+        try:
+            entrypoint_logs = pods.pod_logs(pod, stderr=f)
+            f.write(entrypoint_logs)
+        except subprocess.CalledProcessError:
+            print('Couldn\'t get entrypoint logs for pod {}.'
+                  'See {} for more details'.format(pod_name,
+                                                   entrypoint_logfile_path))
 
     service_type = pods.get_service_type(pod).lower()
 
@@ -106,17 +136,23 @@ for pod in pods.list_pods():
     for app in service_apps:
         app_dir = os.path.join(this_pod_logs_dir, app)
         pod_name = pods.get_name(pod)
-        log_dir = cmd.check_output(
-            pods.cmd_exec(pod_name, ['bash', '-c', 'readlink -f {}'.format(
-                sources.logs_dir(app, pod))]))
 
-        if os.path.exists(app_dir):
-            console.warning('Path {} already exists, it will be '
-                            'deleted'.format(app_dir))
-            shutil.rmtree(app_dir)
+        try:
+            log_dir = cmd.check_output(
+                pods.cmd_exec(pod_name, ['bash', '-c', 'readlink -f {}'.format(
+                    sources.logs_dir(app, pod_name))]),
+                stderr=subprocess.STDOUT)
 
-        cmd.call(pods.cmd_copy_from_pod('{}:{}'.format(pod_name, log_dir),
-                                        app_dir))
+            if os.path.exists(app_dir):
+                console.warning('Path {} already exists, it will be '
+                                'deleted'.format(app_dir))
+                shutil.rmtree(app_dir)
+
+            cmd.call(pods.cmd_copy_from_pod('{}:{}'.format(pod_name, log_dir),
+                                            app_dir))
+        except subprocess.CalledProcessError as e:
+            print('Couldn\'t get logs for application {} in {} pod. '
+                  'Reason: {}'.format(app, pod_name, e.output))
 
 
 # If requested, copy it to an output location

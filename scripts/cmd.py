@@ -22,6 +22,6 @@ def check_return_code(tokens):
     return child.returncode
 
 
-def check_output(tokens):
-    output = subprocess.check_output(tokens, stderr=open(os.devnull, 'w'))
+def check_output(tokens, stderr=open(os.devnull, 'w')):
+    output = subprocess.check_output(tokens, stderr=stderr)
     return output.decode('utf-8').strip()
