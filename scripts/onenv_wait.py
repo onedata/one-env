@@ -30,24 +30,30 @@ parser.add_argument(
     help='timeout (in seconds) after which the script terminates with failure',
     dest='timeout')
 
-user_config.ensure_exists()
-helm.ensure_deployment(exists=True, fail_with_error=True)
 
-args = parser.parse_args()
+def wait(timeout):
+    start_time = time.time()
+    try:
+        while int(time.time() - start_time) <= int(timeout):
+            if pods.all_jobs_succeeded() and pods.all_pods_running():
+                return
+            else:
+                time.sleep(0.5)
 
-start_time = time.time()
+        console.error('Deployment failed to initialize within {} seconds'.format(
+            timeout
+        ))
+        return
+    except KeyboardInterrupt:
+        pass
 
 
-try:
-    while int(time.time() - start_time) <= int(args.timeout):
-        if pods.all_jobs_succeeded() and pods.all_pods_running():
-            sys.exit(0)
-        else:
-            time.sleep(0.5)
+def main():
+    user_config.ensure_exists()
+    helm.ensure_deployment(exists=True, fail_with_error=True)
+    args = parser.parse_args()
+    wait(args.timeout)
 
-    console.error('Deployment failed to initialize within {} seconds'.format(
-        args.timeout
-    ))
-    sys.exit(1)
-except KeyboardInterrupt:
-    pass
+
+if __name__ == '__main__':
+    main()

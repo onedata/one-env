@@ -1,4 +1,4 @@
-import cmd
+import cmd_utils
 import sources as s
 import pods
 import os
@@ -40,18 +40,18 @@ def main():
 
         one_env_dir = os.path.expanduser('~/.one-env')
 
-        cmd.call(['kubectl', 'exec', '-it', pod_name, '--', 'mkdir', '-p', one_env_dir])
+        cmd_utils.call(['kubectl', 'exec', '-it', pod_name, '--', 'mkdir', '-p', one_env_dir])
         rsync(pod_name, one_env_dir, one_env_dir)
 
         for source in sources:
             source_path = os.path.abspath(s.locate(source, service, pod_name))
-            cmd.call(['kubectl', 'exec', '-it', pod_name, '--', 'mkdir', '-p',
-                      source_path])
+            cmd_utils.call(['kubectl', 'exec', '-it', pod_name, '--', 'mkdir', '-p',
+                            source_path])
 
             # For now copying sources to the same path as sources path on host
             rsync(pod_name, source_path, source_path)
 
-        cmd.call(['kubectl', 'exec', '-it', pod_name, '--', 'touch', '/tmp/sources_mounted'])
+        cmd_utils.call(['kubectl', 'exec', '-it', pod_name, '--', 'touch', '/tmp/sources_mounted'])
 
 
 if __name__ == "__main__":

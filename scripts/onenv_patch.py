@@ -32,9 +32,9 @@ SCRIPT_DESCRIPTION = 'Patch onedata deployment.'
 
 def delete_old_support_jobs(release_name):
     cross_support_label = 'app={}-{}'.format(release_name, CROSS_SUPPORT_JOB)
-    print(cross_support_label)
-    subprocess.call(pods.cmd_delete_jobs(all=False, label=cross_support_label,
-                                         include_uninitialized=True))
+    subprocess.call(pods.cmd_delete_kube_object('jobs', all=False,
+                                                label=cross_support_label,
+                                                include_uninitialized=True))
 
 
 def parse_global_conf(landscape, release_name):

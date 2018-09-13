@@ -90,8 +90,6 @@ parser.add_argument(
     help='copy the output to clipboard',
     dest='clipboard')
 
-args = parser.parse_args()
-
 
 def deployment_status():
     component_list = pods.list_components()
@@ -183,6 +181,7 @@ def print_pods_info(pod, fun):
 
 
 def main():
+    args = parser.parse_args()
     user_config.ensure_exists()
     helm.ensure_deployment(exists=True, fail_with_error=False)
 
@@ -221,5 +220,5 @@ def main():
         console.info('Output copied to clipboard ({})'.format(output_sample))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

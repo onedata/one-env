@@ -14,7 +14,7 @@ import shutil
 import argparse
 import subprocess
 
-import cmd
+import cmd_utils
 import pods
 import helm
 import console
@@ -138,7 +138,7 @@ for pod in pods.list_pods():
         pod_name = pods.get_name(pod)
 
         try:
-            log_dir = cmd.check_output(
+            log_dir = cmd_utils.check_output(
                 pods.cmd_exec(pod_name, ['bash', '-c', 'readlink -f {}'.format(
                     sources.logs_dir(app, pod_name))]),
                 stderr=subprocess.STDOUT)
@@ -148,8 +148,8 @@ for pod in pods.list_pods():
                                 'deleted'.format(app_dir))
                 shutil.rmtree(app_dir)
 
-            cmd.call(pods.cmd_copy_from_pod('{}:{}'.format(pod_name, log_dir),
-                                            app_dir))
+            cmd_utils.call(pods.cmd_copy_from_pod('{}:{}'.format(pod_name, log_dir),
+                                                  app_dir))
         except subprocess.CalledProcessError as e:
             print('Couldn\'t get logs for application {} in {} pod. '
                   'Reason: {}'.format(app, pod_name, e.output))

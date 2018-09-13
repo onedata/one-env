@@ -8,13 +8,15 @@ __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
 import sys
-import cmd
+import cmd_utils
 import user_config
 import console
 
 
 def cmd_install(chart_path: str, values_paths: list,
-                release_name=user_config.get_current_release_name()):
+                release_name=None):
+    if not release_name:
+        release_name = user_config.get_current_release_name()
     helm_install_cmd = ['helm', 'install', chart_path, '--namespace',
                         user_config.get_current_namespace(),
                         '--name', release_name]
@@ -32,16 +34,18 @@ def DELETE_DEPLOYMENT(name):
     return ['helm', 'delete', '--purge', name]
 
 
-def deployment_name():
+def get_deployment_name():
     return user_config.get('currentHelmDeploymentName')
 
 
 def deployment_exists():
-    return 0 == cmd.check_return_code(GET_DEPLOYMENT(deployment_name()))
+    return 0 == cmd_utils.check_return_code(GET_DEPLOYMENT(get_deployment_name()))
 
 
-def clean_deployment(deployment_name=deployment_name()):
-    cmd.call(DELETE_DEPLOYMENT(deployment_name))
+def clean_deployment(deployment_name=None):
+    if not deployment_name:
+        deployment_name = get_deployment_name()
+    cmd_utils.call(DELETE_DEPLOYMENT(deployment_name))
 
 
 def ensure_deployment(exists=True, fail_with_error=False):

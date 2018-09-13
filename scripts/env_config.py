@@ -63,13 +63,13 @@ def coalesce(output_path, env_config_path=None, scenario=None, sources=None,
     if oneprovider_image:
         merged_config['oneproviderImage'] = oneprovider_image
 
-    if oneprovider_image:
+    if oneclient_image:
         merged_config['oneclientImage'] = oneclient_image
 
-    if oneprovider_image:
-        merged_config['restCliImage'] = rest_cli_image
+    if rest_cli_image:
+        merged_config['onedataCliImage'] = rest_cli_image
 
-    if oneprovider_image:
+    if luma_image:
         merged_config['lumaImage'] = luma_image
 
     if no_pull:

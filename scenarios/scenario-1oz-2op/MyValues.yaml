@@ -116,6 +116,7 @@ users: &all_users
     lastName: Morgan
     idps:
       onepanel:
+        mode: config
         type: regular
         enabled: true
     password: password
