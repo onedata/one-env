@@ -8,36 +8,34 @@ __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
 import argparse
+import contextlib
 
-import pods
-import helm
-import user_config
-import argparse_utils
-
-
-SCRIPT_DESCRIPTION = 'Execs to chosen pod with an interactive shell.'
-
-parser = argparse.ArgumentParser(
-    prog='onenv exec',
-    formatter_class=argparse_utils.ArgumentsHelpFormatter,
-    description=SCRIPT_DESCRIPTION
-)
-
-parser.add_argument(
-    type=str,
-    nargs='?',
-    action='store',
-    help='pod name (or matching pattern, use "-" for wildcard)',
-    dest='pod')
+from .utils import arg_help_formatter
+from .utils.one_env_dir import user_config
+from .utils.k8s import helm, pods
 
 
-args = parser.parse_args()
+def main() -> None:
+    exec_args_parser = argparse.ArgumentParser(
+        prog='onenv exec',
+        formatter_class=arg_help_formatter.ArgumentsHelpFormatter,
+        description='Execs to chosen pod with an interactive shell.'
+    )
 
-user_config.ensure_exists()
-helm.ensure_deployment(exists=True, fail_with_error=True)
+    exec_args_parser.add_argument(
+        nargs='?',
+        help='pod name (or matching pattern, use "-" for wildcard)',
+        dest='pod'
+    )
+
+    exec_args = exec_args_parser.parse_args()
+
+    user_config.ensure_exists()
+    helm.ensure_deployment(exists=True, fail_with_error=True)
+
+    with contextlib.suppress(KeyboardInterrupt):
+        pods.match_pod_and_run(exec_args.pod, pods.pod_exec)
 
 
-try:
-    pods.match_pod_and_run(args.pod, pods.pod_exec)
-except KeyboardInterrupt:
-    pass
+if __name__ == '__main__':
+    main()

@@ -9,184 +9,167 @@ __license__ = "This software is released under the MIT license cited in " \
 
 import argparse
 
-import pods
-import helm
-import console
-import env_config
-import user_config
-import deployments_dir
-import scenario_runner
-import argparse_utils
+from . import onenv_clean
+from .utils.deployment import scenario_runner
+from .utils import terminal, arg_help_formatter
+from .utils.k8s import helm
+from .utils.one_env_dir import user_config, deployments_dir, env_config
 
 
-SCRIPT_DESCRIPTION = 'Sets up a onedata deployment on kubernetes cluster.'
-
-
-def delete_old_deployment():
+def delete_old_deployment() -> None:
     if helm.deployment_exists():
-        console.warning('Removing the existing deployment (forced)')
-        helm.clean_deployment()
-        pods.clean_jobs()
-        pods.clean_pods()
+        terminal.warning('Removing the existing deployment (forced)')
+        onenv_clean.clean_deployment()
 
 
-def change_release_name(release_name):
+def change_release_name(release_name: str) -> None:
     user_config.update('currentHelmDeploymentName', release_name)
 
 
-def change_release_name_to_default():
+def change_release_name_to_default() -> None:
     default_release_name = user_config.get('defaultHelmDeploymentName')
     change_release_name(default_release_name)
 
 
-def change_namespace(namespace):
+def change_namespace(namespace: str) -> None:
     user_config.update('currentNamespace', namespace)
 
 
-def change_namespace_to_default():
+def change_namespace_to_default() -> None:
     default_namespace = user_config.get('defaultNamespace')
     change_namespace(default_namespace)
 
 
-def main():
-    parser = argparse.ArgumentParser(
+def main() -> None:
+    up_args_parser = argparse.ArgumentParser(
         prog='onenv up',
-        formatter_class=argparse_utils.ArgumentsHelpFormatter,
-        description=SCRIPT_DESCRIPTION
+        formatter_class=arg_help_formatter.ArgumentsHelpFormatter,
+        description='Sets up a onedata deployment on kubernetes cluster.'
     )
 
-    parser.add_argument(
-        type=str,
+    up_args_parser.add_argument(
         nargs='?',
-        action='store',
-        help='path to environment description YAML file. It allows to '
+        help='path to deployment description YAML file. It allows to '
              'override one-env defaults, as well as specific variables in '
              'chosen scenario. NOTE: values from env_config file are overriden'
              ' by command-line arguments passed to this script.',
-        dest='env_config')
+        dest='env_config'
+    )
 
-    parser.add_argument(
+    up_args_parser.add_argument(
         '-sc', '--scenario',
-        type=str,
-        action='store',
-        help='predefined scenario to be set up',
-        dest='scenario')
+        help='predefined scenario to be set up'
+    )
 
-    parser.add_argument(
+    up_args_parser.add_argument(
         '-f', '--force',
         action='store_true',
-        help='forces a new deployment - deletes an old one if present',
-        dest='force')
+        help='forces a new deployment - deletes an old one if present'
+    )
 
-    components_group = parser.add_mutually_exclusive_group()
+    up_args_parser.add_argument(
+        '-t', '--timeout',
+        type=int,
+        help='Timeout (in seconds) after which the script terminates with '
+             'failure. It is used only when sources or env configuration is '
+             'enabled',
+        default=600
+    )
 
-    components_group.add_argument(
+    deployment_type_group = up_args_parser.add_mutually_exclusive_group()
+
+    deployment_type_group.add_argument(
         '-s', '--sources',
         action='store_true',
         help='force onedata components to be started from '
-             'pre-compiled sources on the host',
-        dest='sources')
+             'pre-compiled sources on the host'
+    )
 
-    components_group.add_argument(
+    deployment_type_group.add_argument(
         '-p', '--packages',
         action='store_true',
         help='force onedata components to be started from '
-             'packages pre-installed in dockers',
-        dest='packages')
+             'packages pre-installed in dockers'
+    )
 
-    images_group = parser.add_argument_group('images arguments')
+    images_group = up_args_parser.add_argument_group('images arguments')
 
     images_group.add_argument(
         '-zi', '--onezone-image',
-        type=str,
-        action='store',
         help='onezone image to use',
-        dest='onezone_image')
+        dest='onezone_image'
+    )
 
     images_group.add_argument(
         '-pi', '--oneprovider-image',
-        type=str,
-        action='store',
         help='oneprovider image to use',
-        dest='oneprovider_image')
+        dest='oneprovider_image'
+    )
 
     images_group.add_argument(
         '-ci', '--oneclient-image',
-        type=str,
-        action='store',
         help='oneclient image to use',
-        dest='oneclient_image')
+        dest='oneclient_image'
+    )
 
     images_group.add_argument(
         '-ri', '--rest-cli-image',
-        type=str,
-        action='store',
         help='rest client image to use',
-        dest='rest_cli_image')
+        dest='rest_cli_image'
+    )
 
     images_group.add_argument(
         '-li', '--luma-image',
-        type=str,
-        action='store',
         help='luma image to use',
-        dest='luma_image')
+        dest='luma_image'
+    )
 
     images_group.add_argument(
         '-n', '--no-pull',
         action='store_true',
         help='do not pull images if they are present on the host',
-        dest='no_pull')
+        dest='no_pull'
+    )
 
-    charts_group = parser.add_argument_group('charts arguments')
-
-    charts_group.add_argument(
-        '-l', '--local',
-        action='store_true',
-        help='If present local charts will be used',
-        dest='local')
+    charts_group = up_args_parser.add_argument_group('charts arguments')
 
     charts_group.add_argument(
-        '-cp', '--chart-path',
-        action='store',
-        default='charts/stable',
+        '-lcp', '--local-chart-path',
         help='Path to local charts',
-        dest='chart_path')
+        dest='local_chart_path'
+    )
 
-    k8s_group = parser.add_mutually_exclusive_group()
+    k8s_group = up_args_parser.add_mutually_exclusive_group()
 
     k8s_group.add_argument(
         '-ns', '--namespace',
-        action='store',
-        help='namespace in which release will be deployed',
-        dest='namespace')
+        help='namespace in which release will be deployed'
+    )
 
     k8s_group.add_argument(
         '-kc', '--kube-config',
-        action='store',
         help='path to kubectl config file',
-        dest='kube_config')
+        dest='kube_config'
+    )
 
-    helm_group = parser.add_argument_group('helm arguments')
+    helm_group = up_args_parser.add_argument_group('helm arguments')
 
     helm_group.add_argument(
         '-rn', '--release-name',
-        action='store',
         help='helm release name',
         dest='release_name')
 
     helm_group.add_argument(
         '-hc', '--helm-config',
-        action='store',
         help='path to helm config file',
         dest='helm_config')
 
-    debug_group = parser.add_argument_group('debug arguments')
+    debug_group = up_args_parser.add_argument_group('debug arguments')
 
     debug_group.add_argument(
         '-de', '--debug',
         action='store_true',
-        help='pass debug flag to helm',
-        dest='debug')
+        help='pass debug flag to helm')
 
     debug_group.add_argument(
         '-dr', '--dry-run',
@@ -194,37 +177,43 @@ def main():
         help='pass dry-run flag to helm',
         dest='dry_run')
 
-    args = parser.parse_args()
+    up_args = up_args_parser.parse_args()
     user_config.ensure_exists()
 
-    if args.force:
+    if up_args.force:
         delete_old_deployment()
     else:
-        helm.ensure_deployment(exists=False, fail_with_error=True)
+        helm.ensure_deployment(exists=False, fail_with_error=False)
 
-    if args.release_name:
-        change_release_name(args.release_name)
+    if up_args.release_name:
+        change_release_name(up_args.release_name)
     else:
         change_release_name_to_default()
 
-    if args.namespace:
-        change_namespace(args.namespace)
+    if up_args.namespace:
+        change_namespace(up_args.namespace)
     else:
         change_namespace_to_default()
 
-    if args.kube_config:
+    if up_args.kube_config:
         change_namespace('')
 
-    env_config_output_dir = deployments_dir.new()
+    curr_deployment_dir = deployments_dir.new()
 
-    env_config.coalesce(env_config_output_dir, args.env_config,
-                        args.scenario, args.sources, args.packages,
-                        args.onezone_image, args.oneprovider_image,
-                        args.oneclient_image, args.rest_cli_image,
-                        args.luma_image, args.no_pull)
+    env_config.coalesce(curr_deployment_dir=curr_deployment_dir,
+                        env_config_path=up_args.env_config,
+                        scenario=up_args.scenario,
+                        sources=up_args.sources,
+                        packages=up_args.packages,
+                        onezone_image=up_args.onezone_image,
+                        oneprovider_image=up_args.oneprovider_image,
+                        oneclient_image=up_args.oneclient_image,
+                        rest_cli_image=up_args.rest_cli_image,
+                        luma_image=up_args.luma_image,
+                        no_pull=up_args.no_pull)
 
-    scenario_runner.run_scenario(env_config_output_dir, args.local,
-                                 args.debug, args.dry_run)
+    scenario_runner.run_scenario(curr_deployment_dir, up_args.local_chart_path,
+                                 up_args.debug, up_args.dry_run, up_args.timeout)
 
 
 if __name__ == '__main__':

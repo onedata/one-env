@@ -1,5 +1,5 @@
 """
-Package with onenv scripts.
+This package contains utility functions for operations on k8s objects.
 """
 
 __author__ = "Michal Cwiertnia"

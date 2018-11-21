@@ -7,22 +7,19 @@ __copyright__ = "Copyright (C) 2018 ACK CYFRONET AGH"
 __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
-import argparse
-# import pyperclip
-from io import StringIO
 import sys
-import pods
-import config_maps
-import helm
-import console
-import user_config
-import argparse_utils
-from kubernetes_utils import get_chart_name
+import argparse
+import contextlib
+from io import StringIO
+from typing import Optional, Callable
 
+import pyperclip
+from kubernetes.client import V1ConfigMap, V1Pod
 
-def get_hostname(pod, config_map):
-    return '{}.{}'.format(pods.get_hostname(pod),
-                          config_maps.get_domain(config_map))
+from .utils.one_env_dir import user_config
+from .utils import terminal, arg_help_formatter
+from .utils.names_and_paths import SERVICE_ONEZONE, SERVICE_ONEPROVIDER
+from .utils.k8s import helm, pods, config_maps
 
 
 POD_PARAM_FUN_MAPPING = {
@@ -35,10 +32,19 @@ CONFIG_MAP_PARAM_FUN_MAPPING = {
     'name': config_maps.get_service_name,
     'domain': config_maps.get_domain
 }
+
+DEFAULT_PARAMS = ['service-type', 'ip', 'container-id']
+
+
+def get_hostname(pod: V1Pod, config_map: V1ConfigMap) -> str:
+    return '{}.{}'.format(pods.get_hostname(pod),
+                          config_maps.get_domain(config_map))
+
+
 MIXED_PARAM_MAPPING = {
     'hostname': get_hostname
 }
-DEFAULT_PARAMS = ['service-type', 'ip', 'container-id']
+
 SERVICES_PARAMS = {
     'onezone': (list(CONFIG_MAP_PARAM_FUN_MAPPING.keys()) +
                 ['service-type', 'ip', 'container-id'] +
@@ -50,53 +56,14 @@ SERVICES_PARAMS = {
     'onedata-cli': DEFAULT_PARAMS,
     'luma': DEFAULT_PARAMS
 }
-SCRIPT_DESCRIPTION = 'Displays the status of current onedata deployment.'
-
-parser = argparse.ArgumentParser(
-    prog='onenv status',
-    formatter_class=argparse_utils.ArgumentsHelpFormatter,
-    description=SCRIPT_DESCRIPTION
-)
-
-parser.add_argument(
-    type=str,
-    nargs='?',
-    action='store',
-    help='pod name (or matching pattern, use "-" for wildcard) - '
-         'display detailed status of given pod.',
-    dest='pod')
-
-parser.add_argument(
-    '-i', '--ip',
-    action='store_true',
-    help='display only pod\'s IP',
-    dest='ip')
-
-parser.add_argument(
-    '-hn', '--hostname',
-    action='store_true',
-    help='display only pod\'s hostname',
-    dest='hostname')
-
-parser.add_argument(
-    '-d', '--domain',
-    action='store_true',
-    help='display only pod\'s domain',
-    dest='domain')
-
-parser.add_argument(
-    '-x', '--clipboard',
-    action='store_true',
-    help='copy the output to clipboard',
-    dest='clipboard')
 
 
-def deployment_status():
-    component_list = pods.list_components()
+def deployment_status() -> str:
+    components = pods.list_components()
     status = 'ready: {}\n'.format(pods.all_jobs_succeeded())
     status += 'pods:\n'
 
-    for component in component_list:
+    for component in components:
         config_map = None
         config_map_name = pods.get_service_config_map(component)
 
@@ -113,12 +80,13 @@ def deployment_status():
     return status
 
 
-def service_status(pod, config_map=None, multiple=False, indent=''):
+def service_status(pod: V1Pod, config_map: Optional[V1ConfigMap],
+                   multiple: bool = False, indent: str = '') -> str:
     status = ''
 
     if multiple:
         status += '{}{}:\n'.format(indent, pods.get_name(pod))
-        indent = indent + '    '
+        indent += '    '
     else:
         status += '{}name: {}\n'.format(indent, pods.get_name(pod))
 
@@ -138,31 +106,28 @@ def service_status(pod, config_map=None, multiple=False, indent=''):
     return status
 
 
-def pod_ip(pod, multiple=False):
+def pod_ip(pod: V1Pod, multiple: bool = False) -> str:
     ip = pods.get_ip(pod)
     if multiple:
         return '{}: {}'.format(pods.get_name(pod), ip)
-    else:
-        return ip
+    return ip
 
 
-def pod_hostname(pod, multiple=False):
+def pod_hostname(pod: V1Pod, multiple: bool = False) -> str:
     hostname = pods.get_hostname(pod)
     if multiple:
         return '{}: {}'.format(pods.get_name(pod), hostname)
-    else:
-        return hostname
+    return hostname
 
 
-def pod_domain(pod, multiple=False):
+def pod_domain(pod: V1Pod, multiple: bool = False) -> str:
     service_type = pods.get_service_type(pod)
 
-    if service_type not in ['onezone', 'oneprovider']:
+    if service_type not in (SERVICE_ONEZONE, SERVICE_ONEPROVIDER):
         if multiple:
             return '{}: not supported'.format(pods.get_name(pod))
-        else:
-            print('Domain attribute is supported only for provider and zone '
-                  'pods')
+        return ('Domain attribute is supported only for provider and '
+                'zone pods')
 
     config_map_name = pods.get_service_config_map(pod)
     config_map = config_maps.match_config_map(config_map_name)
@@ -170,54 +135,93 @@ def pod_domain(pod, multiple=False):
 
     if multiple:
         return '{}: {}'.format(pods.get_name(pod), domain)
-    else:
-        return domain
+    return domain
 
 
-def print_pods_info(pod, fun):
-    matching_pods = pods.match_pods(pod)
+def print_pods_info(pod_name: str, fun: Callable[[V1Pod, bool], str]) -> None:
+    matching_pods = pods.match_pods(pod_name)
     for pod in matching_pods:
-        print(fun(pod, multiple=True))
+        print(fun(pod, True))
 
 
-def main():
-    args = parser.parse_args()
+def main() -> None:
+    status_args_parser = argparse.ArgumentParser(
+        prog='onenv status',
+        formatter_class=arg_help_formatter.ArgumentsHelpFormatter,
+        description='Displays the status of current onedata deployment.'
+    )
+
+    status_args_parser.add_argument(
+        nargs='?',
+        help='pod name (or matching pattern, use "-" for wildcard) - '
+             'display detailed status of given pod.',
+        dest='pod'
+    )
+
+    status_args_parser.add_argument(
+        '-x', '--clipboard',
+        action='store_true',
+        help='copy the output to clipboard'
+    )
+
+    info_type_group = status_args_parser.add_mutually_exclusive_group()
+
+    info_type_group.add_argument(
+        '-i', '--ip',
+        action='store_const',
+        help='display only pod\'s IP',
+        const=pod_ip,
+        dest='info_fun'
+    )
+
+    info_type_group.add_argument(
+        '-n', '--hostname',
+        action='store_const',
+        help='display only pod\'s hostname',
+        const=pod_hostname,
+        dest='info_fun'
+    )
+
+    info_type_group.add_argument(
+        '-d', '--domain',
+        action='store_const',
+        help='display only pod\'s domain',
+        const=pod_domain,
+        dest='info_fun'
+    )
+
+    status_args = status_args_parser.parse_args()
     user_config.ensure_exists()
     helm.ensure_deployment(exists=True, fail_with_error=False)
 
-    string_stdout = None
-    if args.clipboard:
-        sys.stdout = string_stdout = StringIO()
-
-    if args.ip:
-        pod = args.pod if args.pod else '-'
-        print_pods_info(pod, pod_ip)
-    elif args.hostname:
-        pod = args.pod if args.pod else '-'
-        print_pods_info(pod, pod_hostname)
-    elif args.domain:
-        pod = args.pod if args.pod else '-'
-        print_pods_info(pod, pod_domain)
+    if status_args.clipboard:
+        string_stdout = StringIO()
     else:
-        if args.pod:
-            matching_pods = pods.match_pods(args.pod)
-            for pod in matching_pods:
-                config_map_name = pods.get_service_config_map(pod)
-                if config_map_name:
-                    config_map = config_maps.match_config_map(config_map_name)
+        string_stdout = sys.stdout
 
-                    print(service_status(pod, config_map, multiple=True))
+    with contextlib.redirect_stdout(string_stdout):
+        if status_args.info_fun:
+            pod = status_args.pod or '-'
+            print_pods_info(pod, status_args.info_fun)
         else:
-            print(deployment_status())
+            if status_args.pod:
+                matching_pods = pods.match_pods(status_args.pod)
+                for pod in matching_pods:
+                    config_map_name = pods.get_service_config_map(pod)
+                    if config_map_name:
+                        config_map = config_maps.match_config_map(config_map_name)
+                        print(service_status(pod, config_map, multiple=True))
+            else:
+                print(deployment_status())
 
-    if args.clipboard:
-        sys.stdout = sys.__stdout__
+    if status_args.clipboard:
         output = string_stdout.getvalue()
-        # pyperclip.copy(output)
+        pyperclip.copy(output)
         output_sample = output.rstrip()
+
         if '\n' in output_sample:
             output_sample = '<multiline>'
-        console.info('Output copied to clipboard ({})'.format(output_sample))
+        terminal.info('Output copied to clipboard ({})'.format(output_sample))
 
 
 if __name__ == '__main__':

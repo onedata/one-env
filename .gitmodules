@@ -1,4 +1,0 @@
-[submodule "charts"]
-	path = charts
-	url = https://github.com/onedata/charts
-	branch = feature/luma

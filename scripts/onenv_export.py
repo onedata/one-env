@@ -8,75 +8,63 @@ __copyright__ = "Copyright (C) 2018 ACK CYFRONET AGH"
 __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
-
 import os
 import shutil
 import argparse
 import subprocess
+from typing import List
+from contextlib import suppress
 
-import cmd_utils
-import pods
-import helm
-import console
-import sources
-import user_config
-import argparse_utils
-import deployments_dir
-from names_and_paths import *
+from kubernetes.client import V1Pod
 
-SCRIPT_DESCRIPTION = 'Gathers all logs and relevant data from current ' \
-                     'deployment and places them in desired location.'
+from .utils.k8s import pods, helm
+from .utils.deployment import sources
+from .utils import shell, terminal, arg_help_formatter
+from .utils.one_env_dir import user_config, deployments_dir
+from .utils.names_and_paths import (SERVICE_ONEZONE, SERVICE_ONEPROVIDER,
+                                    ONEZONE_APPS, ONEPROVIDER_APPS)
+
 
 STATEFUL_SET_OUTPUT_FILE = 'stateful-set.txt'
-
 POD_LOGS_DIR = 'pod-logs'
 
-parser = argparse.ArgumentParser(
-    prog='onenv wait',
-    formatter_class=argparse_utils.ArgumentsHelpFormatter,
-    description=SCRIPT_DESCRIPTION
-)
 
-parser.add_argument(
-    type=str,
-    nargs='?',
-    action='store',
-    help='Directory where deployment data should be stored - if not specified, '
-         'it will be placed in deployments dir '
-         '(~/.one-env/deployments/<timestamp>)',
-    dest='path')
-
-user_config.ensure_exists()
-helm.ensure_deployment(exists=True, fail_with_error=True)
-
-args = parser.parse_args()
-
-
-def onezone_apps():
-    return {APP_OZ_PANEL, APP_CLUSTER_MANAGER, APP_ONEZONE}
-
-
-def oneprovider_apps():
-    return {APP_OP_PANEL, APP_CLUSTER_MANAGER, APP_ONEPROVIDER}
-
-
-def copytree_no_overwrite(src, dst):
+def copytree_no_overwrite(src: str, dst: str) -> None:
     if not os.path.isdir(dst):
         os.mkdir(dst)
     for item in os.listdir(src):
-        s = os.path.join(src, item)
-        d = os.path.join(dst, item)
-        if os.path.islink(s):
+        item_src_path = os.path.join(src, item)
+        item_dst_path = os.path.join(dst, item)
+        if os.path.islink(item_src_path):
             pass
-        elif os.path.isdir(s):
-            copytree_no_overwrite(s, d)
+        elif os.path.isdir(item_src_path):
+            copytree_no_overwrite(item_src_path, item_dst_path)
         else:
-            shutil.copy2(s, d)
+            shutil.copy2(item_src_path, item_dst_path)
 
 
-def export_command_logs(command, logfile_name, append=False):
+def get_pod_logs_dir(deployment_path: str) -> str:
+    pod_logs_dir = os.path.join(deployment_path, POD_LOGS_DIR)
+    with suppress(FileExistsError):
+        os.mkdir(pod_logs_dir)
+    return pod_logs_dir
+
+
+def copy_logs(path: str, pod_logs_dir: str) -> None:
+    if os.path.isdir(path):
+        terminal.warning('Directory {} exists, exporting '
+                         'anyway.'.format(path))
+
+    if os.path.isfile(path):
+        terminal.warning('File {} exists, overwriting.'.format(path))
+        os.remove(path)
+
+    copytree_no_overwrite(pod_logs_dir, path)
+
+
+def export_command_logs(command: List[str], pod_logs_dir: str,
+                        logfile_name: str, append: bool = False, ) -> None:
     command_logfile_path = os.path.join(pod_logs_dir, logfile_name)
-
     mode = 'a' if append else 'w'
 
     try:
@@ -88,83 +76,117 @@ def export_command_logs(command, logfile_name, append=False):
               'See {} for more details.'.format(command, command_logfile_path))
 
 
-# Accumulate all the data in deployment dir
-deployment_path = deployments_dir.current_deployment_dir()
-
-with open(os.path.join(deployment_path, STATEFUL_SET_OUTPUT_FILE), 'w+') as f:
-    f.write(pods.describe_stateful_set())
-
-pod_logs_dir = os.path.join(deployment_path, POD_LOGS_DIR)
-try:
-    os.mkdir(pod_logs_dir)
-except FileExistsError:
-    pass
-
-export_command_logs(pods.cmd_get_pods(), 'k8s_get_pods.log')
-export_command_logs(pods.cmd_get_pods(output='yaml'), 'k8s_get_pods.log',
-                    append=True)
-export_command_logs(pods.cmd_describe_pods(), 'k8s_describe_pods.log')
-
-for pod in pods.list_pods():
-    pod_name = pods.get_name(pod)
-    this_pod_logs_dir = os.path.join(pod_logs_dir, pod_name)
-
-    try:
-        os.mkdir(this_pod_logs_dir)
-    except FileExistsError:
-        pass
-
-    entrypoint_logfile_path = os.path.join(this_pod_logs_dir, 'entrypoint.log')
-    with open(entrypoint_logfile_path, 'w+') as f:
-        try:
-            entrypoint_logs = pods.pod_logs(pod, stderr=f)
-            f.write(entrypoint_logs)
-        except subprocess.CalledProcessError:
-            print('Couldn\'t get entrypoint logs for pod {}.'
-                  'See {} for more details'.format(pod_name,
-                                                   entrypoint_logfile_path))
-
-    service_type = pods.get_service_type(pod).lower()
-
-    if 'onezone' in service_type:
-        service_apps = onezone_apps()
-    elif 'oneprovider' in service_type:
-        service_apps = oneprovider_apps()
-    else:
-        continue
-
+def export_service_logs(service_apps: List[str], this_pod_logs_dir: str,
+                        pod: V1Pod) -> None:
     for app in service_apps:
         app_dir = os.path.join(this_pod_logs_dir, app)
         pod_name = pods.get_name(pod)
 
         try:
-            log_dir = cmd_utils.check_output(
-                pods.cmd_exec(pod_name, ['bash', '-c', 'readlink -f {}'.format(
-                    sources.logs_dir(app, pod_name))]),
-                stderr=subprocess.STDOUT)
+            log_dir = shell.check_output(
+                pods.exec_cmd(pod_name,
+                              ['bash', '-c', 'readlink -f {}'.format(
+                                  sources.get_logs_dir(app, pod_name))]))
 
             if os.path.exists(app_dir):
-                console.warning('Path {} already exists, it will be '
-                                'deleted'.format(app_dir))
+                terminal.warning('Path {} already exists, it will be '
+                                 'deleted'.format(app_dir))
                 shutil.rmtree(app_dir)
+            else:
+                os.makedirs(app_dir)
 
-            cmd_utils.call(pods.cmd_copy_from_pod('{}:{}'.format(pod_name, log_dir),
-                                                  app_dir))
-        except subprocess.CalledProcessError as e:
+            subprocess.call(
+                pods.rsync_cmd('{}:{}'.format(pod_name, log_dir),
+                               app_dir), shell=True)
+        except subprocess.CalledProcessError as ex:
             print('Couldn\'t get logs for application {} in {} pod. '
-                  'Reason: {}'.format(app, pod_name, e.output))
+                  'Reason: {}'.format(app, pod_name, ex.output))
 
 
-# If requested, copy it to an output location
-if args.path:
-    if os.path.isdir(args.path):
-        console.warning(
-            'Directory {} exists, exporting anyway.'.format(args.path))
+def export_pod_logs(pod: V1Pod, pod_logs_dir: str,
+                    pods_list: List[V1Pod]) -> None:
+    pod_name = pods.get_name(pod)
 
-    if os.path.isfile(args.path):
-        console.warning('File {} exists, overwriting.'.format(args.path))
-        os.remove(args.path)
+    this_pod_logs_dir = os.path.join(pod_logs_dir, pod_name)
+    with suppress(FileExistsError):
+        os.mkdir(this_pod_logs_dir)
 
-    copytree_no_overwrite(pod_logs_dir, args.path)
-else:
-    console.info('Deployment data was placed in {}'.format(deployment_path))
+    entrypoint_logfile_path = os.path.join(this_pod_logs_dir,
+                                           'entrypoint.log')
+    with open(entrypoint_logfile_path, 'w+') as f:
+        try:
+            entrypoint_logs = pods.pod_logs(pod, stderr=f)
+            f.write(entrypoint_logs)
+        except subprocess.CalledProcessError:
+            print('Couldn\'t get entrypoint logs for pod {}. See {} for '
+                  'more details'.format(pod_name, entrypoint_logfile_path))
+
+    if pod in pods_list:
+        service_type = pods.get_service_type(pod)
+        if service_type:
+            service_type = service_type.lower()
+
+            if SERVICE_ONEZONE in service_type:
+                service_apps = ONEZONE_APPS
+            elif SERVICE_ONEPROVIDER in service_type:
+                service_apps = ONEPROVIDER_APPS
+            else:
+                return
+
+            export_service_logs(service_apps, this_pod_logs_dir, pod)
+
+
+def export_logs(path: str) -> None:
+    # Accumulate all the data in one_env dir
+    deployment_path = deployments_dir.get_current_deployment_dir()
+
+    with open(os.path.join(deployment_path, STATEFUL_SET_OUTPUT_FILE),
+              'w+') as f:
+        f.write(pods.describe_stateful_set())
+
+    pod_logs_dir = get_pod_logs_dir(deployment_path)
+
+    export_command_logs(pods.get_pods_cmd(), pod_logs_dir, 'k8s_get_pods.log')
+    export_command_logs(pods.get_pods_cmd(output='yaml'), pod_logs_dir,
+                        'k8s_get_pods.log', append=True)
+    export_command_logs(pods.describe_pods_cmd(), pod_logs_dir,
+                        'k8s_describe_pods.log')
+
+    pods_list = pods.list_pods()
+    for pod in pods.list_pods_and_jobs():
+        export_pod_logs(pod, pod_logs_dir, pods_list)
+
+    # If requested, copy it to an output location
+    if path:
+        copy_logs(path, pod_logs_dir)
+    else:
+        terminal.info('Deployment data was placed in {}'
+                      .format(deployment_path))
+
+
+def main() -> None:
+    export_args_parser = argparse.ArgumentParser(
+        prog='onenv export',
+        formatter_class=arg_help_formatter.ArgumentsHelpFormatter,
+        description='Gathers all logs and relevant data from current '
+                    'deployment and places them in desired location.'
+    )
+
+    export_args_parser.add_argument(
+        nargs='?',
+        help='Directory where deployment data should be stored - if not '
+             'specified, it will be placed in deployments dir '
+             '(~/.one-env/deployments/<timestamp>)',
+        dest='path'
+    )
+
+    export_args = export_args_parser.parse_args()
+
+    user_config.ensure_exists()
+    helm.ensure_deployment(exists=True, fail_with_error=True)
+
+    export_logs(export_args.path)
+
+
+if __name__ == '__main__':
+    main()

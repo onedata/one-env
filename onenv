@@ -1,89 +1,83 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python3
 
-SCRIPT_DIR=$( cd ${0%/*} && pwd -P )
+"""
+Runs appropriate onenv_* script.
+"""
 
-usage_and_exit() {
-    echo "usage: ${0} <command> - one of:"
-    echo "      up     - sets up a onedata deployment on kubernetes cluster"
-    echo "      status - displays the status of current onedata deployment"
-    echo "      wait   - waits for current deployment to be ready"
-    echo "      logs   - displays logs of chosen pod"
-    echo "      exec   - execs to chosen pod with an interactive shell"
-    echo "      attach - attaches directly to erlang VM in chosen pod"
-    echo "      gui    - opens the GUI hosted on given pod in default browser"
-    echo "      export - gathers all logs and data from current deployment and"
-    echo "               places them in desired location"
-    echo "      update - updates sources for current deployment or given pod"
-    echo "      hosts  - adds entries in /etc/hosts for all nodes in current
-                         deployment"
-    echo "      watch  - starts watcher for current deployment or given pod"
-    echo "      clean  - removes current onedata deployment and cleans up"
-    echo ""
-    echo "run '${0} <command> -h' to get more detailed help"
-    exit 1
-}
+__author__ = "Michal Cwiertnia"
+__copyright__ = "Copyright (C) 2018 ACK CYFRONET AGH"
+__license__ = "This software is released under the MIT license cited in " \
+              "LICENSE.txt"
 
-if [[ -z ${1} ]]; then
-    usage_and_exit
-fi
+import sys
+import argparse
+import importlib
 
-case "${1}" in
-    up)
-        SCRIPT="onenv_up.py"
-        ;;
 
-    status)
-        SCRIPT="onenv_status.py"
-        ;;
+SCRIPT_DESCRIPTION = 'Runs onenv commands'
+ONENV_COMMANDS = ('attach', 'clean', 'exec', 'export', 'gui', 'hosts', 'logs',
+                  'patch', 'status', 'up', 'update', 'wait', 'watch')
+EPILOG = '''
+Onenv commands:
+       attach - attaches directly to erlang VM in chosen pod 
+       clean  - removes current onedata deployment and cleans up 
+       exec   - execs to chosen pod with an interactive shell 
+       export - gathers all logs and data from current deployment and 
+                places them in desired location 
+       gui    - opens the GUI hosted on given pod in default browser 
+       hosts  - adds entries in /etc/hosts for all nodes in current 
+                deployment 
+       logs   - displays logs of chosen pod 
+       patch  - configures onedata deployment with given patch (patch is
+                yaml file with description of spaces, users, groups 
+                and luma config) 
+       status - displays the status of current onedata deployment 
+       up     - sets up a onedata deployment on kubernetes cluster 
+       update - updates sources for current deployment or given pod 
+       wait   - waits for current deployment to be ready 
+       watch  - starts watcher for current deployment or given pod
+'''
 
-    wait)
-        SCRIPT="onenv_wait.py"
-        ;;
 
-    logs)
-        SCRIPT="onenv_logs.py"
-        ;;
+def main():
+    parser = argparse.ArgumentParser(
+        prog='onenv',
+        formatter_class=argparse.RawTextHelpFormatter,
+        description=SCRIPT_DESCRIPTION,
+        epilog=EPILOG,
+        add_help=False
+    )
 
-    exec)
-        SCRIPT="onenv_exec.py"
-        ;;
+    parser.add_argument(
+        'command',
+        nargs='?',
+        help='onenv command to execute',
+        choices=ONENV_COMMANDS
+    )
 
-    attach)
-        SCRIPT="onenv_attach.py"
-        ;;
+    parser.add_argument(
+        'command_args',
+        nargs='*',
+        help='arguments to onenv command'
+    )
 
-    gui)
-        SCRIPT="onenv_gui.py"
-        ;;
+    parser.add_argument(
+        '-h', '--help',
+        action='store_true',
+        help='display help'
+    )
 
-    export)
-        SCRIPT="onenv_export.py"
-        ;;
+    args, _ = parser.parse_known_args()
 
-    clean)
-        SCRIPT="onenv_clean.py"
-        ;;
+    if args.command:
+        module_path = 'scripts/onenv_{}'.format(args.command)
+        sys.argv = [module_path] + sys.argv[2:]
 
-    update)
-        SCRIPT="onenv_update.py"
-        ;;
+        command_module = importlib.import_module(module_path.replace('/', '.'))
+        command_module.main()
+    else:
+        parser.print_help()
 
-    hosts)
-        SCRIPT="onenv_hosts.py"
-        ;;
 
-    watch)
-        SCRIPT="onenv_watch.py"
-        ;;
-
-    patch)
-        SCRIPT="onenv_patch.py"
-        ;;
-
-    *)
-        usage_and_exit
-        ;;
-esac
-
-shift
-/usr/bin/env python3 ${SCRIPT_DIR}/scripts/${SCRIPT} "$@"
+if __name__ == '__main__':
+    main()

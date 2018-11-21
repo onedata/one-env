@@ -1,6 +1,6 @@
 """
 Part of onenv tool that allows to attach directly to erlang VM of chosen pod in
-onedata deployment.
+onedata one_env_dir.
 """
 
 __author__ = "Lukasz Opiola"
@@ -12,69 +12,67 @@ __license__ = "This software is released under the MIT license cited in " \
 import argparse
 import contextlib
 
-import pods
-import helm
-import user_config
-import argparse_utils
-from names_and_paths import *
+from .utils.k8s import pods, helm
+from .utils import arg_help_formatter
+from .utils.one_env_dir import user_config
+from .utils.names_and_paths import (APP_TYPE_CLUSTER_MANAGER, APP_TYPE_WORKER,
+                                    APP_TYPE_PANEL)
 
 
-SCRIPT_DESCRIPTION = 'Attaches directly to erlang VM in chosen pod. By ' \
-                     'default, will attach to worker console, unless other ' \
-                     'choice is specified in argument.'
-
-parser = argparse.ArgumentParser(
-    prog='onenv attach',
-    formatter_class=argparse_utils.ArgumentsHelpFormatter,
-    description=SCRIPT_DESCRIPTION
-)
-
-parser.add_argument(
-    type=str,
-    nargs='?',
-    action='store',
-    help='pod name (or matching pattern, use "-" for wildcard)',
-    dest='pod')
+def attach_to_pod(pod: str, app_type: str) -> None:
+    with contextlib.suppress(KeyboardInterrupt):
+        pods.match_pod_and_run(pod, lambda pod: pods.attach(pod, app_type))
 
 
-components_group = parser.add_mutually_exclusive_group()
+def main() -> None:
+    attach_args_parser = argparse.ArgumentParser(
+        prog='onenv attach',
+        formatter_class=arg_help_formatter.ArgumentsHelpFormatter,
+        description='Attaches directly to erlang VM in chosen pod. '
+                    'By default, will attach to worker console, '
+                    'unless other choice is specified in argument.'
+    )
 
-components_group.add_argument(
-    '-p', '--panel',
-    action='store_const',
-    help='attach to onepanel\'s console in given pod',
-    const=APP_TYPE_PANEL,
-    dest='app_type')
+    attach_args_parser.add_argument(
+        help='pod name (or matching pattern, use "-" for wildcard)',
+        dest='pod',
+        nargs='?',
+        default=None
+    )
 
-components_group.add_argument(
-    '-c', '--cluster-manager',
-    action='store_const',
-    help='attach to cluster-manager\'s console in given pod',
-    const=APP_TYPE_CLUSTER_MANAGER,
-    dest='app_type')
+    components_group = attach_args_parser.add_mutually_exclusive_group()
 
-components_group.add_argument(
-    '-w', '--worker',
-    action='store_const',
-    help='attach to (op|oz)-worker console in given pod',
-    const=APP_TYPE_WORKER,
-    dest='app_type')
+    components_group.add_argument(
+        '-p', '--panel',
+        action='store_const',
+        help='attach to onepanel\'s console in given pod',
+        const=APP_TYPE_PANEL,
+        dest='app_type'
+    )
 
+    components_group.add_argument(
+        '-c', '--cluster-manager',
+        action='store_const',
+        help='attach to cluster-manager\'s console in given pod',
+        const=APP_TYPE_CLUSTER_MANAGER,
+        dest='app_type'
+    )
 
-def main():
-    args = parser.parse_args()
-    app_type = args.app_type
-    if not app_type:
-        app_type = APP_TYPE_WORKER
+    components_group.add_argument(
+        '-w', '--worker',
+        action='store_const',
+        help='attach to (op|oz)-worker console in given pod',
+        const=APP_TYPE_WORKER,
+        dest='app_type'
+    )
+
+    attach_args = attach_args_parser.parse_args()
+    app_type = attach_args.app_type or APP_TYPE_WORKER
 
     user_config.ensure_exists()
     helm.ensure_deployment(exists=True, fail_with_error=True)
 
-    if not args.pod:
-        args.pod = None
-
-    with contextlib.suppress(KeyboardInterrupt):
-        pods.match_pod_and_run(args.pod, lambda pod: pods.attach(pod, app_type))
+    attach_to_pod(attach_args.pod, app_type)
 
 
 if __name__ == '__main__':

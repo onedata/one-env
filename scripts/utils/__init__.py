@@ -1,5 +1,5 @@
 """
-Package with onenv scripts.
+This package contains modules with utility functions for onenv scripts.
 """
 
 __author__ = "Michal Cwiertnia"

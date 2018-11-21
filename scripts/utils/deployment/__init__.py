@@ -1,5 +1,6 @@
 """
-Package with onenv scripts.
+This package contains modules with functionality for parsing configs and
+starting new deployment.
 """
 
 __author__ = "Michal Cwiertnia"
