@@ -1,3 +1,14 @@
-.idea
-*.beam
+*.iml
 *.pyc
+*.beam
+.idea
+
+.gitmodules
+
+# OSX
+.DS_Store
+
+# VSCode
+.vscode
+
+test_env_config.yaml

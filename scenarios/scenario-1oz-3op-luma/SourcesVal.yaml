@@ -1,0 +1,41 @@
+onedata-3p:
+  onezone:
+    sources_cfg:
+      enabled: true
+      nodes:
+        n0:
+          sources:
+            - name: oz-panel
+            - name: oz-worker
+            - name: cluster-manager
+
+
+  oneprovider-krakow:
+    sources_cfg:
+      enabled: true
+      nodes:
+        n0:
+          sources:
+            - name: op-panel
+            - name: op-worker
+            - name: cluster-manager
+
+  oneprovider-paris:
+    sources_cfg:
+      enabled: true
+      nodes:
+        n0:
+          sources:
+            - name: op-panel
+            - name: op-worker
+            - name: cluster-manager
+
+  oneprovider-lisbon:
+    sources_cfg:
+      enabled: true
+      nodes:
+        n0:
+          sources:
+            - name: op-panel
+            - name: op-worker
+            - name: cluster-manager

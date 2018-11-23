@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+
+"""
+Runs appropriate onenv_* script.
+"""
+
+__author__ = "Michal Cwiertnia"
+__copyright__ = "Copyright (C) 2018 ACK CYFRONET AGH"
+__license__ = "This software is released under the MIT license cited in " \
+              "LICENSE.txt"
+
+import sys
+import argparse
+import importlib
+
+
+SCRIPT_DESCRIPTION = 'Runs onenv commands'
+ONENV_COMMANDS = ('attach', 'clean', 'exec', 'export', 'gui', 'hosts', 'logs',
+                  'patch', 'status', 'up', 'update', 'wait', 'watch')
+EPILOG = '''
+Onenv commands:
+       attach - attaches directly to erlang VM in chosen pod 
+       clean  - removes current onedata deployment and cleans up 
+       exec   - execs to chosen pod with an interactive shell 
+       export - gathers all logs and data from current deployment and 
+                places them in desired location 
+       gui    - opens the GUI hosted on given pod in default browser 
+       hosts  - adds entries in /etc/hosts for all nodes in current 
+                deployment 
+       logs   - displays logs of chosen pod 
+       patch  - configures onedata deployment with given patch (patch is
+                yaml file with description of spaces, users, groups 
+                and luma config) 
+       status - displays the status of current onedata deployment 
+       up     - sets up a onedata deployment on kubernetes cluster 
+       update - updates sources for current deployment or given pod 
+       wait   - waits for current deployment to be ready 
+       watch  - starts watcher for current deployment or given pod
+'''
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog='onenv',
+        formatter_class=argparse.RawTextHelpFormatter,
+        description=SCRIPT_DESCRIPTION,
+        epilog=EPILOG,
+        add_help=False
+    )
+
+    parser.add_argument(
+        'command',
+        nargs='?',
+        help='onenv command to execute',
+        choices=ONENV_COMMANDS
+    )
+
+    parser.add_argument(
+        'command_args',
+        nargs='*',
+        help='arguments to onenv command'
+    )
+
+    parser.add_argument(
+        '-h', '--help',
+        action='store_true',
+        help='display help'
+    )
+
+    args, _ = parser.parse_known_args()
+
+    if args.command:
+        module_path = 'scripts/onenv_{}'.format(args.command)
+        sys.argv = [module_path] + sys.argv[2:]
+
+        command_module = importlib.import_module(module_path.replace('/', '.'))
+        command_module.main()
+    else:
+        parser.print_help()
+
+
+if __name__ == '__main__':
+    main()

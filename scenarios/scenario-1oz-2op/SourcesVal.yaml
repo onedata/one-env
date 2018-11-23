@@ -1,0 +1,30 @@
+onedata-3p:
+  onezone:
+    deployFromSources:
+      enabled: false
+      nodes:
+        n0:
+          sources:
+            - name: oz-panel
+            - name: oz-worker
+            - name: cluster-manager
+
+  oneprovider-krakow:
+    deployFromSources:
+      enabled: false
+      nodes:
+        n0:
+          sources:
+            - name: op-panel
+            - name: op-worker
+            - name: cluster-manager
+
+  oneprovider-paris:
+    deployFromSources:
+      enabled: false
+      nodes:
+        n0:
+          sources:
+            - name: op-panel
+            - name: op-worker
+            - name: cluster-manager
