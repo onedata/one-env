@@ -148,7 +148,7 @@ def main() -> None:
         sources_to_update.extend([APP_ONEZONE, APP_ONEPROVIDER])
     if update_args.cluster_manager:
         sources_to_update.extend([APP_CLUSTER_MANAGER])
-    if update_args.all:
+    if update_args.all or not sources_to_update:
         sources_to_update = [APP_OZ_PANEL, APP_OP_PANEL, APP_ONEZONE,
                              APP_ONEPROVIDER, APP_CLUSTER_MANAGER]
 
