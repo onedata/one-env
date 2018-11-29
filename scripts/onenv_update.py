@@ -53,7 +53,7 @@ def update_sources_in_pod(pod: kubernetes.client.V1Pod,
         deployment_data = load_yaml(deployment_data_path)
     except FileNotFoundError:
         terminal.error('File {} containing deployment data not found. '
-                       'Is service started from sources?'
+                       'Is deployment started from sources?'
                        .format(deployment_data_path))
     else:
         pod_name = pods.get_name(pod)
@@ -76,7 +76,10 @@ def main() -> None:
     update_args_parser = argparse.ArgumentParser(
         prog='onenv update',
         formatter_class=arg_help_formatter.ArgumentsHelpFormatter,
-        description='Update sources in given pod.'
+        description='Update sources in given pod or for the whole deployment '
+                    'if pod is not specified. By default all sources '
+                    'will be updated unless other choice is specified in '
+                    'argument.'
     )
 
     update_args_parser.add_argument(

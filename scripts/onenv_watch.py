@@ -86,7 +86,7 @@ def watch_pod_sources(pod: kubernetes.client.V1Pod,
 
     if not curr_deployment_data:
         terminal.error('File {} containing deployment data not found. '
-                       'Is service started from sources?'
+                       'Is deployment started from sources?'
                        .format(deployment_data
                                .get_current_deployment_data_path()))
         return
@@ -123,7 +123,10 @@ def main() -> None:
     watch_args_parser = argparse.ArgumentParser(
         prog='onenv watch',
         formatter_class=arg_help_formatter.ArgumentsHelpFormatter,
-        description='Watch for sources change for given directory'
+        description='Watch for sources change and automatically updates '
+                    'sources in given pod or the whole deployment if pod is '
+                    'not specified. By default all sources will be watched '
+                    'unless other choice is specified in argument.'
     )
 
     watch_args_parser.add_argument(
