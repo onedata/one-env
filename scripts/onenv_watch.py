@@ -12,7 +12,7 @@ import os
 import glob
 import time
 import argparse
-import itertools
+from itertools import chain
 from typing import List
 
 import kubernetes
@@ -200,8 +200,7 @@ def main() -> None:
     sources_to_update = []
 
     if watch_args.sources_to_update:
-        chain = itertools.chain.from_iterable(watch_args.sources_to_update)
-        sources_to_update = [src for src in chain]
+        sources_to_update = list(chain(*watch_args.sources_to_update))
 
     if watch_args.all or not sources_to_update:
         sources_to_update = [APP_OZ_PANEL, APP_OP_PANEL, APP_ONEZONE,

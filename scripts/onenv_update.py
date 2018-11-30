@@ -10,7 +10,7 @@ __license__ = "This software is released under the MIT license cited in " \
 import os
 import glob
 import argparse
-import itertools
+from itertools import chain
 import subprocess
 from typing import List
 
@@ -153,8 +153,7 @@ def main() -> None:
     sources_to_update = []
 
     if update_args.sources_to_update:
-        chain = itertools.chain.from_iterable(update_args.sources_to_update)
-        sources_to_update = [src for src in chain]
+        sources_to_update = list(chain(*update_args.sources_to_update))
 
     if update_args.all or not sources_to_update:
         sources_to_update = [APP_OZ_PANEL, APP_OP_PANEL, APP_ONEZONE,
