@@ -10,6 +10,7 @@ __license__ = "This software is released under the MIT license cited in " \
 import os
 import glob
 import argparse
+import itertools
 import subprocess
 from typing import List
 
@@ -98,20 +99,26 @@ def main() -> None:
 
     update_args_parser.add_argument(
         '-p', '--panel',
-        action='store_true',
+        action='append_const',
         help='update sources for onepanel service',
+        dest='sources_to_update',
+        const=[APP_OZ_PANEL, APP_OP_PANEL]
     )
 
     update_args_parser.add_argument(
         '-c', '--cluster-manager',
-        action='store_true',
+        action='append_const',
         help='update sources for cluster-manager service',
+        dest='sources_to_update',
+        const=[APP_CLUSTER_MANAGER]
     )
 
     update_args_parser.add_argument(
         '-w', '--worker',
-        action='store_true',
+        action='append_const',
         help='update sources for (op|oz)-worker',
+        dest='sources_to_update',
+        const=[APP_ONEZONE, APP_ONEPROVIDER]
     )
 
     update_args_parser.add_argument(
@@ -145,12 +152,10 @@ def main() -> None:
 
     sources_to_update = []
 
-    if update_args.panel:
-        sources_to_update.extend([APP_OZ_PANEL, APP_OP_PANEL])
-    if update_args.worker:
-        sources_to_update.extend([APP_ONEZONE, APP_ONEPROVIDER])
-    if update_args.cluster_manager:
-        sources_to_update.extend([APP_CLUSTER_MANAGER])
+    if update_args.sources_to_update:
+        chain = itertools.chain.from_iterable(update_args.sources_to_update)
+        sources_to_update = [src for src in chain]
+
     if update_args.all or not sources_to_update:
         sources_to_update = [APP_OZ_PANEL, APP_OP_PANEL, APP_ONEZONE,
                              APP_ONEPROVIDER, APP_CLUSTER_MANAGER]

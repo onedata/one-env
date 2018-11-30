@@ -124,9 +124,7 @@ def rsync_cmd(source_path: str, destination_path: str,
     else:
         rsh = 'kubectl exec {} -i -- '.format(pod_name)
 
-    options = ''
-    if delete:
-        options = '--delete'
+    options = '--delete' if delete else ''
 
     cmd = [cmd_fmt.format(options=options, pod_path=pod_path,
                           host_path=host_path, rsh=rsh)]

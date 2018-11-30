@@ -12,6 +12,7 @@ import os
 import glob
 import time
 import argparse
+import itertools
 from typing import List
 
 import kubernetes
@@ -145,20 +146,26 @@ def main() -> None:
 
     watch_args_parser.add_argument(
         '-p', '--panel',
-        action='store_true',
+        action='append_const',
         help='watch sources for onepanel service',
+        dest='sources_to_update',
+        const=[APP_OZ_PANEL, APP_OP_PANEL]
     )
 
     watch_args_parser.add_argument(
         '-c', '--cluster-manager',
-        action='store_true',
+        action='append_const',
         help='watch sources for cluster-manager service',
+        dest='sources_to_update',
+        const=[APP_CLUSTER_MANAGER]
     )
 
     watch_args_parser.add_argument(
         '-w', '--worker',
-        action='store_true',
+        action='append_const',
         help='watch sources for (op|oz)-worker',
+        dest='sources_to_update',
+        const=[APP_ONEZONE, APP_ONEPROVIDER]
     )
 
     watch_args_parser.add_argument(
@@ -192,12 +199,10 @@ def main() -> None:
 
     sources_to_update = []
 
-    if watch_args.panel:
-        sources_to_update.extend([APP_OZ_PANEL, APP_OP_PANEL])
-    if watch_args.worker:
-        sources_to_update.extend([APP_ONEZONE, APP_ONEPROVIDER])
-    if watch_args.cluster_manager:
-        sources_to_update.extend([APP_CLUSTER_MANAGER])
+    if watch_args.sources_to_update:
+        chain = itertools.chain.from_iterable(watch_args.sources_to_update)
+        sources_to_update = [src for src in chain]
+
     if watch_args.all or not sources_to_update:
         sources_to_update = [APP_OZ_PANEL, APP_OP_PANEL, APP_ONEZONE,
                              APP_ONEPROVIDER, APP_CLUSTER_MANAGER]
