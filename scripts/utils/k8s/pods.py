@@ -97,36 +97,38 @@ def copy_from_pod_cmd(source_path: str, destination: str) -> List[str]:
             '{}:{}'.format(pod_name, parsed_source_path), destination]
 
 
-def rsync_cmd(source_path: str, destination_path: str) -> List[str]:
+def rsync_cmd(source_path: str, destination_path: str,
+              delete: Optional[bool] = None) -> List[str]:
     namespace = user_config.get_current_namespace()
-
     if ':' in source_path:
-        pod_name, parsed_source_path = source_path.split(':')
+        pod_name, pod_path = source_path.split(':')
+        host_path = destination_path
+        cmd_fmt = ("rsync --info=progress2 -a {options} "
+                   "--rsync-path={pod_path} --blocking-io --rsh='{rsh}' "
+                   "rsync:. {host_path}")
         terminal.info('Rsyncing from pod {}: {} -> {} '
-                      .format(pod_name, parsed_source_path, destination_path))
-        if namespace:
-            rsh = 'kubectl --namespace {} exec {} -i -- '.format(namespace,
-                                                                 pod_name)
-        else:
-            rsh = 'kubectl exec {} -i -- '.format(pod_name)
+                      .format(pod_name, pod_path, host_path))
 
-        cmd = ['rsync --info=progress2 -a --delete --rsync-path={} '
-               '--blocking-io --rsh=\'{}\' rsync:. {}'
-               .format(parsed_source_path, rsh, destination_path)]
-        return cmd
     else:
-        pod_name, parsed_destination_path = destination_path.split(':')
+        pod_name, pod_path = destination_path.split(':')
+        host_path = source_path
+        cmd_fmt = ("rsync --info=progress2 -a {options} "
+                   "--rsync-path={pod_path} --blocking-io --rsh='{rsh}' "
+                   "{host_path} rsync:.")
         terminal.info('Rsyncing to pod {}: {} -> {} '
-                      .format(pod_name, source_path, parsed_destination_path))
-        if namespace:
-            rsh = 'kubectl --namespace {} exec {} -i -- '.format(namespace,
-                                                                 pod_name)
-        else:
-            rsh = 'kubectl exec {} -i -- '.format(pod_name)
-        cmd = ['rsync --info=progress2 -a --delete --rsync-path={} '
-               '--blocking-io --rsh=\'{}\' {} rsync:.'
-               .format(parsed_destination_path, rsh, source_path)]
-        return cmd
+                      .format(pod_name, host_path, pod_path))
+
+    if namespace:
+        rsh = 'kubectl --namespace {} exec {} -i -- '.format(namespace,
+                                                             pod_name)
+    else:
+        rsh = 'kubectl exec {} -i -- '.format(pod_name)
+
+    options = '--delete' if delete else ''
+
+    cmd = [cmd_fmt.format(options=options, pod_path=pod_path,
+                          host_path=host_path, rsh=rsh)]
+    return cmd
 
 
 def get_client_provider_host(pod: V1Pod) -> Optional[str]:
