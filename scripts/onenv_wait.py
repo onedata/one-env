@@ -23,9 +23,8 @@ def wait(timeout: int) -> None:
     with contextlib.suppress(KeyboardInterrupt):
         while int(time.time() - start_time) <= timeout:
             if pods.all_jobs_succeeded() and pods.all_pods_running():
-                sys.exit(0)
-            else:
-                time.sleep(0.5)
+                return
+            time.sleep(0.5)
         terminal.error('Deployment failed to initialize within {} '
                        'seconds'.format(timeout))
         sys.exit(1)

@@ -20,7 +20,7 @@ HOSTS_LOCATION = '/etc/hosts'
 
 
 def get_onenv_ip_map():
-    origin_username = os.environ.get('SUDO_USER') or os.environ['USER']
+    origin_username = os.environ.get('SUDO_USER') or os.environ.get('USER')
     script_dir = os.path.dirname(os.path.realpath(__file__))
     onenv_path = os.path.join(script_dir, '../onenv')
 
