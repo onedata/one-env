@@ -213,7 +213,8 @@ def main() -> None:
                         no_pull=up_args.no_pull)
 
     scenario_runner.run_scenario(curr_deployment_dir, up_args.local_chart_path,
-                                 up_args.debug, up_args.dry_run, up_args.timeout)
+                                 up_args.debug, up_args.dry_run,
+                                 up_args.timeout)
 
 
 if __name__ == '__main__':

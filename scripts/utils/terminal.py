@@ -9,11 +9,12 @@ __license__ = "This software is released under the MIT license cited in " \
 
 import shutil
 
+
 from termcolor import colored
 
 
 def info(msg: str) -> None:
-    print(colored('[INFO] ' + msg, 'white'))
+    print(colored('[INFO] ' + msg, 'white'), flush=True)
 
 
 def warning(msg: str) -> None:
@@ -21,11 +22,15 @@ def warning(msg: str) -> None:
 
 
 def error(msg: str) -> None:
-    print(colored('[ERROR] ' + msg, 'red'))
+    print(colored('[ERROR] ' + msg, 'red'), flush=True)
 
 
 def green_str(msg: str) -> str:
     return colored(msg, 'green')
+
+
+def red_str(msg: str) -> str:
+    return colored(msg, 'red')
 
 
 def horizontal_line() -> None:

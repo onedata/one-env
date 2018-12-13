@@ -18,7 +18,7 @@ from contextlib import suppress
 from kubernetes.client import V1Pod
 
 from .utils.k8s import pods, helm
-from .utils.deployment import sources
+from .utils.deployment import sources_paths
 from .utils import shell, terminal, arg_help_formatter
 from .utils.one_env_dir import user_config, deployments_dir
 from .utils.names_and_paths import (SERVICE_ONEZONE, SERVICE_ONEPROVIDER,
@@ -86,7 +86,7 @@ def export_service_logs(service_apps: List[str], this_pod_logs_dir: str,
             log_dir = shell.check_output(
                 pods.exec_cmd(pod_name,
                               ['bash', '-c', 'readlink -f {}'.format(
-                                  sources.get_logs_dir(app, pod_name))]))
+                                  sources_paths.get_logs_dir(app, pod_name))]))
 
             if os.path.exists(app_dir):
                 terminal.warning('Path {} already exists, it will be '

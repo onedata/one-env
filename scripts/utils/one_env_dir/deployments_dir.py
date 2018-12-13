@@ -45,6 +45,10 @@ def get_current_deployment_dir() -> str:
         return os.path.join(get_deployments_directory(), all_deployments[-1])
 
 
+def get_current_log_dir() -> str:
+    return os.path.join(get_current_deployment_dir(), 'logs')
+
+
 def new() -> str:
     with contextlib.suppress(FileExistsError):
         os.mkdir(get_deployments_directory())

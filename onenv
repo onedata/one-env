@@ -16,7 +16,8 @@ import importlib
 
 SCRIPT_DESCRIPTION = 'Runs onenv commands'
 ONENV_COMMANDS = ('attach', 'clean', 'exec', 'export', 'gui', 'hosts', 'logs',
-                  'patch', 'status', 'up', 'update', 'wait', 'watch')
+                  'oneclient', 'patch', 'status', 'up', 'update', 'wait',
+                  'watch')
 EPILOG = '''
 Onenv commands:
        attach - attaches directly to erlang VM in chosen pod 
@@ -28,6 +29,7 @@ Onenv commands:
        hosts  - adds entries in /etc/hosts for all nodes in current 
                 deployment 
        logs   - displays logs of chosen pod 
+       oneclient - starts new oneclient deployment 
        patch  - configures onedata deployment with given patch (patch is
                 yaml file with description of spaces, users, groups 
                 and luma config) 

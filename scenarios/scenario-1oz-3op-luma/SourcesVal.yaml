@@ -1,7 +1,7 @@
 onedata-3p:
   onezone:
-    sources_cfg:
-      enabled: true
+    deployFromSources:
+      enabled: false
       nodes:
         n0:
           sources:
@@ -9,33 +9,41 @@ onedata-3p:
             - name: oz-worker
             - name: cluster-manager
 
-
   oneprovider-krakow:
-    sources_cfg:
-      enabled: true
+    deployFromSources:
+      enabled: false
       nodes:
         n0:
           sources:
             - name: op-panel
             - name: op-worker
             - name: cluster-manager
+    oneclient:
+      deployFromSources:
+        enabled: false
 
   oneprovider-paris:
-    sources_cfg:
-      enabled: true
+    deployFromSources:
+      enabled: false
       nodes:
         n0:
           sources:
             - name: op-panel
             - name: op-worker
             - name: cluster-manager
+    oneclient:
+      deployFromSources:
+        enabled: false
 
   oneprovider-lisbon:
-    sources_cfg:
-      enabled: true
+    deployFromSources:
+      enabled: false
       nodes:
         n0:
           sources:
             - name: op-panel
             - name: op-worker
             - name: cluster-manager
+    oneclient:
+      deployFromSources:
+        enabled: false

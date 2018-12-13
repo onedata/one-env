@@ -5,11 +5,16 @@ scenario: "scenario-1oz-1op"
 # Determines if onedata components should be started from pre-compiled sources
 # or pre-installed packages inside dockers. When enabled, sources are expected
 # to be found in CWD (from where the 'up' script was run) or one dir above.
+# Oneclient can be build in two modes: debug or release. Thus you can specify
+# which binary should be used.
 #
 # To use sources for all possible components just set value for this key to true.
 #
+#
+#
 # Example configuration:
 # sources:
+#   oneclient-1: release
 #   onezone:
 #     node-1:
 #       - oz-panel

@@ -7,7 +7,7 @@ __copyright__ = "Copyright (C) 2018 ACK CYFRONET AGH"
 __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
-from typing import Optional
+from typing import Optional, List
 from os.path import join as join_path
 
 from .one_env_dir import user_config
@@ -25,6 +25,7 @@ APP_TYPE_PANEL = 'panel'
 APP_TYPE_CLUSTER_MANAGER = 'cluster-manager'
 
 SERVICE_ONEZONE = 'onezone'
+SERVICE_ONECLIENT = 'oneclient'
 SERVICE_ONEPROVIDER = 'oneprovider'
 
 NODE_NAME = 'n'
@@ -32,6 +33,7 @@ NODE_NAME = 'n'
 ONEDATA_CHART_REPO = 'https://onedata.github.io/charts/'
 CROSS_SUPPORT_JOB = 'cross-support-job-3p'
 CROSS_SUPPORT_JOB_REPO_PATH = 'onedata/cross-support-job-3p'
+ONECLIENT_CHART_REPO_PATH = 'onedata/oneclient'
 ONEDATA_3P = 'onedata-3p'
 
 ONEZONE_APPS = {APP_OZ_PANEL, APP_CLUSTER_MANAGER, APP_ONEZONE}
@@ -44,8 +46,18 @@ SERVICE_MAPPING = {
     'oneprovider-1': 'oneprovider-krakow',
     'oneprovider-2': 'oneprovider-paris',
     'oneprovider-3': 'oneprovider-lisbon',
+    'oneclient-1': 'oneclient-krakow',
+    'oneclient-2': 'oneclient-paris',
+    'oneclient-3': 'oneclient-lisbon',
+    'oneclient-krakow': 'oneclient-1',
+    'oneclient-paris': 'oneclient-2',
+    'oneclient-lisbon': 'oneclient-3',
     'onezone': 'onezone'
 }
+
+
+SERVICE_TYPES = [SERVICE_ONEZONE, SERVICE_ONEPROVIDER, SERVICE_ONECLIENT]
+
 
 SERVICE_AND_APP_TYPE_TO_APP_MAPPING = {
     (SERVICE_ONEZONE, APP_TYPE_WORKER): APP_ONEZONE,
@@ -57,10 +69,29 @@ SERVICE_AND_APP_TYPE_TO_APP_MAPPING = {
 }
 
 
-def gen_pod_name(service: str, node_name: str) -> str:
+ONECLIENT_BIN_PATH = '/opt/oneclient/bin'
+
+
+def gen_pod_name(service: str, service_type: str,
+                 node_name: Optional[str] = '') -> str:
+    if service_type == SERVICE_ONECLIENT:
+        return '{}-{}'.format(user_config.get_current_release_name(),
+                              service)
     node_num = node_name.split(NODE_NAME)[1]
-    return '{}-{}-{}'.format(user_config.get_current_release_name(), service,
-                             node_num)
+    return '{}-{}-{}'.format(user_config.get_current_release_name(),
+                             service, node_num)
+
+
+def oneclient_sources_dirs(sources_type: Optional[str] = None) -> List[str]:
+    sources_dirs = []
+    if sources_type:
+        if sources_type in 'release':
+            sources_dirs.append('release')
+        elif sources_type in 'debug':
+            sources_dirs.append('debug')
+    else:
+        sources_dirs.extend(['release', 'debug'])
+    return sources_dirs
 
 
 def rel_sources_dir(app: str) -> str:
@@ -90,3 +121,16 @@ def service_and_app_type_to_app(chart: str, app_type: str) -> str:
 def service_name_to_alias_mapping(name: str) -> Optional[str]:
     return next((val for key, val in SERVICE_MAPPING.items()
                  if key.lower() in name), None)
+
+
+def get_service_type(service_name: str) -> Optional[str]:
+    return next((service_type for service_type in SERVICE_TYPES
+                 if service_type.lower() in service_name), None)
+
+
+def get_matching_oneclient(provider_name: str) -> str:
+    return provider_name.replace(SERVICE_ONEPROVIDER, SERVICE_ONECLIENT)
+
+
+def get_matching_oneprovider(provider_name: str) -> str:
+    return provider_name.replace(SERVICE_ONECLIENT, SERVICE_ONEPROVIDER)

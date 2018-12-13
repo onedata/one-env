@@ -1,0 +1,14 @@
+image: docker.onedata.org/oneclient-dev:ID-3c60ebb24b
+imagePullPolicy: IfNotPresent
+
+# Number of oneclients to launch
+# each oneclient pod will be identical 
+replicas: 3
+
+# Atm. this only controls NFS
+directIO:
+  # Should the same NFS PVC as used by the oneprovider that this oneclient
+  # connects to be mounted in this oneclient
+  nfs:
+    enabled: false
+    mount_path: /volumes/nfs

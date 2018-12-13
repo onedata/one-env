@@ -21,7 +21,8 @@ from .utils.yaml_utils import load_yaml
 from .utils import terminal, arg_help_formatter
 from .utils.one_env_dir import deployments_dir, user_config
 from .utils.names_and_paths import (APP_OP_PANEL, APP_OZ_PANEL, APP_ONEZONE,
-                                    APP_ONEPROVIDER, APP_CLUSTER_MANAGER)
+                                    APP_ONEPROVIDER, APP_CLUSTER_MANAGER,
+                                    ONECLIENT_BIN_PATH, SERVICE_ONECLIENT)
 
 
 GUI_DIRS_TO_SYNC = ['_build/default/rel/*/data/gui_static']
@@ -29,9 +30,17 @@ BACKEND_DIRS_TO_SYNC = ['_build/default/lib', 'src', 'include']
 ALL_DIRS_TO_SYNC = GUI_DIRS_TO_SYNC + BACKEND_DIRS_TO_SYNC
 
 
-def update_sources_for_component(pod_name: str, source_path: str,
-                                 dirs_to_sync: List[str],
-                                 delete: bool = False) -> None:
+def update_sources_for_oc(pod_name: str, source_path: str,
+                          delete: bool = False) -> None:
+    destination_path = '{}:{}'.format(pod_name, ONECLIENT_BIN_PATH)
+    rsync_cmd = pods.rsync_cmd(source_path, destination_path,
+                               delete)
+    subprocess.call(rsync_cmd)
+
+
+def update_sources_for_oz_op(pod_name: str, source_path: str,
+                             dirs_to_sync: List[str],
+                             delete: bool = False) -> None:
     for dir_to_sync in dirs_to_sync:
         dir_path = os.path.join(source_path, dir_to_sync)
         for expanded_path in glob.glob(dir_path):
@@ -41,7 +50,7 @@ def update_sources_for_component(pod_name: str, source_path: str,
             if os.path.exists(expanded_path):
                 rsync_cmd = pods.rsync_cmd(expanded_path, destination_path,
                                            delete)
-                subprocess.call(rsync_cmd, shell=True)
+                subprocess.call(rsync_cmd)
 
 
 def update_sources_in_pod(pod: kubernetes.client.V1Pod,
@@ -58,12 +67,17 @@ def update_sources_in_pod(pod: kubernetes.client.V1Pod,
                        .format(deployment_data_path))
     else:
         pod_name = pods.get_name(pod)
+        service_type = pods.get_service_type(pod)
         pod_cfg = deployment_data.get('sources').get(pod_name)
 
         if pod_cfg:
             for source_name, source_path in pod_cfg.items():
-                if source_name in sources_to_update:
-                    update_sources_for_component(pod_name, source_path,
+                if service_type == SERVICE_ONECLIENT:
+                    update_sources_for_oc(pod_name, source_path,
+                                          delete=delete)
+                else:
+                    if source_name in sources_to_update:
+                        update_sources_for_oz_op(pod_name, source_path,
                                                  dirs_to_sync, delete)
 
 

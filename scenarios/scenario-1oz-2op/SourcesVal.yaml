@@ -18,6 +18,9 @@ onedata-3p:
             - name: op-panel
             - name: op-worker
             - name: cluster-manager
+    oneclient:
+      deployFromSources:
+        enabled: false
 
   oneprovider-paris:
     deployFromSources:
@@ -28,3 +31,6 @@ onedata-3p:
             - name: op-panel
             - name: op-worker
             - name: cluster-manager
+    oneclient:
+      deployFromSources:
+        enabled: false

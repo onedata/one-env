@@ -30,3 +30,24 @@ def put(new_data: Dict[Any, Any]) -> None:
     curr_data = get(default={})
     overwritten = {**curr_data, **new_data}
     dump_yaml(overwritten, get_current_deployment_data_path())
+
+
+def add_release(release: str) -> None:
+    curr_data = get(default={})
+    try:
+        curr_releases = curr_data['releases']
+    except KeyError:
+        curr_data['releases'] = [release]
+    else:
+        curr_releases.append(release)
+    dump_yaml(curr_data, get_current_deployment_data_path())
+
+
+def add_source(pod_name: str, app: str, location: str) -> None:
+    curr_data = get(default={})
+    if 'sources' not in curr_data:
+        curr_data['sources'] = {}
+    if pod_name not in curr_data['sources']:
+        curr_data['sources'][pod_name] = {}
+    curr_data['sources'][pod_name][app] = location
+    put(curr_data)
