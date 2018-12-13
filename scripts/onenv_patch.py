@@ -32,23 +32,20 @@ def delete_old_support_jobs(release_name: str) -> None:
                                                 include_uninitialized=True))
 
 
-def parse_global_conf(patch: Dict[str, Dict], release_name: str) -> None:
+def parse_global_conf(patch: Dict[str, Dict], release_name: str,
+                      admin_creds: List[str]) -> None:
     global_cfg = patch.get('global', {})
     global_cfg['releaseNameOverride'] = release_name
+    if not global_cfg.get('onezoneMainAdmin'):
+        admin_username, admin_password = admin_creds
+        global_cfg['onezoneMainAdmin'] = {'name': admin_username,
+                                          'password': admin_password}
     patch['global'] = global_cfg
 
 
-def parse_onedata3p_conf(patch: Dict[str, Dict],
-                         admin_creds: List[str]) -> None:
+def parse_onedata3p_conf(patch: Dict[str, Dict]) -> None:
     onedata_3p_conf = patch.get(ONEDATA_3P, {})
     onedata_3p_conf['enabled'] = False
-
-    onezone_conf = onedata_3p_conf.get('onezone', {})
-    if not onezone_conf.get('onezoneAdmin'):
-        admin_username, admin_password = admin_creds
-        onezone_conf['onezoneAdmin'] = {'name': admin_username,
-                                        'password': admin_password}
-    onedata_3p_conf['onezone'] = onezone_conf
     patch[ONEDATA_3P] = onedata_3p_conf
 
 
@@ -69,8 +66,8 @@ def patch_deployment(patch: str, patch_release_name: str,
     landscape = yaml_utils.load_yaml(deployment_patch_path)
 
     delete_old_support_jobs(deployment_release_name)
-    parse_onedata3p_conf(landscape, admin)
-    parse_global_conf(landscape, deployment_release_name)
+    parse_onedata3p_conf(landscape)
+    parse_global_conf(landscape, deployment_release_name, admin)
 
     parse_groups_config(landscape.get('groups'), landscape)
     parse_users_config(landscape.get('users'), landscape, True)
@@ -151,8 +148,9 @@ def main() -> None:
     user_config.ensure_exists()
     helm.ensure_deployment(exists=True, fail_with_error=True)
 
-    patch_deployment(patch_args.path, patch_args.patch_release_name,
-                     patch_args.deployment_release_name, patch_args.local_charts_path,
+    patch_deployment(patch_args.patch, patch_args.patch_release_name,
+                     patch_args.deployment_release_name,
+                     patch_args.local_charts_path,
                      patch_args.admin)
 
 
