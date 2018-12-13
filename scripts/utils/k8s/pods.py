@@ -64,12 +64,15 @@ def delete_kube_object_cmd(object_type, delete_all=True, label=None,
     return command
 
 
-def exec_cmd(pod: str, command: Any, it: bool = False) -> List[str]:
+def exec_cmd(pod: str, command: Any, interactive: bool = False,
+             tty: bool = False) -> List[str]:
     cmd = ['kubectl', '--namespace', user_config.get_current_namespace(),
            'exec']
 
-    if it:
-        cmd.append('-it')
+    if interactive:
+        cmd.append('-i')
+    if tty:
+        cmd.append('-t')
 
     cmd.extend([pod, '--'])
 
@@ -291,7 +294,7 @@ def attach(pod: V1Pod, app_type: str = APP_TYPE_WORKER) -> None:
         app = service_and_app_type_to_app(service, app_type)
         start_script = sources_paths.get_start_script_path(app, pod_name)
         shell.call(exec_cmd(pod_name, [start_script, 'attach-direct'],
-                            it=True))
+                            interactive=True, tty=True))
     except KeyError:
         terminal.error('Only pods hosting onezone or oneprovider are '
                        'supported.')
@@ -299,7 +302,7 @@ def attach(pod: V1Pod, app_type: str = APP_TYPE_WORKER) -> None:
 
 def pod_exec(pod: V1Pod) -> None:
     pod_name = get_name(pod)
-    shell.call(exec_cmd(pod_name, 'bash', it=True))
+    shell.call(exec_cmd(pod_name, 'bash', interactive=True, tty=True))
 
 
 def describe_stateful_set() -> str:
@@ -369,7 +372,7 @@ def app_logs_follow(pod: V1Pod, log_file: str, infinite=False) -> None:
     pod_name = get_name(pod)
     logs(file_exists_in_pod, pod_name, log_file)
     res = shell.call(exec_cmd(pod_name, ['tail', '-n', '+1', '-f', log_file],
-                              it=True))
+                              interactive=True, tty=True))
     end_log(res, app_logs_follow, pod, infinite=infinite)
 
 
@@ -393,7 +396,8 @@ def app_logs(pod: V1Pod, app_type: str = APP_TYPE_WORKER,
             if interactive:
                 print('> {}'.format(log_file))
                 terminal.horizontal_line()
-                shell.call(exec_cmd(pod_name, ['cat', log_file], it=True))
+                shell.call(exec_cmd(pod_name, ['cat', log_file],
+                                    interactive=True, tty=True))
             else:
                 return shell.check_output(exec_cmd(pod_name, ['cat', log_file]))
         return None

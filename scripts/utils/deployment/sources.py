@@ -139,13 +139,13 @@ def rsync_sources_for_oc(pod_substring: str,
             for source_path in pod_sources_cfg.values():
                 rsync_source(pod_name, source_path, ONECLIENT_BIN_PATH,
                              [], log_file)
+                deployment_data.add_source(pod_name, SERVICE_ONECLIENT,
+                                           source_path)
             call_and_check_return_code(pods.exec_cmd(pod_name,
                                                      create_ready_file_cmd()),
                                        stdout=log_file)
             terminal.info('Rsyncing sources for pod {} done'
                           .format(pod_name))
-            deployment_data.add_source(pod_name, SERVICE_ONECLIENT,
-                                       source_path)
 
 
 def rsync_sources_for_oz_op(pod_name: str, nodes_cfg: Dict[str, Dict],
@@ -160,7 +160,7 @@ def rsync_sources_for_oz_op(pod_name: str, nodes_cfg: Dict[str, Dict],
     pod_sources_cfg = deployment_data_dict.get('sources').get(pod_name).items()
 
     terminal.info('Rsyncing sources for pod {}. All logs can be found in {}.'
-                   .format(pod_name, log_file_path))
+                  .format(pod_name, log_file_path))
     with open(log_file_path, 'w') as log_file:
         panel_from_sources = any('panel' in s for s, _ in pod_sources_cfg)
         panel_path = ''

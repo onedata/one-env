@@ -109,7 +109,7 @@ def exec_to_oneclient_pod(pod_substring: str) -> None:
     pod_name = pods.match_pod_and_run(pod_substring, pods.get_name)
     if pod_name is None:
         sys.exit(1)
-    cmd = pods.exec_cmd(pod_name, 'bash', it=True)
+    cmd = pods.exec_cmd(pod_name, 'bash', interactive=True, tty=True)
     shell.call(cmd)
 
 
