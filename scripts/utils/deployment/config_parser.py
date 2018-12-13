@@ -33,6 +33,16 @@ def set_release_name_override(cfg: Dict[str, Dict], release_name: str) -> None:
     cfg['global'] = global_cfg
 
 
+def set_onezone_main_admin(cfg: Dict[str, Dict],
+                           admin_creds: List[str]) -> None:
+    global_cfg = cfg.get('global', {})
+    if not global_cfg.get('onezoneMainAdmin'):
+        admin_username, admin_password = admin_creds
+        global_cfg['onezoneMainAdmin'] = {'name': admin_username,
+                                          'password': admin_password}
+    cfg['global'] = global_cfg
+
+
 def enable_oneclients(my_values_file: IO[Any]) -> None:
     my_values_file.write('{0}: &{0} true\n'.format('oneclients_enabled'))
 

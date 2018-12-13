@@ -35,11 +35,13 @@ BATCH_SIZE = 1000
 
 
 class BaseHandler(FileSystemEventHandler):
-    def __init__(self, pod_name: str, source_path: str, queue: EventQueue,
+    def __init__(self, pod_name: str, source_path: str,
+                 dir_to_sync: str, queue: EventQueue,
                  delete: bool = False):
         super().__init__()
         self.pod_name = pod_name
         self.source_path = source_path
+        self.dir_to_sync = dir_to_sync
         self.event_queue = queue
         self.delete = delete
 

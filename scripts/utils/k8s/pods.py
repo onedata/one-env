@@ -518,7 +518,7 @@ def create_groups(pod_name: str, groups: Dict[str, List[str]]) -> None:
     """Creates system groups on docker specified by 'container'."""
 
     def _group_exists(group: str, pod_name: str) -> bool:
-        command = ['id', '-g', group]
+        command = ['grep', '-q', group, '/etc/group']
         ret = subprocess.call(exec_cmd(pod_name, command))
 
         return ret == 0

@@ -20,7 +20,8 @@ from .utils.deployment.scenario_runner import update_charts_dependencies
 from .utils.deployment.config_parser import (parse_spaces_cfg,
                                              parse_users_config,
                                              parse_groups_config,
-                                             set_release_name_override)
+                                             set_release_name_override,
+                                             set_onezone_main_admin)
 from .utils.names_and_paths import (CROSS_SUPPORT_JOB_REPO_PATH,
                                     CROSS_SUPPORT_JOB, ONEDATA_3P)
 
@@ -32,17 +33,9 @@ def delete_old_support_jobs(release_name: str) -> None:
                                                 include_uninitialized=True))
 
 
-def parse_onedata3p_conf(patch: Dict[str, Dict],
-                         admin_creds: List[str]) -> None:
+def parse_onedata3p_conf(patch: Dict[str, Dict]) -> None:
     onedata_3p_conf = patch.get(ONEDATA_3P, {})
     onedata_3p_conf['enabled'] = False
-
-    onezone_conf = onedata_3p_conf.get('onezone', {})
-    if not onezone_conf.get('onezoneAdmin'):
-        admin_username, admin_password = admin_creds
-        onezone_conf['onezoneAdmin'] = {'name': admin_username,
-                                        'password': admin_password}
-    onedata_3p_conf['onezone'] = onezone_conf
     patch[ONEDATA_3P] = onedata_3p_conf
 
 
@@ -63,8 +56,9 @@ def patch_deployment(patch: str, patch_release_name: str,
     landscape = yaml_utils.load_yaml(deployment_patch_path)
 
     delete_old_support_jobs(deployment_release_name)
-    parse_onedata3p_conf(landscape, admin)
+    parse_onedata3p_conf(landscape)
     set_release_name_override(landscape, deployment_release_name)
+    set_onezone_main_admin(landscape, admin)
 
     parse_groups_config(landscape.get('groups'), landscape)
     parse_users_config(landscape.get('users'), landscape, True)
@@ -89,7 +83,7 @@ def patch_deployment(patch: str, patch_release_name: str,
 
     subprocess.check_call(helm_install_cmd, cwd=deployment_charts_path,
                           stderr=subprocess.STDOUT)
-    deployment_data.add_to_list(patch_release_name)
+    deployment_data.add_release(patch_release_name)
 
 
 def main() -> None:

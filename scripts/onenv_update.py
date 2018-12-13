@@ -29,6 +29,10 @@ GUI_DIRS_TO_SYNC = ['_build/default/rel/*/data/gui_static']
 BACKEND_DIRS_TO_SYNC = ['_build/default/lib', 'src', 'include']
 ALL_DIRS_TO_SYNC = GUI_DIRS_TO_SYNC + BACKEND_DIRS_TO_SYNC
 
+GUI_DIRS_TO_SYNC = ['_build/default/rel/*/data/gui_static']
+BACKEND_DIRS_TO_SYNC = ['_build/default/lib', 'src', 'include']
+ALL_DIRS_TO_SYNC = GUI_DIRS_TO_SYNC + BACKEND_DIRS_TO_SYNC
+
 
 def update_sources_for_oc(pod_name: str, source_path: str,
                           delete: bool = False) -> None:
