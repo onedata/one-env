@@ -1,5 +1,6 @@
 """
-.
+This module contains functions that allows to rsync sources to pods and
+that allows to appropriately configure services to run from sources.
 """
 
 __author__ = "Michal Cwiertnia"
@@ -9,16 +10,17 @@ __license__ = "This software is released under the MIT license cited in " \
 
 
 import os
-import subprocess
-from multiprocessing import Process
+from itertools import chain
+from threading import Thread
 from typing import List, IO, Any, Dict
 
 import yaml
 
 from .node import Node
 from ..k8s import pods
-from .. import terminal, shell
+from .. import terminal
 from ..one_env_dir import deployment_data
+from ..shell import call_and_check_return_code
 from ..names_and_paths import (SERVICE_ONECLIENT, ONECLIENT_BIN_PATH,
                                get_service_type)
 
@@ -27,16 +29,6 @@ OP_OZ_DIRS_TO_SYNC = ['_build', 'priv', 'src', 'include']
 SOURCES_READY_FILE_PATH = '/tmp/sources_ready.txt'
 
 WAIT_FOR_POD_TIMEOUT = 300
-
-
-def call_and_check_return_code(cmd: List[str],
-                               stdout: shell.File = subprocess.DEVNULL) -> int:
-
-    ret = shell.check_return_code(cmd, stdout=stdout)
-    if ret != 0:
-        terminal.error('Error in command: {}. More information in logs'
-                       'file.'.format(cmd))
-    return ret
 
 
 def modify_package_app_config(pod_name: str, panel_name: str,
@@ -94,33 +86,33 @@ def copy_overlay_cfg(source_name: str, source_path: str,
                                    stdout=log_file)
 
 
+def rsync_file(file_path: str, pod_name: str, pod_dest_path: str,
+               log_file: IO[Any]):
+    if os.path.isdir(file_path):
+        mkdir_cmd = ['bash', '-c', 'mkdir -p {}'.format(file_path)]
+        call_and_check_return_code(pods.exec_cmd(pod_name, mkdir_cmd),
+                                   stdout=log_file)
+    if os.path.exists(file_path):
+        call_and_check_return_code(pods.rsync_cmd(file_path, pod_dest_path),
+                                   stdout=log_file)
+
+
 def rsync_source(pod_name: str, source_path: str, dest_path: str,
                  files_to_rsync: List[str], log_file: IO[Any]) -> None:
     pod_dest_path = '{}:{}'.format(pod_name, dest_path)
-
-    def rsync_file():
-        if os.path.isdir(file_path):
-            mkdir_cmd = ['bash', '-c', 'mkdir -p {}'.format(file_path)]
-            call_and_check_return_code(pods.exec_cmd(pod_name, mkdir_cmd),
-                                       stdout=log_file)
-        if os.path.exists(file_path):
-            call_and_check_return_code(
-                pods.rsync_cmd(file_path, pod_dest_path),
-                stdout=log_file)
-
-    processes = []
-    if files_to_rsync:
-        for file_to_sync in files_to_rsync:
-            file_path = os.path.join(source_path, file_to_sync)
-            process = Process(target=rsync_file)
-            process.start()
-            processes.append(process)
-    else:
+    threads = []
+    for file_to_sync in files_to_rsync:
+        file_path = os.path.join(source_path, file_to_sync)
+        thread = Thread(target=rsync_file, args=(file_path, pod_name,
+                                                 pod_dest_path, log_file))
+        thread.start()
+        threads.append(thread)
+    if not files_to_rsync:
         file_path = source_path
-        rsync_file()
+        rsync_file(file_path, pod_name, pod_dest_path, log_file)
 
-    for process in processes:
-        process.join()
+    for thread in threads:
+        thread.join()
 
 
 def rsync_sources_for_oc(pod_substring: str,
@@ -129,7 +121,7 @@ def rsync_sources_for_oc(pod_substring: str,
     pods.wait_for_pods_to_be_running(pod_substring,
                                      timeout=WAIT_FOR_POD_TIMEOUT)
     pod_list = pods.match_pods(pod_substring)
-    pod_sources_cfg = deployment_data_dict.get('sources').get(pod_substring)
+    pod_sources_cfg = deployment_data_dict.get('oc-deployments').get(pod_substring)
 
     for pod in pod_list:
         with open(log_file_path, 'w') as log_file:
@@ -189,26 +181,26 @@ def rsync_sources_for_oz_op(pod_name: str, nodes_cfg: Dict[str, Dict],
 def rsync_sources(deployment_dir: str, log_directory_path: str,
                   nodes_cfg: Dict[str, Dict]) -> None:
     deployment_data_path = os.path.join(deployment_dir, 'deployment_data.yml')
-
     with open(deployment_data_path, 'r') as deployment_data_file:
         deployment_data_dict = yaml.load(deployment_data_file)
-        processes = []
-        for pod_substring in deployment_data_dict.get('sources'):
+        threads = []
+        for pod_substring in chain(deployment_data_dict.get('sources', {}),
+                                   deployment_data_dict.get('oc-deployments', {})):
             log_file_path = os.path.join(log_directory_path,
                                          '{}_rsync.log'.format(pod_substring))
             service_type = get_service_type(pod_substring)
             if service_type == SERVICE_ONECLIENT:
-                process = Process(target=rsync_sources_for_oc,
-                                  args=(pod_substring, deployment_data_dict,
-                                        log_file_path))
-                process.start()
-                processes.append(process)
+                thread = Thread(target=rsync_sources_for_oc,
+                                args=(pod_substring, deployment_data_dict,
+                                      log_file_path))
+                thread.start()
+                threads.append(thread)
             else:
-                process = Process(target=rsync_sources_for_oz_op,
-                                  args=(pod_substring, nodes_cfg,
-                                        deployment_data_dict, log_file_path))
-                process.start()
-                processes.append(process)
+                thread = Thread(target=rsync_sources_for_oz_op,
+                                args=(pod_substring, nodes_cfg,
+                                      deployment_data_dict, log_file_path))
+                thread.start()
+                threads.append(thread)
 
-        for process in processes:
-            process.join()
+        for thread in threads:
+            thread.join()

@@ -9,7 +9,6 @@ __license__ = "This software is released under the MIT license cited in " \
 
 import time
 import argparse
-from typing import Optional
 
 from .utils.k8s import helm, pods
 from .utils import arg_help_formatter
@@ -20,7 +19,7 @@ from .utils.one_env_dir import deployment_data
 DEFAULT_RETRIES_NUM = 30
 
 
-def clean_deployment(all_deployments: Optional[bool] = None) -> None:
+def clean_deployment(all_deployments: bool = False) -> None:
     if all_deployments:
         releases = deployment_data.get(default={}).get('releases', {})
         for release in releases:

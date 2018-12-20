@@ -144,7 +144,8 @@ def parse_service_cfg(parsed_env_cfg: Dict[str, Any],
     if isinstance(custom_src_cfg, bool) and custom_src_cfg:
         enable_sources(service_src_cfg)
         if service_type == SERVICE_ONEPROVIDER:
-            enable_sources(service_src_cfg['oneclient'])
+            if env_cfg.get('oneclients'):
+                enable_sources(service_src_cfg['oneclient'])
 
     service_cfg = env_cfg.get(service_name_to_alias_mapping(service))
     if service_cfg:

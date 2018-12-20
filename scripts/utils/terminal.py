@@ -9,7 +9,6 @@ __license__ = "This software is released under the MIT license cited in " \
 
 import shutil
 
-
 from termcolor import colored
 
 
@@ -18,7 +17,7 @@ def info(msg: str) -> None:
 
 
 def warning(msg: str) -> None:
-    print(colored('[WARNING] ' + msg, 'yellow'))
+    print(colored('[WARNING] ' + msg, 'yellow'), flush=True)
 
 
 def error(msg: str) -> None:
@@ -35,7 +34,7 @@ def red_str(msg: str) -> str:
 
 def horizontal_line() -> None:
     width, _ = shutil.get_terminal_size()
-    print('-' * width)
+    print('-' * width, flush=True)
 
 
 def print_same_line(line: str) -> None:

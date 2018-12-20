@@ -49,7 +49,7 @@ def delete_release_cmd(name: str) -> List[str]:
 
 
 def deployment_exists() -> bool:
-    ret = shell.check_return_code(
+    ret = shell.get_return_code(
         get_deployment_cmd(user_config.get_current_release_name())
     )
     return ret == 0

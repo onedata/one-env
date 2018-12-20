@@ -12,8 +12,8 @@ import os
 import glob
 import time
 import argparse
-from itertools import chain
 from typing import List
+from itertools import chain
 
 import kubernetes
 from watchdog.observers.api import EventQueue
@@ -25,7 +25,7 @@ from .utils.k8s import pods, kubernetes_utils, helm
 from .utils.one_env_dir import deployment_data, user_config
 from .onenv_update import (update_sources_for_oz_op, GUI_DIRS_TO_SYNC,
                            BACKEND_DIRS_TO_SYNC, ALL_DIRS_TO_SYNC,
-                           update_sources_for_oc)
+                           update_sources_for_oc, update_oc_deployment)
 from .utils.names_and_paths import (APP_OP_PANEL, APP_OZ_PANEL, APP_ONEZONE,
                                     APP_ONEPROVIDER, APP_CLUSTER_MANAGER,
                                     SERVICE_ONECLIENT)
@@ -35,22 +35,20 @@ BATCH_SIZE = 1000
 
 
 class BaseHandler(FileSystemEventHandler):
-    def __init__(self, pod_name: str, source_path: str,
-                 dir_to_sync: str, queue: EventQueue,
+    def __init__(self, name: str, source_path: str, queue: EventQueue,
                  delete: bool = False):
         super().__init__()
-        self.pod_name = pod_name
+        self.name = name
         self.source_path = source_path
-        self.dir_to_sync = dir_to_sync
         self.event_queue = queue
         self.delete = delete
 
 
 class OzOpHandler(BaseHandler):
-    def __init__(self, pod_name: str, source_path: str,
+    def __init__(self, name: str, source_path: str,
                  dir_to_sync: str, queue: EventQueue,
                  delete: bool = False):
-        super().__init__(pod_name, source_path, queue, delete)
+        super().__init__(name, source_path, queue, delete)
         self.dir_to_sync = dir_to_sync
 
     def on_any_event(self, event: FileSystemEvent) -> None:
@@ -58,21 +56,36 @@ class OzOpHandler(BaseHandler):
         while not self.event_queue.empty() and counter < BATCH_SIZE:
             self.event_queue.get()
             counter += 1
-        update_sources_for_oz_op(self.pod_name, self.source_path,
+        update_sources_for_oz_op(self.name, self.source_path,
                                  [self.dir_to_sync], self.delete)
 
 
 class OcHandler(BaseHandler):
-    def __init__(self, pod_name: str, source_path: str, queue: EventQueue,
-                 delete: bool = False):
-        super().__init__(pod_name, source_path, queue, delete)
+    def __init__(self, name: str, source_path: str, queue: EventQueue,
+                 deployment: bool = False):
+        super().__init__(name, source_path, queue)
+        self.deployment = deployment
 
-    def on_any_event(self, event: FileSystemEvent) -> None:
+    def on_modified(self, event: FileSystemEvent) -> None:
         counter = 0
+        if event.src_path == self.source_path:
+            oneclient_changed = True
+            time.sleep(1)
+        else:
+            oneclient_changed = False
+
         while not self.event_queue.empty() and counter < BATCH_SIZE:
-            self.event_queue.get()
+            event = self.event_queue.get()
+            if event[0].src_path == self.source_path:
+                oneclient_changed = True
             counter += 1
-        update_sources_for_oc(self.pod_name, self.source_path, self.delete)
+
+        if oneclient_changed:
+            if self.deployment:
+                update_oc_deployment(self.name)
+            else:
+                self.name = update_sources_for_oc(self.name,
+                                                  self.source_path)
 
 
 def run_oz_op_observer(pod_name: str, source_path: str, dir_to_sync: str,
@@ -91,31 +104,34 @@ def run_oz_op_observer(pod_name: str, source_path: str, dir_to_sync: str,
     return observer
 
 
-def run_oc_observer(pod_name: str, source_path: str,
-                    delete: bool = False) -> Observer:
+def run_oc_observer(name: str, source_path: str,
+                    deployment: bool) -> Observer:
+    if deployment:
+        update_oc_deployment(name)
+    else:
+        name = update_sources_for_oc(name, source_path)
+
     observer = Observer()
-    event_handler = OcHandler(pod_name, source_path, observer.event_queue,
-                              delete)
+    event_handler = OcHandler(name, source_path, observer.event_queue,
+                              deployment)
 
     observer.schedule(event_handler, os.path.dirname(source_path))
     observer.start()
 
-    update_sources_for_oc(pod_name, source_path, delete)
-
     return observer
 
 
-def create_observers_oc(pod_name: str, source_path: str,
-                        delete: bool = False) -> List[Observer]:
+def run_oc_observers(pod_name: str, source_path: str,
+                     deployment: bool = False) -> List[Observer]:
     observers = []
     terminal.info('Starting watcher for {}'.format(source_path))
-    observers.append(run_oc_observer(pod_name, source_path, delete))
+    observers.append(run_oc_observer(pod_name, source_path, deployment))
     return observers
 
 
-def create_observers_for_oz_op(pod_name: str, source_path: str,
-                               dirs_to_sync: List[str] = None,
-                               delete: bool = False) -> List[Observer]:
+def run_oz_op_observers(pod_name: str, source_path: str,
+                        dirs_to_sync: List[str] = None,
+                        delete: bool = False) -> List[Observer]:
     observers = []
 
     for dir_to_sync in dirs_to_sync:
@@ -150,13 +166,12 @@ def watch_pod_sources(pod: kubernetes.client.V1Pod,
     if pod_cfg:
         for source_name, source_path in pod_cfg.items():
             if service_type == SERVICE_ONECLIENT:
-                observers.extend(create_observers_oc(pod_name, source_path,
-                                                     delete=delete))
-            if source_name in sources_to_update:
-                observers.extend(create_observers_for_oz_op(pod_name,
-                                                            source_path,
-                                                            dirs_to_sync,
-                                                            delete))
+                observers.extend(run_oc_observers(pod_name, source_path))
+            elif source_name in sources_to_update:
+                observers.extend(run_oz_op_observers(pod_name,
+                                                     source_path,
+                                                     dirs_to_sync,
+                                                     delete))
 
     try:
         while True:
@@ -174,6 +189,22 @@ def watch_deployment_sources(sources_to_update: List[str],
         watch_pod_sources(pod, sources_to_update, dirs_to_sync, delete)
 
 
+def watch_oc_deployment(deployment_substring: str) -> None:
+    oc_deployments = deployment_data.get(default={}).get('oc-deployments', {})
+    deployment_name = deployment_data.get_oc_deployment_name(deployment_substring,
+                                                             oc_deployments)
+    source_path = oc_deployments.get(deployment_name).get(SERVICE_ONECLIENT)
+    observers = run_oc_observers(deployment_name, source_path,
+                                 deployment=True)
+    try:
+        while True:
+            time.sleep(2)
+    except KeyboardInterrupt:
+        for observer in observers:
+            observer.stop()
+            observer.join()
+
+
 def main() -> None:
     watch_args_parser = argparse.ArgumentParser(
         prog='onenv watch',
@@ -185,10 +216,12 @@ def main() -> None:
     )
 
     watch_args_parser.add_argument(
-        help='pod name (or matching pattern, use "-" for wildcard) - '
-             'display detailed status of given pod.',
+        help='Pod name (or matching pattern, use "-" for wildcard).'
+             'If --oc-deployment flag is present this will match name '
+             'of oneclient deployment, and whole oneclient deployment will '
+             'be updated. If not specified whole deployment will be updated.',
         nargs='?',
-        dest='pod'
+        dest='name'
     )
 
     watch_args_parser.add_argument(
@@ -228,6 +261,13 @@ def main() -> None:
         help='watch sources for all services',
     )
 
+    watch_args_parser.add_argument(
+        '--oc-deployment',
+        action='store_true',
+        help='if present name will match whole oneclient deployment instead '
+             'of single pod. For each pod watcher will be started.'
+    )
+
     sources_type = watch_args_parser.add_mutually_exclusive_group()
 
     sources_type.add_argument(
@@ -262,10 +302,13 @@ def main() -> None:
 
     dirs_to_sync = watch_args.dirs_to_sync or ALL_DIRS_TO_SYNC
 
-    if watch_args.pod:
-        pod = pods.match_pods(watch_args.pod)[0]
-        watch_pod_sources(pod, sources_to_update, dirs_to_sync,
-                          watch_args.delete)
+    if watch_args.name:
+        if not watch_args.oc_deployment:
+            pods.match_pod_and_run(watch_args.name, watch_pod_sources,
+                                   sources_to_update, dirs_to_sync,
+                                   watch_args.delete)
+        else:
+            watch_oc_deployment(watch_args.name)
     else:
         watch_deployment_sources(sources_to_update, dirs_to_sync,
                                  watch_args.delete)

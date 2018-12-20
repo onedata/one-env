@@ -7,9 +7,11 @@ __copyright__ = "Copyright (C) 2018 ACK CYFRONET AGH"
 __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
+import sys
 from typing import Optional, List
 from os.path import join as join_path
 
+from .terminal import error
 from .one_env_dir import user_config
 
 
@@ -85,10 +87,17 @@ def gen_pod_name(service: str, service_type: str,
 def oneclient_sources_dirs(sources_type: Optional[str] = None) -> List[str]:
     sources_dirs = []
     if sources_type:
-        if sources_type in 'release':
+        if sources_type in ('rel', 'release'):
             sources_dirs.append('release')
-        elif sources_type in 'debug':
+        elif sources_type in ('deb', 'debug'):
             sources_dirs.append('debug')
+        else:
+            error('Could not recognize provided type of oneclient sources.'
+                  'Possible values are following:\n'
+                  '    - for release: rel or release\n'
+                  '    - for debug:   deb or debug\n'
+                  'Provided value is: {}'.format(sources_type))
+            sys.exit(1)
     else:
         sources_dirs.extend(['release', 'debug'])
     return sources_dirs

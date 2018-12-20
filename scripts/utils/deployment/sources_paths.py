@@ -57,32 +57,31 @@ def locate_oc(app: str, service_name: str, generate_pod_name: bool = True,
     location = get_sources_location(app)
 
     if not generate_pod_name:
-        pod_name = service_name
+        pod_substring = service_name
     else:
         # It is not possible to generate full pod name for oneclient
         # before deployment is started. Generated name will not contain k8s
         # suffix assigned to oneclients pods
-        pod_name = gen_pod_name(service_name, SERVICE_ONECLIENT)
+        pod_substring = gen_pod_name(service_name, SERVICE_ONECLIENT)
 
     sources_dirs = oneclient_sources_dirs(sources_type)
     sources_paths = [os.path.join(location, src_dir, SERVICE_ONECLIENT)
                      for src_dir in sources_dirs]
-    source_path = ''
 
     for src_path in sources_paths:
         if os.path.isfile(src_path):
             terminal.info('{} -> {}: using sources from:\n    {}'
-                          .format(terminal.green_str(pod_name),
+                          .format(terminal.green_str(pod_substring),
                                   terminal.green_str(app),
                                   terminal.green_str(src_path)))
             source_path = src_path
             break
-    if not source_path:
+    else:
         terminal.error('Cannot locate oneclient binary for {}, '
                        'tried: {}'.format(app, sources_paths))
         sys.exit(1)
 
-    deployment_data.add_source(pod_name, app, source_path)
+    deployment_data.add_oneclient_deployment(pod_substring, source_path)
     return location
 
 

@@ -9,37 +9,75 @@ __license__ = "This software is released under the MIT license cited in " \
 
 import os
 import glob
+import time
 import argparse
-from itertools import chain
-import subprocess
 from typing import List
+import subprocess as sp
+from itertools import chain
+from threading import Thread, Lock
 
 import kubernetes
 
 from .utils.k8s import pods, helm
 from .utils.yaml_utils import load_yaml
 from .utils import terminal, arg_help_formatter
-from .utils.one_env_dir import deployments_dir, user_config
+from .utils.deployment.sources import create_ready_file_cmd
+from .utils.one_env_dir import deployments_dir, user_config, deployment_data
 from .utils.names_and_paths import (APP_OP_PANEL, APP_OZ_PANEL, APP_ONEZONE,
                                     APP_ONEPROVIDER, APP_CLUSTER_MANAGER,
                                     ONECLIENT_BIN_PATH, SERVICE_ONECLIENT)
 
+DEPLOYMENT_DATA_LOCK = Lock()
+NEW_PODS_TIMEOUT = 60
 
 GUI_DIRS_TO_SYNC = ['_build/default/rel/*/data/gui_static']
 BACKEND_DIRS_TO_SYNC = ['_build/default/lib', 'src', 'include']
 ALL_DIRS_TO_SYNC = GUI_DIRS_TO_SYNC + BACKEND_DIRS_TO_SYNC
 
-GUI_DIRS_TO_SYNC = ['_build/default/rel/*/data/gui_static']
-BACKEND_DIRS_TO_SYNC = ['_build/default/lib', 'src', 'include']
-ALL_DIRS_TO_SYNC = GUI_DIRS_TO_SYNC + BACKEND_DIRS_TO_SYNC
+
+def delete_oc_pod(pod_name: str) -> None:
+    sp.Popen(pods.delete_kube_object_cmd('pod', name=pod_name,
+                                         delete_all=False))
+    with DEPLOYMENT_DATA_LOCK:
+        deployment_data.delete_pod_from_sources(pod_name)
+
+
+def rsync_sources_to_oc_pod(pod_name: str, source_path: str) -> None:
+    pods.wait_for_pods_to_be_running(pod_name)
+    destination_path = '{}:{}'.format(pod_name, ONECLIENT_BIN_PATH)
+    rsync_cmd = pods.rsync_cmd(source_path, destination_path)
+    sp.call(rsync_cmd, stdout=sp.DEVNULL)
+    sp.call(pods.exec_cmd(pod_name, create_ready_file_cmd()))
+    with DEPLOYMENT_DATA_LOCK:
+        deployment_data.add_source(pod_name, SERVICE_ONECLIENT, source_path)
 
 
 def update_sources_for_oc(pod_name: str, source_path: str,
-                          delete: bool = False) -> None:
-    destination_path = '{}:{}'.format(pod_name, ONECLIENT_BIN_PATH)
-    rsync_cmd = pods.rsync_cmd(source_path, destination_path,
-                               delete)
-    subprocess.call(rsync_cmd)
+                          delete_pod: bool = True) -> str:
+    oc_pod_substring = ''
+    for oc_deployment in deployment_data.get().get('oc-deployments').keys():
+        if oc_deployment in pod_name:
+            oc_pod_substring = oc_deployment
+
+    pod_names = set(pods.get_name(pod) for pod in pods.list_pods())
+    if delete_pod:
+        delete_oc_pod(pod_name)
+
+    new_pod_name = ''
+    start_time = time.time()
+    while (not new_pod_name and
+           int(time.time() - start_time) <= NEW_PODS_TIMEOUT):
+        curr_pod_names = set(pods.get_name(pod) for pod in pods.list_pods())
+        if curr_pod_names != pod_names:
+            new_names = curr_pod_names - pod_names
+            for name in new_names:
+                if oc_pod_substring in name:
+                    new_pod_name = name
+        pod_names = curr_pod_names
+        time.sleep(1)
+
+    rsync_sources_to_oc_pod(new_pod_name, source_path)
+    return new_pod_name
 
 
 def update_sources_for_oz_op(pod_name: str, source_path: str,
@@ -54,7 +92,7 @@ def update_sources_for_oz_op(pod_name: str, source_path: str,
             if os.path.exists(expanded_path):
                 rsync_cmd = pods.rsync_cmd(expanded_path, destination_path,
                                            delete)
-                subprocess.call(rsync_cmd)
+                sp.call(rsync_cmd)
 
 
 def update_sources_in_pod(pod: kubernetes.client.V1Pod,
@@ -64,7 +102,7 @@ def update_sources_in_pod(pod: kubernetes.client.V1Pod,
     deployment_dir = deployments_dir.get_current_deployment_dir()
     deployment_data_path = os.path.join(deployment_dir, 'deployment_data.yml')
     try:
-        deployment_data = load_yaml(deployment_data_path)
+        deployment_cfg = load_yaml(deployment_data_path)
     except FileNotFoundError:
         terminal.error('File {} containing deployment data not found. '
                        'Is deployment started from sources?'
@@ -72,17 +110,52 @@ def update_sources_in_pod(pod: kubernetes.client.V1Pod,
     else:
         pod_name = pods.get_name(pod)
         service_type = pods.get_service_type(pod)
-        pod_cfg = deployment_data.get('sources').get(pod_name)
+        pod_cfg = deployment_cfg.get('sources').get(pod_name)
 
         if pod_cfg:
             for source_name, source_path in pod_cfg.items():
                 if service_type == SERVICE_ONECLIENT:
-                    update_sources_for_oc(pod_name, source_path,
-                                          delete=delete)
+                    update_sources_for_oc(pod_name, source_path)
                 else:
                     if source_name in sources_to_update:
                         update_sources_for_oz_op(pod_name, source_path,
                                                  dirs_to_sync, delete)
+
+
+def update_oc_deployment(deployment_substring: str) -> None:
+    oc_deployments = deployment_data.get(default={}).get('oc-deployments', {})
+    deployment_name = deployment_data.get_oc_deployment_name(deployment_substring,
+                                                             oc_deployments)
+    source_path = oc_deployments.get(deployment_name).get(SERVICE_ONECLIENT)
+
+    pod_names = set(pods.get_name(pod) for pod in pods.list_pods())
+    deployment_pods = [pods.get_name(pod)
+                       for pod in pods.list_pods()
+                       if deployment_name in pods.get_name(pod)]
+
+    threads = []
+    for pod_name in deployment_pods:
+        thread = Thread(target=delete_oc_pod, args=(pod_name,))
+        thread.start()
+        threads.append(thread)
+    for thread in threads:
+        thread.join()
+
+    threads = []
+    start_time = time.time()
+    while (len(threads) < len(deployment_pods) and
+           int(time.time() - start_time) <= NEW_PODS_TIMEOUT):
+        curr_pod_names = set(pods.get_name(pod) for pod in pods.list_pods())
+        new_pods = curr_pod_names - pod_names
+        for pod_name in new_pods:
+            if deployment_name in pod_name:
+                thread = Thread(target=rsync_sources_to_oc_pod,
+                                args=(pod_name, source_path))
+                thread.start()
+                threads.append(thread)
+        time.sleep(1)
+    for thread in threads:
+        thread.join()
 
 
 def update_deployment(sources_to_update: List[str], dirs_to_sync: List[str],
@@ -103,9 +176,11 @@ def main() -> None:
 
     update_args_parser.add_argument(
         nargs='?',
+        dest='name',
         help='Pod name (or matching pattern, use "-" for wildcard).'
-             'If not specified whole deployment will be updated.',
-        dest='pod'
+             'If --oc-deployment flag is present this will match name '
+             'of oneclient deployment, and whole oneclient deployment will '
+             'be updated. If not specified whole deployment will be updated.'
     )
 
     update_args_parser.add_argument(
@@ -145,6 +220,13 @@ def main() -> None:
         help='update sources for all services',
     )
 
+    update_args_parser.add_argument(
+        '--oc-deployment',
+        action='store_true',
+        help='if present name will match whole oneclient deployment instead '
+             'of single pod'
+    )
+
     sources_type = update_args_parser.add_mutually_exclusive_group()
 
     sources_type.add_argument(
@@ -179,10 +261,13 @@ def main() -> None:
 
     dirs_to_sync = update_args.dirs_to_sync or ALL_DIRS_TO_SYNC
 
-    if update_args.pod:
-        pods.match_pod_and_run(update_args.pod, update_sources_in_pod,
-                               sources_to_update, dirs_to_sync,
-                               update_args.delete)
+    if update_args.name:
+        if not update_args.oc_deployment:
+            pods.match_pod_and_run(update_args.name, update_sources_in_pod,
+                                   sources_to_update, dirs_to_sync,
+                                   update_args.delete)
+        else:
+            update_oc_deployment(update_args.name)
     else:
         update_deployment(sources_to_update, dirs_to_sync, update_args.delete)
 

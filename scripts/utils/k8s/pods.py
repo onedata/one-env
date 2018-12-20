@@ -47,10 +47,15 @@ def describe_pods_cmd() -> List[str]:
             'describe', 'pods']
 
 
-def delete_kube_object_cmd(object_type, delete_all=True, label=None,
-                           include_uninitialized=False):
+def delete_kube_object_cmd(object_type: str, delete_all: bool = True,
+                           label: str = None,
+                           include_uninitialized: bool = False,
+                           name: str = None):
     command = ['kubectl', '--namespace', user_config.get_current_namespace(),
                'delete', object_type]
+
+    if name:
+        command.append(name)
 
     if delete_all:
         command.append('--all')
@@ -256,10 +261,9 @@ def wait_for_pods_to_be_running(pod_substring: str, timeout: int = 60) -> None:
 
     terminal.error('Timeout while waiting for the following pods to be '
                    'running:')
-
-    for pod in pod_list:
-        if not is_pod_running(pod):
-            terminal.red_str('    ' + get_name(pod))
+    '\n'.join('    {}'.format(get_name(pod))
+              for pod in pod_list
+              if not is_pod_running(pod))
 
 
 def clean_jobs() -> None:
@@ -310,7 +314,7 @@ def describe_stateful_set() -> str:
 
 
 def file_exists_in_pod(pod: str, path: str) -> bool:
-    ret = shell.check_return_code(exec_cmd(pod, ['test', '-e', path]))
+    ret = shell.get_return_code(exec_cmd(pod, ['test', '-e', path]))
     return ret == 0
 
 

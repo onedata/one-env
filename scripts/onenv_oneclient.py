@@ -29,9 +29,9 @@ from .utils.names_and_paths import SERVICE_ONECLIENT, ONECLIENT_CHART_REPO_PATH
 
 def get_default_cfg() -> Dict[str, Any]:
     script_dir = os.path.dirname(os.path.realpath(__file__))
-    default_values = os.path.join(script_dir, 'utils', 'one_env_dir',
-                                  'client_values.yaml')
-    return load_yaml(default_values)
+    default_cfg_path = os.path.join(script_dir, 'utils', 'one_env_dir',
+                                    'client_values.yaml')
+    return load_yaml(default_cfg_path)
 
 
 def save_cfg(name: str, cfg: Dict[str, Any]) -> str:
@@ -55,12 +55,12 @@ def get_provider_suffix(provider_substring: str) -> str:
     return suffix
 
 
-def start_oneclient_pod(*, name: str, release_name: str,
-                        deployment_release_name: str,
-                        oneclient_cfg_path: Optional[str] = None,
-                        direct_io: Optional[bool] = None,
-                        provider_substring: Optional[str] = None,
-                        image: Optional[str] = None) -> str:
+def start_oneclient_deployment(*, name: str, release_name: str,
+                               deployment_release_name: str,
+                               oneclient_cfg_path: Optional[str] = None,
+                               direct_io: bool = False,
+                               provider_substring: Optional[str] = None,
+                               image: Optional[str] = None) -> str:
     helm.add_onedata_repo()
     pod_substring = '{}-{}'.format(deployment_release_name, name)
 
@@ -99,15 +99,14 @@ def rsync_sources(pod_substring: str,
 
     log_file_path = os.path.join(deployments_dir.get_current_log_dir(),
                                  'rsync_{}.log'.format(pod_substring))
-    deployment_data_path = deployment_data.get_current_deployment_data_path()
-    deployment_data_cfg = load_yaml(deployment_data_path)
+    deployment_data_cfg = deployment_data.get(default={})
     sources.rsync_sources_for_oc(pod_substring, deployment_data_cfg,
                                  log_file_path)
 
 
 def exec_to_oneclient_pod(pod_substring: str) -> None:
     pod_name = pods.match_pod_and_run(pod_substring, pods.get_name)
-    if pod_name is None:
+    if not pod_name:
         sys.exit(1)
     cmd = pods.exec_cmd(pod_name, 'bash', interactive=True, tty=True)
     shell.call(cmd)
@@ -121,7 +120,6 @@ def main() -> None:
     )
 
     oneclient_args_parser.add_argument(
-        nargs=1,
         help='name of the oneclient deployment that will '
              'be started. Please note that this name should be unique for '
              'each k8s deployment.',
@@ -190,10 +188,10 @@ def main() -> None:
     )
 
     oneclient_args = oneclient_args_parser.parse_args()
-    release_name = oneclient_args.release_name or oneclient_args.name[0]
+    release_name = oneclient_args.release_name or oneclient_args.name
 
-    pod_substring = start_oneclient_pod(
-        name=oneclient_args.name[0],
+    pod_substring = start_oneclient_deployment(
+        name=oneclient_args.name,
         release_name=release_name,
         deployment_release_name=oneclient_args.deployment_release_name,
         oneclient_cfg_path=oneclient_args.config,
