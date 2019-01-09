@@ -9,10 +9,12 @@ __license__ = "This software is released under the MIT license cited in " \
 
 import os
 import itertools
-from typing import Dict, Any, List
+from typing import Dict, List, IO, Any
 
-from .. import yaml_utils
-from ..names_and_paths import service_name_to_alias_mapping
+from ..yaml_utils import load_yaml, dump_yaml
+from ..names_and_paths import (service_name_to_alias_mapping, get_service_type,
+                               SERVICE_ONEPROVIDER, get_matching_oneclient,
+                               SERVICE_ONECLIENT)
 
 
 # TODO: remove after keys in one-env cfg and chart will be the same
@@ -23,6 +25,26 @@ IMAGE_KEY_MAPPING = {
     'onedataCliImage': 'cli_image',
     'lumaImage': 'luma_image'
 }
+
+
+def set_release_name_override(cfg: Dict[str, Dict], release_name: str) -> None:
+    global_cfg = cfg.get('global', {})
+    global_cfg['releaseNameOverride'] = release_name
+    cfg['global'] = global_cfg
+
+
+def set_onezone_main_admin(cfg: Dict[str, Dict],
+                           admin_creds: List[str]) -> None:
+    global_cfg = cfg.get('global', {})
+    if not global_cfg.get('onezoneMainAdmin'):
+        admin_username, admin_password = admin_creds
+        global_cfg['onezoneMainAdmin'] = {'name': admin_username,
+                                          'password': admin_password}
+    cfg['global'] = global_cfg
+
+
+def enable_oneclients(my_values_file: IO[Any]) -> None:
+    my_values_file.write('oneclients_enabled: &oneclients_enabled true\n')
 
 
 def parse_my_values(my_values_path: str, env_cfg: Dict[str, Any]) -> None:
@@ -37,7 +59,7 @@ def parse_my_values(my_values_path: str, env_cfg: Dict[str, Any]) -> None:
             f.write('{0}: &{0} true\n'.format('luma_enabled'))
 
         if env_cfg.get('oneclients'):
-            f.write('{0}: &{0} true\n'.format('oneclients_enabled'))
+            enable_oneclients(f)
 
         if env_cfg.get('onedataCli'):
             f.write('{0}: &{0} true\n'.format('onedata_cli_enabled'))
@@ -77,12 +99,17 @@ def get_nodes_dict(service_cfg: Dict[str, Dict]) -> Dict[str, Dict]:
     return nodes_dict
 
 
-def parse_env_config(env_cfg: Dict[str, Any], base_sources_cfg: Dict[str, Dict],
+def enable_sources(cfg: Dict[str, Any]) -> None:
+    cfg['deployFromSources']['enabled'] = True
+
+
+def parse_env_config(env_cfg: Dict[str, Any], base_sources_cfg_path: str,
                      scenario_key: str, scenario_path: str,
-                     my_values_path: str) -> None:
+                     my_values_path: str) -> Dict[str, Dict]:
     parsed_env_cfg = {
         scenario_key: {}
     }
+    parsed_sources_cfg = load_yaml(base_sources_cfg_path)
 
     parse_my_values(my_values_path, env_cfg)
     force_image_pull = env_cfg.get('forceImagePull')
@@ -93,27 +120,32 @@ def parse_env_config(env_cfg: Dict[str, Any], base_sources_cfg: Dict[str, Dict],
     spaces_cfg = env_cfg.get('createSpaces')
     parse_spaces_cfg(spaces_cfg, parsed_env_cfg)
 
-    for service in base_sources_cfg[scenario_key].keys():
+    for service in parsed_sources_cfg[scenario_key].keys():
         parse_service_cfg(parsed_env_cfg, env_cfg, service, scenario_key,
-                          base_sources_cfg)
+                          parsed_sources_cfg, my_values_path)
 
-    yaml_utils.dump_yaml(parsed_env_cfg, os.path.join(scenario_path,
-                                                      'CustomConfig.yaml'))
-    yaml_utils.dump_yaml(base_sources_cfg, os.path.join(scenario_path,
-                                                        'SourcesVal.yaml'))
+    dump_yaml(parsed_env_cfg, os.path.join(scenario_path,
+                                           'CustomConfig.yaml'))
+    dump_yaml(parsed_sources_cfg, os.path.join(scenario_path,
+                                               'SourcesVal.yaml'))
+    return parsed_sources_cfg
 
 
 def parse_service_cfg(parsed_env_cfg: Dict[str, Any],
                       env_cfg: Dict[str, Any], service: str, scenario_key: str,
-                      base_sources_cfg: Dict[str, Dict]) -> None:
-    service_type = 'onezone' if 'onezone' in service else 'oneprovider'
+                      parsed_src_cfg: Dict[str, Dict],
+                      my_values_path: str) -> None:
+    service_type = get_service_type(service)
     parsed_env_cfg[scenario_key][service] = {}
     nodes = {}
+    custom_src_cfg = env_cfg.get('sources')
+    service_src_cfg = parsed_src_cfg[scenario_key][service]
 
-    custom_sources_cfg = env_cfg.get('sources')
-    if isinstance(custom_sources_cfg, bool) and custom_sources_cfg:
-        base_sources_cfg[scenario_key][service]['deployFromSources'][
-            'enabled'] = True
+    if isinstance(custom_src_cfg, bool) and custom_src_cfg:
+        enable_sources(service_src_cfg)
+        if service_type == SERVICE_ONEPROVIDER:
+            if env_cfg.get('oneclients'):
+                enable_sources(service_src_cfg['oneclient'])
 
     service_cfg = env_cfg.get(service_name_to_alias_mapping(service))
     if service_cfg:
@@ -127,16 +159,17 @@ def parse_service_cfg(parsed_env_cfg: Dict[str, Any],
             service_cfg.pop('clusterConfig')
 
         # Add sources for additional nodes
-        if isinstance(custom_sources_cfg, bool) and custom_sources_cfg:
+        if isinstance(custom_src_cfg, bool) and custom_src_cfg:
             add_sources_for_nodes(parsed_env_cfg[scenario_key][service]['nodes'],
-                                  base_sources_cfg, scenario_key, service)
+                                  parsed_src_cfg, scenario_key, service)
 
         batch_cfg = service_cfg.get('batchConfig')
         if isinstance(batch_cfg, bool) and not batch_cfg:
             parsed_env_cfg[scenario_key][service]['onepanel_batch_mode_enabled'] = False
         if isinstance(batch_cfg, dict):
             users_cfg = batch_cfg.get('createUsers')
-            parse_users_config(users_cfg, parsed_env_cfg[scenario_key][service])
+            parse_users_config(users_cfg,
+                               parsed_env_cfg[scenario_key][service])
 
         parsed_env_cfg[scenario_key][service] = {
             **parsed_env_cfg[scenario_key][service],
@@ -145,20 +178,39 @@ def parse_service_cfg(parsed_env_cfg: Dict[str, Any],
 
     # Parse custom sources. If some node wasn't specified in clusterConfig part
     # it should be automatically added
-    if isinstance(custom_sources_cfg, dict):
-        if service_name_to_alias_mapping(service) in custom_sources_cfg:
-            base_sources_cfg[scenario_key][service]['deployFromSources'][
-                'enabled'] = True
-            parse_node_sources(base_sources_cfg, custom_sources_cfg,
-                               scenario_key, service)
-            nodes = base_sources_cfg[scenario_key][service]['deployFromSources']['nodes']
+    if isinstance(custom_src_cfg, dict):
+        if service_name_to_alias_mapping(service) in custom_src_cfg:
+            enable_sources(service_src_cfg)
+            parse_custom_sources_for_oz_op(parsed_src_cfg, custom_src_cfg,
+                                           scenario_key, service)
+            nodes = parsed_src_cfg[scenario_key][service]['deployFromSources']['nodes']
+        if service_type == SERVICE_ONEPROVIDER:
+            parse_custom_sources_for_oc(service, custom_src_cfg,
+                                        service_src_cfg, my_values_path)
 
     set_nodes_num(parsed_env_cfg, service_type, scenario_key, service, nodes)
 
 
-def parse_node_sources(base_sources_cfg: Dict[str, Dict],
-                       custom_sources_cfg: Dict[str, Dict], scenario_key: str,
-                       service: str) -> None:
+def parse_custom_sources_for_oc(provider_name: str,
+                                custom_src_cfg: Dict[str, Any],
+                                service_src_cfg: Dict[str, Any],
+                                my_values_path: str) -> None:
+    oneclient_name = get_matching_oneclient(provider_name)
+    oneclient_alias = service_name_to_alias_mapping(oneclient_name)
+    if oneclient_alias in custom_src_cfg:
+        with open(my_values_path, 'a') as f:
+            enable_oneclients(f)
+        oneclient_cfg = service_src_cfg[SERVICE_ONECLIENT]
+        enable_sources(oneclient_cfg)
+        if isinstance(custom_src_cfg[oneclient_alias], str):
+            src_type = custom_src_cfg[oneclient_alias]
+            oneclient_cfg['deployFromSources']['type'] = src_type
+
+
+def parse_custom_sources_for_oz_op(base_sources_cfg: Dict[str, Dict],
+                                   custom_sources_cfg: Dict[str, Dict],
+                                   scenario_key: str,
+                                   service: str) -> None:
     parsed_nodes_cfg = {node_name: {}
                         for node_name in base_sources_cfg[scenario_key]
                         .get(service)

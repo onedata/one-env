@@ -17,7 +17,7 @@ from typing import List, Callable, Dict, Union, IO, Any, Optional
 
 from kubernetes.client import V1Pod, V1EnvVar, V1Volume, V1PersistentVolume
 
-from ..deployment import sources
+from ..deployment import sources_paths
 from ..one_env_dir import user_config
 from .. import shell, terminal
 from ..k8s.kubernetes_utils import get_name, get_kube_client
@@ -47,10 +47,15 @@ def describe_pods_cmd() -> List[str]:
             'describe', 'pods']
 
 
-def delete_kube_object_cmd(object_type, delete_all=True, label=None,
-                           include_uninitialized=False):
+def delete_kube_object_cmd(object_type: str, delete_all: bool = True,
+                           label: str = None,
+                           include_uninitialized: bool = False,
+                           name: str = None):
     command = ['kubectl', '--namespace', user_config.get_current_namespace(),
                'delete', object_type]
+
+    if name:
+        command.append(name)
 
     if delete_all:
         command.append('--all')
@@ -64,12 +69,23 @@ def delete_kube_object_cmd(object_type, delete_all=True, label=None,
     return command
 
 
-def exec_cmd(pod, command) -> List[str]:
+def exec_cmd(pod: str, command: Any, interactive: bool = False,
+             tty: bool = False) -> List[str]:
+    cmd = ['kubectl', '--namespace', user_config.get_current_namespace(),
+           'exec']
+
+    if interactive:
+        cmd.append('-i')
+    if tty:
+        cmd.append('-t')
+
+    cmd.extend([pod, '--'])
+
     if isinstance(command, list):
-        return ['kubectl', '--namespace', user_config.get_current_namespace(),
-                'exec', '-it', pod, '--'] + command
-    return ['kubectl', '--namespace', user_config.get_current_namespace(),
-            'exec', '-it', pod, '--', command]
+        cmd += command
+    else:
+        cmd.append(command)
+    return cmd
 
 
 def logs_cmd(pod: str, follow: bool = False) -> List[str]:
@@ -100,34 +116,34 @@ def copy_from_pod_cmd(source_path: str, destination: str) -> List[str]:
 def rsync_cmd(source_path: str, destination_path: str,
               delete: Optional[bool] = None) -> List[str]:
     namespace = user_config.get_current_namespace()
+    options = '--delete' if delete else ''
+    cmd = ['rsync', '--info=progress2', '--archive', '--blocking-io']
+    if options:
+        cmd.append(options)
+
+    if namespace:
+        rsh_fmt = 'kubectl --namespace {} exec {{}} -i -- '.format(namespace)
+    else:
+        rsh_fmt = 'kubectl exec {} -i -- '
+
     if ':' in source_path:
         pod_name, pod_path = source_path.split(':')
         host_path = destination_path
-        cmd_fmt = ("rsync --info=progress2 -a {options} "
-                   "--rsync-path={pod_path} --blocking-io --rsh='{rsh}' "
-                   "rsync:. {host_path}")
+        rsh = rsh_fmt.format(pod_name)
+        cmd += ['--rsync-path={}'.format(pod_path), '--rsh={}'.format(rsh),
+                'rsync:.', '{}'.format(host_path)]
+
         terminal.info('Rsyncing from pod {}: {} -> {} '
                       .format(pod_name, pod_path, host_path))
-
     else:
         pod_name, pod_path = destination_path.split(':')
         host_path = source_path
-        cmd_fmt = ("rsync --info=progress2 -a {options} "
-                   "--rsync-path={pod_path} --blocking-io --rsh='{rsh}' "
-                   "{host_path} rsync:.")
+        rsh = rsh_fmt.format(pod_name)
+        cmd += ['--rsync-path={}'.format(pod_path), '--rsh={}'.format(rsh),
+                '{}'.format(host_path), 'rsync:.']
+
         terminal.info('Rsyncing to pod {}: {} -> {} '
                       .format(pod_name, host_path, pod_path))
-
-    if namespace:
-        rsh = 'kubectl --namespace {} exec {} -i -- '.format(namespace,
-                                                             pod_name)
-    else:
-        rsh = 'kubectl exec {} -i -- '.format(pod_name)
-
-    options = '--delete' if delete else ''
-
-    cmd = [cmd_fmt.format(options=options, pod_path=pod_path,
-                          host_path=host_path, rsh=rsh)]
     return cmd
 
 
@@ -197,6 +213,8 @@ def is_job(pod: V1Pod) -> bool:
 def is_pod(pod: V1Pod) -> bool:
     if pod.metadata.owner_references:
         return pod.metadata.owner_references[0].kind != 'Job'
+    if pod.metadata.owner_references is None:
+        return True
     return False
 
 
@@ -231,14 +249,21 @@ def all_pods_running() -> bool:
     return all(is_pod_running(pod) for pod in list_pods())
 
 
-def wait_for_pod_to_be_running(pod: V1Pod) -> None:
-    pod_name = get_name(pod)
-    pod_ready = is_pod_running(pod)
+def wait_for_pods_to_be_running(pod_substring: str, timeout: int = 60) -> None:
+    start_time = time.time()
+    pod_list = []
 
-    while not pod_ready:
+    while int(time.time() - start_time) <= timeout:
+        pod_list = match_pods(pod_substring)
+        if all(is_pod_running(pod) for pod in pod_list):
+            return
         time.sleep(1)
-        pod = match_pods(pod_name)[0]
-        pod_ready = is_pod_running(pod)
+
+    terminal.error('Timeout while waiting for the following pods to be '
+                   'running:')
+    print('\n'.join('    {}'.format(get_name(pod))
+                    for pod in pod_list
+                    if not is_pod_running(pod)))
 
 
 def clean_jobs() -> None:
@@ -271,8 +296,9 @@ def attach(pod: V1Pod, app_type: str = APP_TYPE_WORKER) -> None:
     try:
         service = get_service_type(pod)
         app = service_and_app_type_to_app(service, app_type)
-        start_script = sources.get_start_script_path(app, pod_name)
-        shell.call(exec_cmd(pod_name, [start_script, 'attach-direct']))
+        start_script = sources_paths.get_start_script_path(app, pod_name)
+        shell.call(exec_cmd(pod_name, [start_script, 'attach-direct'],
+                            interactive=True, tty=True))
     except KeyError:
         terminal.error('Only pods hosting onezone or oneprovider are '
                        'supported.')
@@ -280,7 +306,7 @@ def attach(pod: V1Pod, app_type: str = APP_TYPE_WORKER) -> None:
 
 def pod_exec(pod: V1Pod) -> None:
     pod_name = get_name(pod)
-    shell.call(exec_cmd(pod_name, 'bash'))
+    shell.call(exec_cmd(pod_name, 'bash', interactive=True, tty=True))
 
 
 def describe_stateful_set() -> str:
@@ -288,7 +314,7 @@ def describe_stateful_set() -> str:
 
 
 def file_exists_in_pod(pod: str, path: str) -> bool:
-    ret = shell.check_return_code(exec_cmd(pod, ['test', '-e', path]))
+    ret = shell.get_return_code(exec_cmd(pod, ['test', '-e', path]))
     return ret == 0
 
 
@@ -349,7 +375,8 @@ def logs_follow(pod: V1Pod, infinite: bool = False) -> None:
 def app_logs_follow(pod: V1Pod, log_file: str, infinite=False) -> None:
     pod_name = get_name(pod)
     logs(file_exists_in_pod, pod_name, log_file)
-    res = shell.call(exec_cmd(pod_name, ['tail', '-n', '+1', '-f', log_file]))
+    res = shell.call(exec_cmd(pod_name, ['tail', '-n', '+1', '-f', log_file],
+                              interactive=True, tty=True))
     end_log(res, app_logs_follow, pod, infinite=infinite)
 
 
@@ -362,7 +389,7 @@ def app_logs(pod: V1Pod, app_type: str = APP_TYPE_WORKER,
         service = get_service_type(pod)
         print(service)
         app = service_and_app_type_to_app(service, app_type)
-        log_file = sources.get_logs_file(app, pod_name, logfile)
+        log_file = sources_paths.get_logs_file(app, pod_name, logfile)
         if follow:
             app_logs_follow(pod, log_file, infinite=infinite)
         else:
@@ -373,7 +400,8 @@ def app_logs(pod: V1Pod, app_type: str = APP_TYPE_WORKER,
             if interactive:
                 print('> {}'.format(log_file))
                 terminal.horizontal_line()
-                shell.call(exec_cmd(pod_name, ['cat', log_file]))
+                shell.call(exec_cmd(pod_name, ['cat', log_file],
+                                    interactive=True, tty=True))
             else:
                 return shell.check_output(exec_cmd(pod_name, ['cat', log_file]))
         return None
@@ -388,7 +416,7 @@ def list_logfiles(pod: V1Pod, app_type: str = APP_TYPE_WORKER) -> None:
     try:
         service = get_service_type(pod)
         app = service_and_app_type_to_app(service, app_type)
-        logs_dir = sources.get_logs_dir(app, pod_name)
+        logs_dir = sources_paths.get_logs_dir(app, pod_name)
         print(shell.check_output(exec_cmd(pod_name, ['ls', logs_dir])))
     except KeyError:
         terminal.error('Only pods hosting onezone or oneprovider '
@@ -413,13 +441,13 @@ def print_pod_choosing_hint() -> None:
                           terminal.green_str('dev-onezone-node-1-0')))
 
 
-def match_pod_and_run(pod_substring: str, fun: Callable[..., None],
-                      *fun_args, allow_multiple: bool = False) -> None:
+def match_pod_and_run(pod_substring: str, fun: Callable[..., Optional[Any]],
+                      *fun_args, allow_multiple: bool = False) -> Optional[Any]:
     if not pod_substring:
         terminal.error('Please choose a pod:')
         print_pods(list_pods())
         print_pod_choosing_hint()
-        return
+        return None
 
     matching_pods = match_pods(pod_substring)
 
@@ -432,22 +460,21 @@ def match_pod_and_run(pod_substring: str, fun: Callable[..., None],
             print_pod_choosing_hint()
         else:
             terminal.error('There are no pods running')
-        return
+        return None
 
     elif len(matching_pods) == 1:
         if fun_args:
-            fun(matching_pods[0], *fun_args)
-        else:
-            fun(matching_pods[0])
+            return fun(matching_pods[0], *fun_args)
+        return fun(matching_pods[0])
 
+    if allow_multiple:
+        for pod in matching_pods:
+            fun(pod, fun_args, multiple=True)
     else:
-        if allow_multiple:
-            for pod in matching_pods:
-                fun(pod, fun_args, multiple=True)
-        else:
-            terminal.error('There is more than one matching pod:')
-            print_pods(matching_pods)
-            print_pod_choosing_hint()
+        terminal.error('There is more than one matching pod:')
+        print_pods(matching_pods)
+        print_pod_choosing_hint()
+    return None
 
 
 def client_alias_to_pod_mapping() -> Dict[str, str]:

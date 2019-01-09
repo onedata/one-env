@@ -14,15 +14,16 @@ import subprocess
 from typing import Dict, List
 
 from .utils.k8s import helm, pods
-from .utils import terminal, arg_help_formatter, yaml_utils
-from .utils.one_env_dir import user_config, deployments_dir
+from .utils import arg_help_formatter, yaml_utils
+from .utils.one_env_dir import user_config, deployments_dir, deployment_data
 from .utils.deployment.scenario_runner import update_charts_dependencies
 from .utils.deployment.config_parser import (parse_spaces_cfg,
                                              parse_users_config,
-                                             parse_groups_config)
+                                             parse_groups_config,
+                                             set_release_name_override,
+                                             set_onezone_main_admin)
 from .utils.names_and_paths import (CROSS_SUPPORT_JOB_REPO_PATH,
-                                    CROSS_SUPPORT_JOB, ONEDATA_CHART_REPO,
-                                    ONEDATA_3P)
+                                    CROSS_SUPPORT_JOB, ONEDATA_3P)
 
 
 def delete_old_support_jobs(release_name: str) -> None:
@@ -30,17 +31,6 @@ def delete_old_support_jobs(release_name: str) -> None:
     subprocess.call(pods.delete_kube_object_cmd('jobs', delete_all=False,
                                                 label=cross_support_label,
                                                 include_uninitialized=True))
-
-
-def parse_global_conf(patch: Dict[str, Dict], release_name: str,
-                      admin_creds: List[str]) -> None:
-    global_cfg = patch.get('global', {})
-    global_cfg['releaseNameOverride'] = release_name
-    if not global_cfg.get('onezoneMainAdmin'):
-        admin_username, admin_password = admin_creds
-        global_cfg['onezoneMainAdmin'] = {'name': admin_username,
-                                          'password': admin_password}
-    patch['global'] = global_cfg
 
 
 def parse_onedata3p_conf(patch: Dict[str, Dict]) -> None:
@@ -61,13 +51,14 @@ def patch_deployment(patch: str, patch_release_name: str,
     patch_release_name = (patch_release_name if patch_release_name
                           else 'patch-{}'.format(deployment_release_name))
 
-    helm.clean_deployment(patch_release_name)
+    helm.clean_release(patch_release_name)
 
     landscape = yaml_utils.load_yaml(deployment_patch_path)
 
     delete_old_support_jobs(deployment_release_name)
     parse_onedata3p_conf(landscape)
-    parse_global_conf(landscape, deployment_release_name, admin)
+    set_release_name_override(landscape, deployment_release_name)
+    set_onezone_main_admin(landscape, admin)
 
     parse_groups_config(landscape.get('groups'), landscape)
     parse_users_config(landscape.get('users'), landscape, True)
@@ -85,16 +76,14 @@ def patch_deployment(patch: str, patch_release_name: str,
                                             [deployment_patch_path],
                                             release_name=patch_release_name)
     else:
-        terminal.info('Adding {} repo to helm repositories'
-                      .format(ONEDATA_CHART_REPO))
-        subprocess.call(helm.add_repo_cmd('onedata', ONEDATA_CHART_REPO),
-                        stdout=None, stderr=subprocess.STDOUT)
+        helm.add_onedata_repo()
         helm_install_cmd = helm.install_cmd(CROSS_SUPPORT_JOB_REPO_PATH,
                                             [deployment_patch_path],
                                             release_name=patch_release_name)
 
     subprocess.check_call(helm_install_cmd, cwd=deployment_charts_path,
                           stderr=subprocess.STDOUT)
+    deployment_data.add_release(patch_release_name)
 
 
 def main() -> None:

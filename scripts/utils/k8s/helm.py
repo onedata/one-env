@@ -8,10 +8,19 @@ __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
 import sys
+import subprocess
 from typing import List
 
-from ..one_env_dir import user_config
 from .. import terminal, shell
+from ..one_env_dir import user_config
+from ..names_and_paths import ONEDATA_CHART_REPO
+
+
+def add_onedata_repo() -> None:
+    terminal.info('Adding {} repo to helm repositories'
+                  .format(ONEDATA_CHART_REPO))
+    cmd = add_repo_cmd('onedata', ONEDATA_CHART_REPO)
+    subprocess.call(cmd, stdout=None, stderr=subprocess.STDOUT)
 
 
 def install_cmd(chart_path: str, values_paths: List[str],
@@ -35,21 +44,21 @@ def get_deployment_cmd(name: str) -> List[str]:
     return ['helm', 'get', name]
 
 
-def delete_deployment_cmd(name: str) -> List[str]:
+def delete_release_cmd(name: str) -> List[str]:
     return ['helm', 'delete', '--purge', name]
 
 
 def deployment_exists() -> bool:
-    ret = shell.check_return_code(
+    ret = shell.get_return_code(
         get_deployment_cmd(user_config.get_current_release_name())
     )
     return ret == 0
 
 
-def clean_deployment(deployment_name: str = None) -> None:
-    if not deployment_name:
-        deployment_name = user_config.get_current_release_name()
-    shell.call(delete_deployment_cmd(deployment_name))
+def clean_release(release_name: str = None) -> None:
+    if not release_name:
+        release_name = user_config.get_current_release_name()
+    shell.call(delete_release_cmd(release_name))
 
 
 def ensure_deployment(exists: bool = True,
