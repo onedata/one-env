@@ -32,17 +32,17 @@ def generate_app_config(app_name: str, node_name: str,
 
     if (deploy_from_sources and any(a['name'] == app_name for a in
                                     node_config.get('sources', []))):
-        source_path = os.path.abspath(sources_paths.locate_oz_op(app_name,
-                                                                 service,
-                                                                 service_type,
-                                                                 node_name))
+        sources_path = os.path.abspath(sources_paths.locate_oz_op(app_name,
+                                                                  service,
+                                                                  service_type,
+                                                                  node_name))
 
-        if source_path.startswith('/home'):
-            app_config['hostPath'] = os.path.relpath(source_path,
+        if sources_path.startswith('/home'):
+            app_config['hostPath'] = os.path.relpath(sources_path,
                                                      host_home_dir)
         else:
             override_prefix = True
-            app_config['hostPath'] = source_path
+            app_config['hostPath'] = sources_path
 
     else:
         app_config['hostPath'] = ''
@@ -120,10 +120,13 @@ def generate_configs(sources_cfg: Dict[str, Dict], sources_cfg_path: str,
         # client is always attached to some provider
         oneclient_cfg = sources_cfg[service].get(SERVICE_ONECLIENT)
         if oneclient_cfg:
-            sources_type = oneclient_cfg.get('deployFromSources').get('type')
-            sources_paths.locate_oc(SERVICE_ONECLIENT,
-                                    get_matching_oneclient(service),
-                                    sources_type=sources_type)
+            deploy_from_sources_cfg = oneclient_cfg.get('deployFromSources')
+            sources_enabled = deploy_from_sources_cfg.get('enabled')
+            if sources_enabled:
+                sources_type = deploy_from_sources_cfg.get('type')
+                sources_paths.locate_oc(SERVICE_ONECLIENT,
+                                        get_matching_oneclient(service),
+                                        sources_type=sources_type)
 
         nodes_cfg[service] = {}
         service_nodes_cfg = generate_nodes_config(sources_cfg, service,

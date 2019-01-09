@@ -74,14 +74,14 @@ def locate_oc(app: str, service_name: str, generate_pod_name: bool = True,
                           .format(terminal.green_str(pod_substring),
                                   terminal.green_str(app),
                                   terminal.green_str(src_path)))
-            source_path = src_path
+            sources_path = src_path
             break
     else:
         terminal.error('Cannot locate oneclient binary for {}, '
                        'tried: {}'.format(app, sources_paths))
         sys.exit(1)
 
-    deployment_data.add_oneclient_deployment(pod_substring, source_path)
+    deployment_data.add_oneclient_deployment(pod_substring, sources_path)
     return location
 
 

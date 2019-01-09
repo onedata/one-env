@@ -37,5 +37,5 @@ def call_and_check_return_code(tokens: List[str], stdout: File = sp.DEVNULL,
                                shell: bool = False) -> None:
     ret = get_return_code(tokens, stdout=stdout, stderr=stderr, shell=shell)
     if ret != 0:
-        error('Error in command: {}. More information in logs '
-              'file.'.format(tokens))
+        error('Error in command: "{}". More information in logs '
+              'file.'.format(' '.join(tokens)))

@@ -261,9 +261,9 @@ def wait_for_pods_to_be_running(pod_substring: str, timeout: int = 60) -> None:
 
     terminal.error('Timeout while waiting for the following pods to be '
                    'running:')
-    '\n'.join('    {}'.format(get_name(pod))
-              for pod in pod_list
-              if not is_pod_running(pod))
+    print('\n'.join('    {}'.format(get_name(pod))
+                    for pod in pod_list
+                    if not is_pod_running(pod)))
 
 
 def clean_jobs() -> None:

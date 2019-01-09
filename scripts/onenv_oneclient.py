@@ -92,24 +92,16 @@ def start_oneclient_deployment(*, name: str, release_name: str,
     return pod_substring
 
 
-def rsync_sources(pod_substring: str,
-                  sources_type: Optional[str] = None) -> None:
+def configure_sources(pod_substring: str,
+                      sources_type: Optional[str] = None) -> None:
     locate_oc(SERVICE_ONECLIENT, pod_substring, generate_pod_name=False,
               sources_type=sources_type)
 
     log_file_path = os.path.join(deployments_dir.get_current_log_dir(),
                                  'rsync_{}.log'.format(pod_substring))
     deployment_data_cfg = deployment_data.get(default={})
-    sources.rsync_sources_for_oc(pod_substring, deployment_data_cfg,
-                                 log_file_path)
-
-
-def exec_to_oneclient_pod(pod_substring: str) -> None:
-    pod_name = pods.match_pod_and_run(pod_substring, pods.get_name)
-    if not pod_name:
-        sys.exit(1)
-    cmd = pods.exec_cmd(pod_name, 'bash', interactive=True, tty=True)
-    shell.call(cmd)
+    sources.rsync_sources_for_oc_deployment(pod_substring, deployment_data_cfg,
+                                            log_file_path)
 
 
 def main() -> None:
@@ -181,12 +173,6 @@ def main() -> None:
              'service.'
     )
 
-    oneclient_args_parser.add_argument(
-        '-e', '--exec',
-        action='store_true',
-        help='exec to started pod'
-    )
-
     oneclient_args = oneclient_args_parser.parse_args()
     release_name = oneclient_args.release_name or oneclient_args.name
 
@@ -201,10 +187,7 @@ def main() -> None:
     )
 
     if oneclient_args.sources:
-        rsync_sources(pod_substring, oneclient_args.sources_type)
-
-    if oneclient_args.exec:
-        exec_to_oneclient_pod(pod_substring)
+        configure_sources(pod_substring, oneclient_args.sources_type)
 
     user_config.ensure_exists()
 

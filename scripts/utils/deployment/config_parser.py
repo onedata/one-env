@@ -44,7 +44,7 @@ def set_onezone_main_admin(cfg: Dict[str, Dict],
 
 
 def enable_oneclients(my_values_file: IO[Any]) -> None:
-    my_values_file.write('{0}: &{0} true\n'.format('oneclients_enabled'))
+    my_values_file.write('oneclients_enabled: &oneclients_enabled true\n')
 
 
 def parse_my_values(my_values_path: str, env_cfg: Dict[str, Any]) -> None:

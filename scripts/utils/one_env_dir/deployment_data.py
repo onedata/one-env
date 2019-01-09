@@ -10,12 +10,16 @@ __license__ = "This software is released under the MIT license cited in " \
 import os
 import re
 import sys
+from threading import Lock
 from typing import Any, Dict
 
 from .. import terminal
 from ..one_env_dir import deployments_dir
 from ..yaml_utils import load_yaml, dump_yaml
 from ..names_and_paths import SERVICE_ONECLIENT
+
+
+DEPLOYMENT_DATA_LOCK = Lock()
 
 
 def get_current_deployment_data_path() -> str:
@@ -39,12 +43,12 @@ def put(new_data: Dict[Any, Any]) -> None:
 def delete_pod_from_sources(pod_name: str) -> None:
     curr_data = get(default={})
     try:
-        curr_sources = curr_data.get('sources')
+        curr_sources = curr_data['sources']
+        del curr_sources[pod_name]
     except KeyError:
         return
     else:
-        del curr_sources[pod_name]
-    dump_yaml(curr_data, get_current_deployment_data_path())
+        dump_yaml(curr_data, get_current_deployment_data_path())
 
 
 def add_release(release: str) -> None:
