@@ -66,14 +66,14 @@ def configure_os(os_configs: Dict[str, Dict], timeout: int) -> None:
             alias = service_name_to_alias_mapping(pod_name)
             os_config = os_configs.get('services').get(alias)
             if os_config:
-                pods.wait_for_pods_to_be_running(pod_name)
+                pods.wait_for_pods_container(service_type, pod_name)
                 pods.create_users(pod_name, os_config.get('users'))
                 pods.create_groups(pod_name, os_config.get('groups'))
         if service_type == 'oneclient':
             client_alias = pods.client_alias_to_pod_mapping().get(pod_name)
             os_config = os_configs.get('services').get(client_alias)
             if os_config:
-                pods.wait_for_pods_to_be_running(pod_name)
+                pods.wait_for_pods_container(service_type, pod_name)
                 pods.create_users(pod_name, os_config.get('users'))
                 pods.create_groups(pod_name, os_config.get('groups'))
 

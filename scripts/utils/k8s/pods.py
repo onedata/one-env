@@ -15,7 +15,8 @@ import subprocess
 from collections import defaultdict
 from typing import List, Callable, Dict, Union, IO, Any, Optional
 
-from kubernetes.client import V1Pod, V1EnvVar, V1Volume, V1PersistentVolume
+from kubernetes.client import (V1Pod, V1EnvVar, V1Volume, V1PersistentVolume,
+                               V1ContainerStatus)
 
 from ..deployment import sources_paths
 from ..one_env_dir import user_config
@@ -204,6 +205,20 @@ def get_ip(pod: V1Pod) -> Optional[str]:
     return pod.status.pod_ip
 
 
+def get_status_of_container(container_name: str,
+                            pod: V1Pod) -> Optional[V1ContainerStatus]:
+    container_statuses = pod.status.container_statuses
+    if container_statuses:
+        for status in container_statuses:
+            if status.name == container_name:
+                return status
+    return None
+
+
+def get_deletion_timestamp(pod: V1Pod):
+    return pod.metadata.deletion_timestamp
+
+
 def is_job(pod: V1Pod) -> bool:
     if pod.metadata.owner_references:
         return pod.metadata.owner_references[0].kind == 'Job'
@@ -249,21 +264,30 @@ def all_pods_running() -> bool:
     return all(is_pod_running(pod) for pod in list_pods())
 
 
-def wait_for_pods_to_be_running(pod_substring: str, timeout: int = 60) -> None:
+def wait_for_pods_container(container_name: str, pod_name: str,
+                            timeout: int = 60) -> None:
     start_time = time.time()
-    pod_list = []
 
     while int(time.time() - start_time) <= timeout:
-        pod_list = match_pods(pod_substring)
-        if all(is_pod_running(pod) for pod in pod_list):
-            return
+        try:
+            pod = match_pods(pod_name)[0]
+        except IndexError:
+            pass
+        else:
+            deletion_timestamp = get_deletion_timestamp(pod)
+            container_status = get_status_of_container(container_name, pod)
+            if not deletion_timestamp and container_status:
+                container_state = container_status.state
+                running_info = container_state.running
+                terminated_info = container_state.terminated
+                waiting_info = container_state.waiting
+                if running_info and not terminated_info and not waiting_info:
+                    return
         time.sleep(1)
 
-    terminal.error('Timeout while waiting for the following pods to be '
-                   'running:')
-    print('\n'.join('    {}'.format(get_name(pod))
-                    for pod in pod_list
-                    if not is_pod_running(pod)))
+    terminal.error('Timeout while waiting for the pod {} to be running'
+                   .format(pod_name))
+    return
 
 
 def clean_jobs() -> None:

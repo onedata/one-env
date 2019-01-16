@@ -100,3 +100,9 @@ onezone:
     managers: [node-1]
     workers: [node-2]
     databases: [node-1]
+
+
+# Determines if given service (onezone or oneprovider) should be automatically
+# deployed. By default this is set to true.
+oneprovider-1:
+  batchConfig: false
