@@ -11,6 +11,7 @@ import re
 import sys
 import time
 import signal
+import contextlib
 import subprocess
 from collections import defaultdict
 from typing import List, Callable, Dict, Union, IO, Any, Optional
@@ -205,8 +206,8 @@ def get_ip(pod: V1Pod) -> Optional[str]:
     return pod.status.pod_ip
 
 
-def get_status_of_container(container_name: str,
-                            pod: V1Pod) -> Optional[V1ContainerStatus]:
+def get_container_status(container_name: str,
+                         pod: V1Pod) -> Optional[V1ContainerStatus]:
     container_statuses = pod.status.container_statuses
     if container_statuses:
         for status in container_statuses:
@@ -264,18 +265,15 @@ def all_pods_running() -> bool:
     return all(is_pod_running(pod) for pod in list_pods())
 
 
-def wait_for_pods_container(container_name: str, pod_name: str,
-                            timeout: int = 60) -> None:
+def wait_for_container(container_name: str, pod_name: str,
+                       timeout: int = 60) -> None:
     start_time = time.time()
 
     while int(time.time() - start_time) <= timeout:
-        try:
+        with contextlib.suppress(IndexError):
             pod = match_pods(pod_name)[0]
-        except IndexError:
-            pass
-        else:
             deletion_timestamp = get_deletion_timestamp(pod)
-            container_status = get_status_of_container(container_name, pod)
+            container_status = get_container_status(container_name, pod)
             if not deletion_timestamp and container_status:
                 container_state = container_status.state
                 running_info = container_state.running
