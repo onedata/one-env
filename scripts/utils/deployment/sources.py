@@ -116,8 +116,8 @@ def rsync_sources_for_app(pod_name: str, sources_path: str, dest_path: str,
 def rsync_sources_for_oc_pod(pod_name: str, pod_sources_cfg: Dict[str, Any],
                              log_file_path: str):
     with open(log_file_path, 'w') as log_file:
-        pods.wait_for_pods_to_be_running(pod_name,
-                                         timeout=WAIT_FOR_POD_TIMEOUT)
+        pods.wait_for_container(SERVICE_ONECLIENT, pod_name,
+                                timeout=WAIT_FOR_POD_TIMEOUT)
         terminal.info('Rsyncing sources for pod {}'.format(pod_name))
         for sources_path in pod_sources_cfg.values():
             rsync_sources_for_app(pod_name, sources_path, ONECLIENT_BIN_PATH,
@@ -135,7 +135,8 @@ def rsync_sources_for_oc_pod(pod_name: str, pod_sources_cfg: Dict[str, Any],
 def rsync_sources_for_oc_deployment(pod_substring: str,
                                     deployment_data_dict: Dict[str, Dict],
                                     log_file_path: str) -> None:
-    pod_list = pods.match_pods(pod_substring)
+    pod_list = [pod for pod in pods.match_pods(pod_substring)
+                if not pods.get_deletion_timestamp(pod)]
     pod_sources_cfg = deployment_data_dict.get('oc-deployments').get(pod_substring)
     threads = []
     for pod in pod_list:
@@ -151,8 +152,9 @@ def rsync_sources_for_oc_deployment(pod_substring: str,
 
 def rsync_sources_for_oz_op(pod_name: str, nodes_cfg: Dict[str, Dict],
                             deployment_data_dict: Dict[str, Dict],
-                            log_file_path: str) -> None:
-    pods.wait_for_pods_to_be_running(pod_name, timeout=WAIT_FOR_POD_TIMEOUT)
+                            log_file_path: str, service_type: str) -> None:
+    pods.wait_for_container(service_type, pod_name,
+                            timeout=WAIT_FOR_POD_TIMEOUT)
     pod = pods.match_pods(pod_name)[0]
     service_name = pods.get_chart_name(pod)
     node_name = 'n{}'.format(pods.get_node_num(pod_name))
@@ -208,7 +210,8 @@ def rsync_sources(deployment_dir: str, log_directory_path: str,
             else:
                 thread = Thread(target=rsync_sources_for_oz_op,
                                 args=(pod_substring, nodes_cfg,
-                                      deployment_data_dict, log_file_path))
+                                      deployment_data_dict, log_file_path,
+                                      service_type))
                 thread.start()
                 threads.append(thread)
 

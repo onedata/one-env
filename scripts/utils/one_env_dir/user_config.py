@@ -12,7 +12,7 @@ import contextlib
 from shutil import copyfile
 
 from .. import terminal
-from ..common import replace_in_file
+from ..common import replace_in_file_using_fileinput
 from ..yaml_utils import load_yaml, dump_yaml
 from . import get_one_env_directory, get_host_home
 
@@ -55,13 +55,13 @@ def initialize() -> None:
         host_home_value = "'{}'".format(get_host_home())
         terminal.info('{key: >23}: {val: <0}'.format(key='hostHomeDir',
                                                      val=host_home_value))
-        replace_in_file(user_cfg_path, '$hostHomeDir', host_home_value,
-                        backup='.bak')
+        replace_in_file_using_fileinput(user_cfg_path, '$hostHomeDir',
+                                        host_home_value, backup='.bak')
 
         terminal.info('{key: >23}: {val: <0}'.format(key='kubeHostHomeDir',
                                                      val=host_home_value))
-        replace_in_file(user_cfg_path, '$kubeHostHomeDir', host_home_value,
-                        backup='.bak')
+        replace_in_file_using_fileinput(user_cfg_path, '$kubeHostHomeDir',
+                                        host_home_value, backup='.bak')
 
         terminal.warning('Please make sure that the auto-generated '
                          'config is correct')

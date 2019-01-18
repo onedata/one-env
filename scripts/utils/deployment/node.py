@@ -13,7 +13,7 @@ import shutil
 from typing import List
 
 from . import application
-from ..common import replace_in_file
+from ..common import replace_in_file_using_open
 from ..names_and_paths import APP_TYPE_PANEL, APP_ONEPANEL
 
 
@@ -23,8 +23,8 @@ def modify_app_config(app: application.Application, path: str) -> None:
                                 else app.name)
     for attr, val in app.config.items():
         app_attr = attr_fmt.format(attr)
-        replace_in_file(path, r'{{{}, .*}}'.format(app_attr),
-                        r'{{{}, "{}"}}'.format(app_attr, val), regexp=True)
+        replace_in_file_using_open(path, r'{{{}, .*}}'.format(app_attr),
+                                   r'{{{}, "{}"}}'.format(app_attr, val))
 
 
 # pylint: disable=too-few-public-methods
