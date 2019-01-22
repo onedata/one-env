@@ -12,6 +12,7 @@ oneprovider-paris:
 oneprovider-lisbon:
   enabled: true
 
+lumaJobEnabled: false
 allOneproviders: &allOneproviders
   - krakow
   - paris
