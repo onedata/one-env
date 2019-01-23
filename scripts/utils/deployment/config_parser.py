@@ -116,6 +116,8 @@ def parse_env_config(env_cfg: Dict[str, Any], base_sources_cfg_path: str,
     image_pull_policy = 'Always' if force_image_pull else 'IfNotPresent'
 
     parsed_env_cfg['global'] = {'imagePullPolicy': image_pull_policy}
+    if env_cfg.get('luma'):
+        parsed_env_cfg['lumaJobEnabled'] = True
 
     spaces_cfg = env_cfg.get('createSpaces')
     parse_spaces_cfg(spaces_cfg, parsed_env_cfg)
@@ -253,7 +255,6 @@ def parse_cluster_config(cluster_cfg: dict, parsed_cluster_cfg: dict) -> None:
                 [parse_node_num(node_name) for node_name in nodes_list]
 
 
-# TODO: add luma and graph for groups
 def parse_groups_config(groups_cfg: List[Dict],
                         parsed_groups_cfg: Dict[str, List]) -> None:
     """
@@ -271,10 +272,12 @@ def parse_groups_config(groups_cfg: List[Dict],
                         'enabled': True
                     }
                 }
+            if group.get('luma'):
+                group['luma'] = parse_luma_cfg(group.get('luma'))
     parsed_groups_cfg['groups'] = groups_cfg
 
 
-def parse_user_luma_cfg(user_luma_cfg: List[Dict]) -> List[Dict]:
+def parse_luma_cfg(user_luma_cfg: List[Dict]) -> List[Dict]:
     """
     luma:
         - provider: oneprovider-1
@@ -318,11 +321,10 @@ def parse_users_config(users_cfg: List[Dict],
                     }
                 }
             if user.get('luma'):
-                user['luma'] = parse_user_luma_cfg(user.get('luma', []))
+                user['luma'] = parse_luma_cfg(user.get('luma', []))
         parsed_users_cfg['users'] = users_cfg
 
 
-# TODO: add luma
 def parse_spaces_cfg(spaces_cfg: List[Dict],
                      new_env_cfg: Dict[str, List]) -> None:
     if isinstance(spaces_cfg, bool) and not spaces_cfg:
