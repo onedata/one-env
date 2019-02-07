@@ -97,7 +97,7 @@ def export_service_logs(service_apps: List[str], this_pod_logs_dir: str,
 
             subprocess.call(
                 pods.rsync_cmd('{}:{}'.format(pod_name, log_dir),
-                               app_dir), shell=True)
+                               app_dir))
         except subprocess.CalledProcessError as ex:
             print('Couldn\'t get logs for application {} in {} pod. '
                   'Reason: {}'.format(app, pod_name, ex.output))

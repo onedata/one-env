@@ -223,7 +223,8 @@ onedata-3p:
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
     log_level: *log_level
     nameOverride: oneprovider
-    wait-for-onezone: *wait-for-onezone-enabled
+    wait-for-onezone:
+      enabled: *wait-for-onezone-enabled
 
     onedata_anti_affinity_enabled: *onedata_anti_affinity_enabled
 
@@ -342,7 +343,8 @@ onedata-3p:
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
     log_level: *log_level
     nameOverride: oneprovider
-    wait-for-onezone: *wait-for-onezone-enabled
+    wait-for-onezone:
+      enabled: *wait-for-onezone-enabled
 
     onedata_anti_affinity_enabled: *onedata_anti_affinity_enabled
 
@@ -424,7 +426,8 @@ onedata-3p:
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
     log_level: *log_level
     nameOverride: oneprovider
-    wait-for-onezone: *wait-for-onezone-enabled
+    wait-for-onezone:
+      enabled: *wait-for-onezone-enabled
 
     oneprovider_nodes_count: *oneproviders_nodes_count
     cluster_config: *oneprovider_cluster_configs
