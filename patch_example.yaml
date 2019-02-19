@@ -1,0 +1,61 @@
+global:
+  # TODO: VFS-4942 Find a way to eliminate necessity for region and tld values
+  # to make deployment cluster independent
+   region: cluster
+   tld: local
+   imagePullPolicy: IfNotPresent
+
+
+groups:
+  # The most basic config
+  - &group1
+    name: group1
+
+  # Little bit more advanced configs
+  - &group_delta
+    name: delta
+    idps:
+      onezone:
+        enabled: true
+        mode: rest
+    posix:
+      gid: 50004
+  - &group_trois
+    name: trois
+    idps:
+      keycloak:
+        enabled: true
+        mode: duringCrossSupportJob
+    posix:
+      gid: 60003
+
+users:
+  - &user1
+    name: user1
+    password: password
+    groups:
+      - group: *group1
+    luma:
+      - provider: oneprovider-1
+        storages:
+          - name: posix
+            uid: 45148
+            gid: 45148
+
+spaces:
+  - name: space1
+    user: *user1
+    groups:
+      - group: *group1
+    supports:
+        - provider: "oneprovider-1"
+          storage_name: "posix"
+          size: '1000000000'
+  - name: space2
+    user: *user1
+    groups:
+      - group: *group1
+    supports:
+        - provider: "oneprovider-1"
+          storage_name: "posix"
+          size: '1000000000'

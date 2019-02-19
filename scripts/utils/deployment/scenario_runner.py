@@ -28,7 +28,7 @@ from ..names_and_paths import (CROSS_SUPPORT_JOB_REPO_PATH,
                                service_name_to_alias_mapping)
 
 
-CHART_VERSION = '0.2.14'
+CHART_VERSION = '0.2.15-rc1'
 
 
 def get_scenario_key(sources_val_path: str) -> str:

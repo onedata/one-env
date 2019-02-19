@@ -15,6 +15,7 @@ from typing import Dict, List
 
 from .utils.k8s import helm, pods
 from .utils import arg_help_formatter, yaml_utils
+from .utils.deployment.scenario_runner import CHART_VERSION
 from .utils.one_env_dir import user_config, deployments_dir, deployment_data
 from .utils.deployment.scenario_runner import update_charts_dependencies
 from .utils.deployment.config_parser import (parse_spaces_cfg,
@@ -80,6 +81,7 @@ def patch_deployment(patch: str, patch_release_name: str,
         helm_install_cmd = helm.install_cmd(CROSS_SUPPORT_JOB_REPO_PATH,
                                             [deployment_patch_path],
                                             release_name=patch_release_name)
+        helm_install_cmd.extend(['--version', CHART_VERSION])
 
     subprocess.check_call(helm_install_cmd, cwd=deployment_charts_path,
                           stderr=subprocess.STDOUT)
