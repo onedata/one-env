@@ -255,50 +255,57 @@ def parse_cluster_config(cluster_cfg: dict, parsed_cluster_cfg: dict) -> None:
                 [parse_node_num(node_name) for node_name in nodes_list]
 
 
+def get_provider_suffix(provider_name: str) -> str:
+    provider_alias = service_name_to_alias_mapping(provider_name)
+    return provider_alias.split('-')[-1]
+
+
+def get_default_group_idp(patch: bool = False) -> Dict[str, Dict]:
+    default_idp = {
+        'onezone': {
+            'enabled': True,
+            'mode': 'duringCrossSupportJob'
+                    if patch
+                    else 'duringKeycloakDeployment'
+        }
+    }
+    return default_idp
+
+
+def get_default_user_idp(user_type: str = 'regular',
+                         patch: bool = False) -> Dict[str, Dict]:
+    default_idp = {
+        'onepanel': {
+            'mode': 'rest' if patch else 'config',
+            'enabled': True,
+            'type': user_type
+        }
+    }
+    return default_idp
+
+
 def parse_groups_config(groups_cfg: List[Dict],
-                        parsed_groups_cfg: Dict[str, List]) -> None:
+                        parsed_cfg: Dict[str, Any],
+                        patch: bool = False) -> None:
     """
     groups:
         - name: group1
         - name: group2
     """
     if isinstance(groups_cfg, bool) and not groups_cfg:
-        parsed_groups_cfg['groups'] = []
+        parsed_cfg['groups'] = []
     else:
         for group in groups_cfg:
             if not group.get('idps'):
-                group['idps'] = {
-                    'onezone': {
-                        'enabled': True
-                    }
-                }
+                group['idps'] = get_default_group_idp(patch)
             if group.get('luma'):
-                group['luma'] = parse_luma_cfg(group.get('luma'))
-    parsed_groups_cfg['groups'] = groups_cfg
-
-
-def parse_luma_cfg(user_luma_cfg: List[Dict]) -> List[Dict]:
-    """
-    luma:
-        - provider: oneprovider-1
-          storages:
-            - name: posix
-              uid: 1001
-              gid: 1001
-    """
-    parsed_luma_cfg = []
-
-    for prov_cfg in user_luma_cfg:
-        provider_name = service_name_to_alias_mapping(prov_cfg.get('provider'))
-        del prov_cfg['provider']
-        prov_cfg['name'] = provider_name.split('-')[-1]
-
-        parsed_luma_cfg.append(prov_cfg)
-    return parsed_luma_cfg
+                group['luma'] = parse_luma_cfg(group.get('luma', []),
+                                               parsed_cfg)
+    parsed_cfg['groups'] = groups_cfg
 
 
 def parse_users_config(users_cfg: List[Dict],
-                       parsed_users_cfg: Dict[str, List],
+                       parsed_cfg: Dict[str, Any],
                        patch: bool = False) -> None:
     """
     users:
@@ -309,31 +316,44 @@ def parse_users_config(users_cfg: List[Dict],
             - *group1
     """
     if isinstance(users_cfg, bool) and not users_cfg:
-        parsed_users_cfg['users'] = []
+        parsed_cfg['users'] = []
     else:
         for user in users_cfg:
             if not user.get('idps'):
-                user['idps'] = {
-                    'onepanel': {
-                        'mode': 'rest' if patch else 'config',
-                        'enabled': True,
-                        'type': user.get('type', 'regular')
-                    }
-                }
+                user['idps'] = get_default_user_idp(user.get('type', 'regular'),
+                                                    patch)
             if user.get('luma'):
-                user['luma'] = parse_luma_cfg(user.get('luma', []))
-        parsed_users_cfg['users'] = users_cfg
+                user['luma'] = parse_luma_cfg(user.get('luma', []),
+                                              parsed_cfg)
+        parsed_cfg['users'] = users_cfg
 
 
 def parse_spaces_cfg(spaces_cfg: List[Dict],
-                     new_env_cfg: Dict[str, List]) -> None:
+                     parsed_cfg: Dict[str, Any]) -> None:
     if isinstance(spaces_cfg, bool) and not spaces_cfg:
-        new_env_cfg['spaces'] = []
+        parsed_cfg['spaces'] = []
     if isinstance(spaces_cfg, list):
         for space in spaces_cfg:
             if space.get('owner'):
                 space['user'] = space.get('owner')
             for support in space.get('supports', []):
-                provider_name = service_name_to_alias_mapping(support['provider'])
-                support['provider'] = provider_name.split('-')[-1]
-        new_env_cfg['spaces'] = spaces_cfg
+                support['provider'] = get_provider_suffix(support['provider'])
+                if support.get('luma'):
+                    enable_luma_job(parsed_cfg)
+        parsed_cfg['spaces'] = spaces_cfg
+
+
+def enable_luma_job(cfg: Dict[str, Any]) -> None:
+    cfg['lumaJobEnabled'] = True
+
+
+def parse_luma_cfg(luma_cfg: List[Dict], cfg: Dict[str, Any]) -> List[Dict]:
+    parsed_luma_cfg = []
+    enable_luma_job(cfg)
+
+    for prov_cfg in luma_cfg:
+        prov_cfg['name'] = get_provider_suffix(prov_cfg.get('provider'))
+        del prov_cfg['provider']
+        parsed_luma_cfg.append(prov_cfg)
+
+    return parsed_luma_cfg

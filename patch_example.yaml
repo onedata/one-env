@@ -7,9 +7,27 @@ global:
 
 
 groups:
+  # The most basic config
   - &group1
     name: group1
 
+  # Little bit more advanced configs
+  - &group_delta
+    name: delta
+    idps:
+      onezone:
+        enabled: true
+        mode: rest
+    posix:
+      gid: 50004
+  - &group_trois
+    name: trois
+    idps:
+      keycloak:
+        enabled: true
+        mode: duringCrossSupportJob
+    posix:
+      gid: 60003
 
 users:
   - &user1
