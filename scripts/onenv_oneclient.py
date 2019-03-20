@@ -92,7 +92,7 @@ def start_oneclient_deployment(*, name: str, release_name: str,
     return pod_substring
 
 
-def configure_sources(pod_substring: str,
+def configure_sources(pod_substring: str, timeout: int,
                       sources_type: Optional[str] = None) -> None:
     locate_oc(SERVICE_ONECLIENT, pod_substring, generate_pod_name=False,
               sources_type=sources_type)
@@ -101,7 +101,7 @@ def configure_sources(pod_substring: str,
                                  'rsync_{}.log'.format(pod_substring))
     deployment_data_cfg = deployment_data.get(default={})
     sources.rsync_sources_for_oc_deployment(pod_substring, deployment_data_cfg,
-                                            log_file_path)
+                                            log_file_path, timeout)
 
 
 def main() -> None:
@@ -173,6 +173,14 @@ def main() -> None:
              'service.'
     )
 
+    oneclient_args_parser.add_argument(
+        '-t', '--timeout',
+        type=int,
+        help='Timeout (in seconds) specifying how long wait for pod to '
+             'appear. It is used only when sources are enabled.',
+        default=120
+    )
+
     oneclient_args = oneclient_args_parser.parse_args()
     release_name = oneclient_args.release_name or oneclient_args.name
 
@@ -187,7 +195,8 @@ def main() -> None:
     )
 
     if oneclient_args.sources:
-        configure_sources(pod_substring, oneclient_args.sources_type)
+        configure_sources(pod_substring, oneclient_args.timeout,
+                          oneclient_args.sources_type)
 
     user_config.ensure_exists()
 

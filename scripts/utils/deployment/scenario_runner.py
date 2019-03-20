@@ -141,7 +141,7 @@ def run_scenario(deployment_dir: str, local_chart_path: str, debug: bool,
 
     if env_cfg.get('sources'):
         sources.rsync_sources(deployment_dir, deployment_logdir_path,
-                              nodes_cfg)
+                              nodes_cfg, timeout)
 
     if env_cfg.get('os-config'):
         configure_os(env_cfg.get('os-config'), timeout)
