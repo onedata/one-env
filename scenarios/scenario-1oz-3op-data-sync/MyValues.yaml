@@ -289,6 +289,12 @@ onedata-3p:
           - path: Landsat-5/TM/L1T/2010/06/21
             user: 40001 #user
             group: 42001 #gamma
+      - name: volume-data-sync-rw-luma-test
+        luma-enabled: *luma_enabled_posix
+        image: onedata/eo-data-mock:Landsat-5-sample-latest
+        imagePullPolicy: IfNotPresent
+        dataPath: /tmp
+        readOnly: false
 
     oneclient:
       image: *oc_image

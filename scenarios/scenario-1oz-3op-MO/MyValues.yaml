@@ -1,7 +1,7 @@
 global:
   # TODO: Find a way to eliminate necessity for region and tld values
   # to make deployment cluster independent
-  #releaseNameOverride: luma
+  #releaseNameOverride: ""
   region: dev
   tld: onedata.uk.to
   imagePullPolicy: "Always"
@@ -11,12 +11,14 @@ global:
 oneprovider-krakow:
   enabled: true
 oneprovider-paris:
-  enabled: false
+  enabled: true
 oneprovider-lisbon:
-  enabled: false
+  enabled: true
 
 allOneproviders: &allOneproviders
   - *op1s
+  - *op2s
+  - *op3s
 
 deployment_enabled: &deployment_enabled true
 
@@ -131,6 +133,7 @@ all_space_privileges: &all_space_privileges
   - space_remove_group
   - space_add_provider
   - space_remove_provider
+
 
 users: &all_users
   - &user_joe
@@ -277,7 +280,7 @@ users: &all_users
         mode: duringKeycloakDeployment
     password: password
     email: marie@example.com
-    oneclient: []
+    oneclient: *allOneproviders
     luma:
       - name: krakow
         storages:
@@ -304,42 +307,37 @@ groups_graph:
     children: [ *group_un ]
 
 spaces:
-  - name: "krk-p"
-    # TODO: change to owner
-    user: *user_joe 
-    # TODO: change to supportedby
-    supports:
-      - provider: "krakow"
-        storage_name: "posix"
-        size: '1073741824'
-  - name: "krk-c"
-    user: *user_joe 
-    supports:
-      - provider: "krakow"
-        storage_name: "ceph"
-        size: '1073741824'
-  - name: "krk-n"
-    user: *user_joe 
-    supports:
-      - provider: "krakow"
-        storage_name: "nfs"
-        size: '1073741824'
+  # Proper spaces
   - name: "krk-3"
-    user: *user_joe 
+    # TODO: change to owner
+    user: *user_joe
+    # TODO: change to supportedby
     supports:
       - provider: "krakow"
         storage_name: "s3"
         size: '1073741824'
-  - name: "krk-g"
-    user: *user_joe 
+  - name: "par-n"
+    user: *user_joe
     supports:
-      - provider: "krakow"
-        storage_name: "gluster"
+      - provider: "paris"
+        storage_name: "nfs"
         size: '1073741824'
-  - name: "krk-wi"
-    user: *user_joe 
+  - name: "lis-3"
+    user: *user_joe
+    supports:
+      - provider: "lisbon"
+        storage_name: "s3"
+        size: '1073741824'
+  - name: "krk-w"
+    user: *user_joe
     supports:
       - provider: "krakow"
+        storage_name: "webdav"
+        size: '1073741824'
+  - name: "par-wi"
+    user: *user_joe
+    supports:
+      - provider: "paris"
         storage_name: "webdav"
         size: '1073741824'
         mountInRoot: true
@@ -348,7 +346,53 @@ spaces:
         update:
           strategy: "simple_scan"
           deleteEnable: true
-  - name: "krk-pirw"
+  - name: "krk-n-par-3"
+    user: *user_joe
+    supports:
+      - provider: "krakow"
+        storage_name: "nfs"
+        size: '1073741824'
+      - provider: "paris"
+        storage_name: "s3"
+        size: '1073741824'
+  - name: "krk-3-lis-c"
+    user: *user_joe
+    supports:
+      - provider: "krakow"
+        storage_name: "s3"
+        size: '1073741824'
+      - provider: "lisbon"
+        storage_name: "ceph"
+        size: '1073741824'
+  - name: "par-n-lis-c"
+    user: *user_joe
+    supports:
+      - provider: "paris"
+        storage_name: "nfs"
+        size: '1073741824'
+      - provider: "lisbon"
+        storage_name: "ceph"
+        size: '1073741824'
+  - name: "krk-3-par-c-lis-n"
+    user: *user_joe
+    supports:
+      - provider: "krakow"
+        storage_name: "s3"
+        size: '1073741824'
+      - provider: "paris"
+        storage_name: "ceph"
+        size: '1073741824'
+      - provider: "lisbon"
+        storage_name: "nfs"
+        size: '1073741824'
+  - name: "krk-g"
+    user: *user_joe
+    supports:
+      - provider: "krakow"
+        storage_name: "gluster"
+        size: '1073741824'
+  # Proper spaces with import
+  - name: "krk-pirw-par-3-lis-n"
     user: *user_joe
     supports:
       - provider: "krakow"
@@ -360,7 +404,13 @@ spaces:
         update:
           strategy: "simple_scan"
           deleteEnable: true
-  - name: "krk-piro"
+      - provider: "paris"
+        storage_name: "s3"
+        size: '1073741824'
+      - provider: "lisbon"
+        storage_name: "nfs"
+        size: '1073741824'
+  - name: "krk-piro-par-c-lis-n"
     user: *user_joe
     supports:
       - provider: "krakow"
@@ -369,8 +419,14 @@ spaces:
         mountInRoot: true
         import:
           strategy: "simple_scan"
+      - provider: "paris"
+        storage_name: "ceph"
+        size: '1073741824'
+      - provider: "lisbon"
+        storage_name: "nfs"
+        size: '1073741824'
   # Luma enabled spaces
-  - name: "krk-pl"
+  - name: "krk-pl-par-c"
     user: *user_joe
     users:
       - user: *user_tom
@@ -394,7 +450,10 @@ spaces:
         size: '1073741824'
         luma:
           gid: 42001
-  - name: "krk-plirw"
+      - provider: "paris"
+        storage_name: "ceph"
+        size: '1073741824'
+  - name: "krk-plirw-par-c"
     user: *user_joe
     users:
       - user: *user_tom
@@ -402,8 +461,6 @@ spaces:
       - user: *user_meg
         privileges: *all_space_privileges
       - user: *user_karen
-        privileges: *all_space_privileges
-      - user: *user_pier
         privileges: *all_space_privileges
     groups:
       - group: *group_alpha
@@ -424,8 +481,11 @@ spaces:
         update:
           strategy: "simple_scan"
           deleteEnable: true
-        luma: 
+        luma:
           gid: 42001
+      - provider: "paris"
+        storage_name: "ceph"
+        size: '1073741824'
   # Null device spaces
   - name: "krk-iu"
     user: *user_joe
@@ -433,17 +493,89 @@ spaces:
       - provider: "krakow"
         storage_name: "IdealNullStorage"
         size: '1125899906842624'
-  - name: "krk-su"
+  - name: "par-su"
     user: *user_joe
     supports:
-      - provider: "krakow"
+      - provider: "paris"
         storage_name: "SlowNullStorage"
         size: '1125899906842624'
-  - name: "krk-bu"
+  - name: "par-bu"
     user: *user_joe
     supports:
+      - provider: "paris"
+        storage_name: "BusyNullStorage"
+        size: '1125899906842624'
+  - name: "lis-bu-par-bu"
+    user: *user_joe
+    supports:
+      - provider: "lisbon"
+        storage_name: "BusyNullStorage"
+        size: '1125899906842624'
+      - provider: "paris"
+        storage_name: "BusyNullStorage"
+        size: '1125899906842624'
+  - name: "lis-iu-par-iu"
+    user: *user_joe
+    supports:
+      - provider: "lisbon"
+        storage_name: "IdealNullStorage"
+        size: '1125899906842624'
+      - provider: "paris"
+        storage_name: "IdealNullStorage"
+        size: '1125899906842624'
+  - name: "lis-su-par-su"
+    user: *user_joe
+    supports:
+      - provider: "lisbon"
+        storage_name: "SlowNullStorage"
+        size: '1125899906842624'
+      - provider: "paris"
+        storage_name: "SlowNullStorage"
+        size: '1125899906842624'
+  - name: "par-bu-krk-bu"
+    user: *user_joe
+    supports:
+      - provider: "paris"
+        storage_name: "BusyNullStorage"
+        size: '1125899906842624'
       - provider: "krakow"
         storage_name: "BusyNullStorage"
+        size: '1125899906842624'
+  - name: "lis-bu-par-bu-krk-bu"
+    user: *user_joe
+    supports:
+      - provider: "lisbon"
+        storage_name: "BusyNullStorage"
+        size: '1125899906842624'
+      - provider: "paris"
+        storage_name: "BusyNullStorage"
+        size: '1125899906842624'
+      - provider: "krakow"
+        storage_name: "BusyNullStorage"
+        size: '1125899906842624'
+  - name: "lis-iu-par-iu-krk-iu"
+    user: *user_joe
+    supports:
+      - provider: "lisbon"
+        storage_name: "IdealNullStorage"
+        size: '1125899906842624'
+      - provider: "paris"
+        storage_name: "IdealNullStorage"
+        size: '1125899906842624'
+      - provider: "krakow"
+        storage_name: "IdealNullStorage"
+        size: '1125899906842624'
+  - name: "lis-su-par-su-krk-su"
+    user: *user_joe
+    supports:
+      - provider: "lisbon"
+        storage_name: "SlowNullStorage"
+        size: '1125899906842624'
+      - provider: "paris"
+        storage_name: "SlowNullStorage"
+        size: '1125899906842624'
+      - provider: "krakow"
+        storage_name: "SlowNullStorage"
         size: '1125899906842624'
 
 # Those variables are the unfortunate necessity of an issue discussed here:
@@ -474,8 +606,8 @@ volume-swift:
   enabled: *swift_enabled
 volume-webdav:
   enabled: *webdav_enabled
-  
-onedata-3p: 
+
+onedata-3p:
   enabled: *deployment_enabled
   oz_image: &oz_image onedata/onezone:18.02.0-rc13
   op_image: &op_image onedata/oneprovider:18.02.0-rc13
@@ -502,14 +634,14 @@ onedata-3p:
   oneprovidersWorkerOverlayConfig: &oneprovidersWorkerOverlayConfig |-
     [].
 
-  oneclients_enabled: &oneclients_enabled true
+  oneclients_enabled: &oneclients_enabled false
   oneclientFlags: &oneclientFlags --force-fullblock-read
   oneclientDirectIOEnabled: &oneclientDirectIOEnabled true
 
   onedata_cli_enabled: &onedata_cli_enabled true
 
-  luma_enabled: &luma_enabled true 
- 
+  luma_enabled: &luma_enabled true
+
   posix_enabled: &posix_enabled true
   s3_enabled: &s3_enabled true
   ceph_enabled: &ceph_enabled true
@@ -572,7 +704,7 @@ onedata-3p:
     image: *oz_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
     log_level: *log_level
-    generate-certificates: 
+    generate-certificates:
       enabled: true
     persistence:
       enabled: *onedata_persistence
@@ -583,7 +715,7 @@ onedata-3p:
       databases: [ ]
     saml-idp:
       enabled: &idp_enabled false
-      generate-certificates: 
+      generate-certificates:
         enabled: true
     onedata_anti_affinity_enabled: *onedata_anti_affinity_enabled
     panelOverlayConfig: |-
@@ -601,7 +733,7 @@ onedata-3p:
       enabled: &token_dispenser_enabled true
 
     elasticsearch:
-      enabled: &elasticsearch_enabled true
+      enabled: &elasticsearch_enabled false
 
     keycloak: &keycloak
       enabled: &keycloak_enabled true
@@ -623,7 +755,6 @@ onedata-3p:
   # What follows are the providers configurations for providers designated as:
   # krakow, paris, and lisbon
   oneprovider-krakow:
-    
     onepanel_generate_test_web_cert: true
     onepanel_trust_test_ca: true
     suffix: &op1s krakow
@@ -634,7 +765,7 @@ onedata-3p:
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
     log_level: *log_level
     nameOverride: oneprovider
-    wait-for-onezone: 
+    wait-for-onezone:
       enabled: *wait-for-onezone-enabled
 
     onedata_anti_affinity_enabled: *onedata_anti_affinity_enabled
@@ -649,7 +780,7 @@ onedata-3p:
       type: auto-generate
       disableSuffix: true
 
-    generate-certificates: 
+    generate-certificates:
       enabled: *oneproviders_generate_certificates
     persistence:
       enabled: *onedata_persistence
@@ -668,14 +799,11 @@ onedata-3p:
         dataPath: /data
         readOnly: false
         mountPermissions: 777
-        permissions: 
+        permissions:
           - path: Landsat-5
             # chmod -R command parameters
             # the root of the path is dataPath
-            mask: 777 # check this in regard to
-            # @here @Michał Wrzeszcz problem, który miał @Michal Orzechowski wynikał z tego, że to wszystko działo sie w syncowanym spaceie
-            # zaimportowany katalog miał złe uprawnienia na storage'u
-            # tzn nie miał write'a
+            mask: 777
       - name: volume-data-sync-ro
         luma-enabled: false
         image: onedata/eo-data-mock:Landsat-5-sample-latest
@@ -688,7 +816,7 @@ onedata-3p:
         imagePullPolicy: IfNotPresent
         dataPath: /data
         readOnly: false
-        permissions: 
+        permissions:
           - path: Landsat-5
             # chown -R command parameters
             # the root of the path is dataPath
@@ -702,8 +830,6 @@ onedata-3p:
             group: 42001 #gamma
 
     oneclient:
-      wait_for_oneprovider:
-        enabled: true		
       image: *oc_image
       debug_mode: *oneclients_debug_mode_enabled
       enabled: *oneclients_enabled
@@ -746,8 +872,172 @@ onedata-3p:
       enabled: *webdav_enabled
       suffix: *op1s
       luma-enabled: *luma_enabled_webdav
+
+    external-storages:
+      << : *external-storages
+
+  oneprovider-paris:
+    onepanel_generate_test_web_cert: true
+    onepanel_trust_test_ca: true
+    suffix: &op2s paris
+    geoLatitude: 48.8566
+    geoLongitude: 2.3522
+
+    image: *op_image
+    onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
+    log_level: *log_level
+    nameOverride: oneprovider
+    wait-for-onezone:
+      enabled: *wait-for-onezone-enabled
+
+    onedata_anti_affinity_enabled: *onedata_anti_affinity_enabled
+
+    oneprovider_nodes_count: *oneproviders_nodes_count
+    cluster_config: *oneprovider_cluster_configs
+
+    panelOverlayConfig: *oneprovidersPanelOverlayConfig
+    workerOverlayConfig: *oneprovidersWorkerOverlayConfig
+
+    onezone_service_url:
+      type: auto-generate
+      disableSuffix: true
+
+    generate-certificates:
+      enabled: *oneproviders_generate_certificates
+    persistence:
+      enabled: *onedata_persistence
+
+    luma:
+      suffix: *op2s
+      << : *luma_global
+
+    oneclient:
+      image: *oc_image
+      debug_mode: *oneclients_debug_mode_enabled
+      enabled: *oneclients_enabled
+      suffix: *op2s
+      users: *all_users
+      onedata_cli:
+        image: *cli_image
+      oneclientFlags: *oneclientFlags
+      directIO:
+        nfs:
+          enabled: *oneclientDirectIOEnabled
+    onedata-cli:
+      image: *cli_image
+      enabled: *onedata_cli_enabled
+      suffix: *op2s
+    posix:
+      enabled: *posix_enabled
+      luma-enabled: *luma_enabled_posix
+    volume-s3:
+      enabled: *s3_enabled
+      suffix: *op2s
+      luma-enabled: *luma_enabled_s3
+    volume-ceph:
+      enabled: *ceph_enabled
+      suffix: *op2s
+      luma-enabled: *luma_enabled_ceph
+    volume-nfs:
+      enabled: *nfs_enabled
+      suffix: *op2s
+      luma-enabled: *luma_enabled_nfs
+    volume-gluster:
+      enabled: *gluster_enabled
+      suffix: *op2s
+      luma-enabled: *luma_enabled_gluster
+    volume-swift:
+      enabled: *swift_enabled
+      suffix: *op2s
+      luma-enabled: *luma_enabled_swift
+    volume-webdav:
+      enabled: *webdav_enabled
+      suffix: *op2s
+      luma-enabled: *luma_enabled_webdav
       volume-data-sync:
         enabled: true
-      
+
+    external-storages:
+      << : *external-storages
+
+  oneprovider-lisbon:
+    onepanel_generate_test_web_cert: true
+    onepanel_trust_test_ca: true
+    suffix: &op3s lisbon
+    geoLatitude: 38.7223
+    geoLongitude: -9.1393
+
+    image: *op_image
+    onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
+    log_level: *log_level
+    nameOverride: oneprovider
+    wait-for-onezone:
+      enabled: *wait-for-onezone-enabled
+
+    oneprovider_nodes_count: *oneproviders_nodes_count
+    cluster_config: *oneprovider_cluster_configs
+
+    onedata_anti_affinity_enabled: *onedata_anti_affinity_enabled
+
+    panelOverlayConfig: *oneprovidersPanelOverlayConfig
+    workerOverlayConfig: *oneprovidersWorkerOverlayConfig
+
+    onezone_service_url:
+      type: auto-generate
+      disableSuffix: true
+
+    generate-certificates:
+      enabled: *oneproviders_generate_certificates
+    persistence:
+      enabled: *onedata_persistence
+
+    luma:
+      suffix: *op3s
+      << : *luma_global
+
+    oneclient:
+      image: *oc_image
+      debug_mode: *oneclients_debug_mode_enabled
+      enabled: *oneclients_enabled
+      suffix: *op3s
+      users: *all_users
+      onedata_cli:
+        image: *cli_image
+      oneclientFlags: *oneclientFlags
+      directIO:
+        nfs:
+          enabled: *oneclientDirectIOEnabled
+    onedata-cli:
+      image: *cli_image
+      enabled: *onedata_cli_enabled
+      suffix: *op3s
+    posix:
+      enabled: *posix_enabled
+      luma-enabled: *luma_enabled_posix
+    volume-s3:
+      enabled: *s3_enabled
+      suffix: *op3s
+      luma-enabled: *luma_enabled_s3
+    volume-ceph:
+      enabled: *ceph_enabled
+      suffix: *op3s
+      luma-enabled: *luma_enabled_ceph
+    volume-nfs:
+      enabled: *nfs_enabled
+      suffix: *op3s
+      luma-enabled: *luma_enabled_nfs
+    volume-gluster:
+      enabled: *gluster_enabled
+      suffix: *op3s
+      luma-enabled: *luma_enabled_gluster
+    volume-swift:
+      enabled: *swift_enabled
+      suffix: *op3s
+      luma-enabled: *luma_enabled_swift
+    volume-webdav:
+      enabled: *webdav_enabled
+      suffix: *op3s
+      luma-enabled: *luma_enabled_webdav
+
     external-storages:
       << : *external-storages

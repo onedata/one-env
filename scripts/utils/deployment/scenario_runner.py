@@ -28,7 +28,7 @@ from ..names_and_paths import (CROSS_SUPPORT_JOB_REPO_PATH,
                                service_name_to_alias_mapping)
 
 
-CHART_VERSION = '0.2.15-rc2'
+CHART_VERSION = '0.2.15-rc5'
 
 
 def get_scenario_key(sources_val_path: str) -> str:
@@ -141,7 +141,7 @@ def run_scenario(deployment_dir: str, local_chart_path: str, debug: bool,
 
     if env_cfg.get('sources'):
         sources.rsync_sources(deployment_dir, deployment_logdir_path,
-                              nodes_cfg)
+                              nodes_cfg, timeout)
 
     if env_cfg.get('os-config'):
         configure_os(env_cfg.get('os-config'), timeout)
