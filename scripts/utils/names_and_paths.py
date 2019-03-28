@@ -119,6 +119,14 @@ def rel_logs_dir(app: str) -> str:
     return join_path(rel_sources_dir(app), 'log')
 
 
+def rel_etc_dir(app: str) -> str:
+    return join_path(rel_sources_dir(app), 'etc')
+
+
+def abs_etc_dir(app: str) -> str:
+    return join_path('/', 'etc', app.replace('-', '_'))
+
+
 def abs_logs_dir(app: str) -> str:
     return join_path('/', 'var', 'log', app.replace('-', '_'))
 

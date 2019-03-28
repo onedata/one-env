@@ -7,7 +7,7 @@ global:
   region: cluster
   tld: local
   imagePullPolicy: "Always"
-  #hostNetwork: true
+  alpha: true
 
 allOneproviders: &allOneproviders
   - krakow
@@ -44,6 +44,8 @@ saml-idp:
   enabled: *idp_enabled
 keycloak:
   enabled: *keycloak_enabled
+elasticsearch:
+  enabled: *elasticsearch_enabled
 luma:
   enabled: *luma_enabled
 oneclient:
@@ -107,7 +109,7 @@ onedata-3p:
   volume_data_sync_enabled: &volume_data_sync_enabled false
 
   # Explicately wait for onezone pod to enter ready state before starting oneproviders
-  wait-for-onezone-enabled: &wait-for-onezone-enabled false
+  wait-for-onezone-enabled: &wait-for-onezone-enabled true
 
   # External for all providers
   external-storages: &external-storages
@@ -188,6 +190,9 @@ onedata-3p:
 
     token-dispenser:
       enabled: &token_dispenser_enabled true
+
+    elasticsearch:
+      enabled: &elasticsearch_enabled false
     
     keycloak: &keycloak
       enabled: &keycloak_enabled true 
@@ -284,6 +289,12 @@ onedata-3p:
           - path: Landsat-5/TM/L1T/2010/06/21
             user: 40001 #user
             group: 42001 #gamma
+      - name: volume-data-sync-rw-luma-test
+        luma-enabled: *luma_enabled_posix
+        image: onedata/eo-data-mock:Landsat-5-sample-latest
+        imagePullPolicy: IfNotPresent
+        dataPath: /tmp
+        readOnly: false
 
     oneclient:
       image: *oc_image

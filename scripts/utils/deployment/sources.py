@@ -22,13 +22,16 @@ from .. import terminal
 from ..one_env_dir import deployment_data
 from ..shell import call_and_check_return_code
 from ..names_and_paths import (SERVICE_ONECLIENT, ONECLIENT_BIN_PATH,
-                               get_service_type)
+                               get_service_type, rel_etc_dir, abs_etc_dir,
+                               APP_ONEZONE)
 
 
+CERT_DIRS = ['certs', 'cacerts']
+CONFIG_FILES = ['auth.config', 'overlay.config']
 OP_OZ_DIRS_TO_SYNC = ['_build', 'priv', 'src', 'include']
 SOURCES_READY_FILE_PATH = '/tmp/sources_ready.txt'
 
-WAIT_FOR_POD_TIMEOUT = 300
+DEFAULT_POD_TIMEOUT = 300
 
 
 def modify_onepanel_app_config(node_cfg: Node, panel_name: str, pod_name: str,
@@ -65,23 +68,43 @@ def create_ready_file_cmd(panel_path: str = None) -> List[str]:
     return cmd
 
 
-def copy_overlay_cfg(app_name: str, sources_path: str,
-                     pod_name: str, log_file: IO[Any]) -> None:
-    parsed_source_name = app_name.replace('-', '_')
-    overlay_cfg_path = '/etc/{}/overlay.config'.format(parsed_source_name)
+def copy_within_pod(pod_name: str, from_path: str, to_path: str,
+                    log_file: IO[Any], is_directory: bool = False):
+    if pods.file_exists_in_pod(pod_name, from_path):
+        cmd = ['bash', '-c']
+        recursive_opt = '-r' if is_directory else ''
+        cmd.append('cp {} {} {}'.format(recursive_opt, from_path, to_path))
 
-    if pods.file_exists_in_pod(pod_name, overlay_cfg_path):
-        destination_path = os.path.join(sources_path,
-                                        '_build/default/rel/{}/etc'
-                                        .format(parsed_source_name))
-        cmd = ['bash', '-c', 'cp {} {}'.format(overlay_cfg_path,
-                                               destination_path)]
-
-        terminal.info('Copying overlay.config from {} to '
-                      '{}'.format(overlay_cfg_path, destination_path))
-
+        terminal.info('Copying {} to {} on pod {}'
+                      .format(from_path, to_path, pod_name))
         call_and_check_return_code(pods.exec_cmd(pod_name, cmd),
                                    stdout=log_file)
+    else:
+        log_file.write('Skipping copying file {} as it does not exists in '
+                       'pod.\n'.format(from_path))
+
+
+def copy_certs(app_name: str, sources_path: str, pod_name: str,
+               log_file: IO[Any]) -> None:
+    for cert_dir in CERT_DIRS:
+        original_path = os.path.join(abs_etc_dir(app_name), cert_dir)
+        destination_path = os.path.join(sources_path, rel_etc_dir(app_name))
+        copy_within_pod(pod_name, original_path, destination_path, log_file,
+                        is_directory=True)
+
+
+def copy_overlay_cfg(app_name: str, sources_path: str,
+                     pod_name: str, log_file: IO[Any]) -> None:
+    original_path = os.path.join(abs_etc_dir(app_name), 'overlay.config')
+    destination_path = os.path.join(sources_path, rel_etc_dir(app_name))
+    copy_within_pod(pod_name, original_path, destination_path, log_file)
+
+
+def copy_auth_cfg(app_name: str, sources_path: str,
+                  pod_name: str, log_file: IO[Any]):
+    original_path = os.path.join(abs_etc_dir(app_name), 'auth.config')
+    destination_path = os.path.join(sources_path, rel_etc_dir(app_name))
+    copy_within_pod(pod_name, original_path, destination_path, log_file)
 
 
 def rsync_file(file_path: str, pod_name: str, pod_dest_path: str,
@@ -114,10 +137,11 @@ def rsync_sources_for_app(pod_name: str, sources_path: str, dest_path: str,
 
 
 def rsync_sources_for_oc_pod(pod_name: str, pod_sources_cfg: Dict[str, Any],
-                             log_file_path: str):
+                             log_file_path: str,
+                             timeout: int = DEFAULT_POD_TIMEOUT) -> None:
     with open(log_file_path, 'w') as log_file:
         pods.wait_for_container(SERVICE_ONECLIENT, pod_name,
-                                timeout=WAIT_FOR_POD_TIMEOUT)
+                                timeout=timeout)
         terminal.info('Rsyncing sources for pod {}'.format(pod_name))
         for sources_path in pod_sources_cfg.values():
             rsync_sources_for_app(pod_name, sources_path, ONECLIENT_BIN_PATH,
@@ -134,7 +158,8 @@ def rsync_sources_for_oc_pod(pod_name: str, pod_sources_cfg: Dict[str, Any],
 
 def rsync_sources_for_oc_deployment(pod_substring: str,
                                     deployment_data_dict: Dict[str, Dict],
-                                    log_file_path: str) -> None:
+                                    log_file_path: str,
+                                    timeout: int = DEFAULT_POD_TIMEOUT) -> None:
     pod_list = [pod for pod in pods.match_pods(pod_substring)
                 if not pods.get_deletion_timestamp(pod)]
     pod_sources_cfg = deployment_data_dict.get('oc-deployments').get(pod_substring)
@@ -142,7 +167,7 @@ def rsync_sources_for_oc_deployment(pod_substring: str,
     for pod in pod_list:
         thread = Thread(target=rsync_sources_for_oc_pod,
                         args=(pods.get_name(pod), pod_sources_cfg,
-                              log_file_path))
+                              log_file_path, timeout))
         thread.start()
         threads.append(thread)
 
@@ -152,9 +177,10 @@ def rsync_sources_for_oc_deployment(pod_substring: str,
 
 def rsync_sources_for_oz_op(pod_name: str, nodes_cfg: Dict[str, Dict],
                             deployment_data_dict: Dict[str, Dict],
-                            log_file_path: str, service_type: str) -> None:
+                            log_file_path: str, service_type: str,
+                            timeout: int) -> None:
     pods.wait_for_container(service_type, pod_name,
-                            timeout=WAIT_FOR_POD_TIMEOUT)
+                            timeout=timeout)
     pod = pods.match_pods(pod_name)[0]
     service_name = pods.get_chart_name(pod)
     node_name = 'n{}'.format(pods.get_node_num(pod_name))
@@ -176,6 +202,9 @@ def rsync_sources_for_oz_op(pod_name: str, nodes_cfg: Dict[str, Dict],
                 modify_onepanel_app_config(node_cfg, panel_name, pod_name,
                                            log_file, sources_path)
                 panel_path = sources_path
+                copy_certs(app_name, sources_path, pod_name, log_file)
+            if app_name == APP_ONEZONE:
+                copy_auth_cfg(app_name, sources_path, pod_name, log_file)
 
         if not panel_from_sources:
             modify_onepanel_app_config(node_cfg, panel_name, pod_name,
@@ -191,7 +220,7 @@ def rsync_sources_for_oz_op(pod_name: str, nodes_cfg: Dict[str, Dict],
 
 
 def rsync_sources(deployment_dir: str, log_directory_path: str,
-                  nodes_cfg: Dict[str, Dict]) -> None:
+                  nodes_cfg: Dict[str, Dict], timeout: int) -> None:
     deployment_data_path = os.path.join(deployment_dir, 'deployment_data.yml')
     with open(deployment_data_path, 'r') as deployment_data_file:
         deployment_data_dict = yaml.load(deployment_data_file)
@@ -204,14 +233,14 @@ def rsync_sources(deployment_dir: str, log_directory_path: str,
             if service_type == SERVICE_ONECLIENT:
                 thread = Thread(target=rsync_sources_for_oc_deployment,
                                 args=(pod_substring, deployment_data_dict,
-                                      log_file_path))
+                                      log_file_path, timeout))
                 thread.start()
                 threads.append(thread)
             else:
                 thread = Thread(target=rsync_sources_for_oz_op,
                                 args=(pod_substring, nodes_cfg,
                                       deployment_data_dict, log_file_path,
-                                      service_type))
+                                      service_type, timeout))
                 thread.start()
                 threads.append(thread)
 

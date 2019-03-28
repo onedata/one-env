@@ -4,6 +4,8 @@ global:
    region: cluster
    tld: local
    imagePullPolicy: IfNotPresent
+   alpha: true
+
 
 oneprovider-krakow:
   enabled: true
@@ -564,6 +566,8 @@ saml-idp:
   enabled: *idp_enabled
 keycloak:
   enabled: *keycloak_enabled
+elasticsearch:
+  enabled: *elasticsearch_enabled
 luma:
   enabled: *luma_enabled
 oneclient:
@@ -624,7 +628,7 @@ onedata-3p:
   volume_data_sync_enabled: &volume_data_sync_enabled false
 
   # Explicately wait for onezone pod to enter ready state before starting oneproviders
-  wait-for-onezone-enabled: &wait-for-onezone-enabled false
+  wait-for-onezone-enabled: &wait-for-onezone-enabled true
 
   # External for all providers
   external-storages: &external-storages
@@ -704,6 +708,9 @@ onedata-3p:
 
     token-dispenser:
       enabled: &token_dispenser_enabled true
+
+    elasticsearch:
+      enabled: &elasticsearch_enabled false
 
     keycloak: &keycloak
       enabled: &keycloak_enabled false

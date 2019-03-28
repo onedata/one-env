@@ -54,7 +54,8 @@ SERVICES_PARAMS = {
                     list(MIXED_PARAM_MAPPING.keys())),
     'oneclient': ['service-type', 'ip', 'container-id', 'provider-host'],
     'onedata-cli': DEFAULT_PARAMS,
-    'luma': DEFAULT_PARAMS
+    'luma': DEFAULT_PARAMS,
+    'client': DEFAULT_PARAMS
 }
 
 
