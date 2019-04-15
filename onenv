@@ -16,31 +16,34 @@ import importlib
 
 SCRIPT_DESCRIPTION = 'Runs onenv commands'
 ONENV_COMMANDS = ('attach', 'clean', 'exec', 'export', 'gui', 'hosts', 'init',
-                  'logs', 'oneclient', 'patch', 'status', 'up', 'update',
-                  'wait', 'watch')
+                  'logs', 'oneclient', 'patch', 'pull_artifacts', 'status',
+                  'up', 'update', 'wait', 'watch')
 EPILOG = '''
 Onenv commands:
-       attach    - attaches directly to erlang VM in chosen pod 
-       clean     - removes current onedata deployment and cleans up 
-       exec      - execs to chosen pod with an interactive shell 
-       export    - gathers all logs and data from current deployment and 
-                   places them in desired location 
-       gui       - opens the GUI hosted on given pod in default browser 
-       hosts     - adds entries in /etc/hosts for all nodes in current 
-                   deployment 
-       init      - creates ~/.one-env directory and config files
-       logs      - displays logs of chosen pod 
-       oneclient - allows to start new oneclients (k8s deployment), 
-                   that can be configured using configuration file or command 
-                   line options.
-       patch     - configures onedata deployment with given patch (patch is
-                   yaml file with description of spaces, users, groups 
-                   and luma config) 
-       status    - displays the status of current onedata deployment 
-       up        - sets up a onedata deployment on kubernetes cluster 
-       update    - updates sources for current deployment or given pod 
-       wait      - waits for current deployment to be ready 
-       watch     - starts watcher for current deployment or given pod
+       attach         - attaches directly to erlang VM in chosen pod 
+       clean          - removes current onedata deployment and cleans up 
+       exec           - execs to chosen pod with an interactive shell 
+       export         - gathers all logs and data from current deployment and 
+                        places them in desired location 
+       gui            - opens the GUI hosted on given pod in default browser 
+       hosts          - adds entries in /etc/hosts for all nodes in current 
+                        deployment 
+       init           - creates ~/.one-env directory and config files
+       logs           - displays logs of chosen pod 
+       oneclient      - allows to start new oneclients (k8s deployment), 
+                        that can be configured using configuration file or 
+                        command line options.
+       patch          - configures onedata deployment with given patch (patch 
+                        is yaml file with description of spaces, users, groups 
+                        and luma config) 
+       pull_artifacts - downloads missing sources from artifact repository.
+                        Branches can be configured using yaml file or command
+                        line arguments.
+       status         - displays the status of current onedata deployment 
+       up             - sets up a onedata deployment on kubernetes cluster 
+       update         - updates sources for current deployment or given pod 
+       wait           - waits for current deployment to be ready 
+       watch          - starts watcher for current deployment or given pod
 '''
 
 
