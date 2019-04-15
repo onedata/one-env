@@ -12,3 +12,5 @@
 .vscode
 
 test_env_config.yaml
+artifacts_dir
+sources_info.yaml

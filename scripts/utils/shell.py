@@ -16,8 +16,8 @@ from .terminal import error
 File = Union[None, int, IO[Any]]
 
 
-def call(tokens: List[str]) -> int:
-    return sp.call(tokens)
+def call(tokens: List[str], cwd: str = None) -> int:
+    return sp.call(tokens, cwd=cwd)
 
 
 def get_return_code(tokens: List[str], stdout: File = sp.DEVNULL,
@@ -27,8 +27,8 @@ def get_return_code(tokens: List[str], stdout: File = sp.DEVNULL,
 
 
 def check_output(tokens: List[str],
-                 stderr: File = sp.DEVNULL) -> str:
-    output = sp.check_output(tokens, stderr=stderr)
+                 stderr: File = sp.DEVNULL, cwd: str = None,) -> str:
+    output = sp.check_output(tokens, stderr=stderr, cwd=cwd)
     return output.decode('utf-8').strip()
 
 
