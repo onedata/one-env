@@ -23,6 +23,7 @@ from .utils.names_and_paths import (APP_TYPE_CLUSTER_MANAGER, APP_TYPE_WORKER,
 def logs(pod: V1Pod, clipboard: bool, app_type: str, log_file: str,
          follow: bool, infinity: bool) -> None:
     interactive = not clipboard
+    service_type = pods.get_service_type(pod)
 
     if app_type:
         res = pods.app_logs(pod, app_type=app_type, logfile=log_file,
@@ -30,7 +31,8 @@ def logs(pod: V1Pod, clipboard: bool, app_type: str, log_file: str,
                             follow=follow, infinite=infinity)
     else:
         res = pods.pod_logs(pod, interactive=interactive,
-                            follow=follow, infinite=infinity)
+                            follow=follow, infinite=infinity,
+                            container=service_type)
 
     if clipboard and res:
         pyperclip.copy(res)

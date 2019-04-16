@@ -10,10 +10,12 @@ __license__ = "This software is released under the MIT license cited in " \
 import os
 import sys
 import contextlib
-from typing import Optional
+from typing import Optional, Tuple
 
+from ..artifacts import LOCAL_ARTIFACTS_DIR
 from .. import terminal
 from ..one_env_dir import deployment_data
+from ..common import find_files_in_relative_paths
 from ..names_and_paths import (gen_pod_name, APP_OZ_PANEL, APP_OP_PANEL,
                                APP_ONEPROVIDER, APP_ONEZONE,
                                APP_CLUSTER_MANAGER, join_path, rel_sources_dir,
@@ -32,20 +34,41 @@ RELEASE_DIRS_TO_CHECK = {
 }
 
 
-def get_sources_location(app: str) -> str:
-    cwd = os.getcwd()
+def get_onepanel_sources_locations() -> Tuple[Optional[str], Optional[str]]:
+    ozp_src_path = get_sources_location(APP_OZ_PANEL, exit_on_error=False)
+    opp_src_path = get_sources_location(APP_OP_PANEL, exit_on_error=False)
+
+    warning_msg_fmt = ('Found sources for {} in {} but did not find sources '
+                       'for {}. It is probably due to fact that panel was '
+                       'build only for one of onezone / oneprovider. Please '
+                       'see onepanel\'s README for more information.')
+
+    if ozp_src_path and not opp_src_path:
+        terminal.warning(warning_msg_fmt.format(APP_OZ_PANEL, ozp_src_path,
+                                                APP_OP_PANEL))
+
+    if not ozp_src_path and opp_src_path:
+        terminal.warning(warning_msg_fmt.format(APP_OP_PANEL, ozp_src_path,
+                                                APP_OZ_PANEL))
+
+    return ozp_src_path, opp_src_path
+
+
+def get_sources_location(app: str,
+                         exit_on_error: bool = True) -> Optional[str]:
     dirs_to_check = RELEASE_DIRS_TO_CHECK.get(app, [])
-    paths_to_check = [join_path(cwd, p) for p in dirs_to_check]
-    paths_to_check.extend([join_path(cwd, '../', p) for p in dirs_to_check])
-    paths_to_check.extend([join_path(cwd, '../../', p) for p in dirs_to_check])
-    location = next((path for path in paths_to_check if os.path.isdir(path)),
-                    None)
+    location, checked_path = find_files_in_relative_paths(dirs_to_check,
+                                                          ['../', '../../',
+                                                           LOCAL_ARTIFACTS_DIR])
 
     if not location:
-        terminal.error('Cannot locate directory for {}, tried:'.format(app))
-        for path in paths_to_check:
-            terminal.error('    ' + path)
-        sys.exit(1)
+        if exit_on_error:
+            terminal.error('Cannot locate directory for {}, tried:'.format(app))
+            for path in checked_path:
+                terminal.error('    ' + path)
+            sys.exit(1)
+        else:
+            return None
 
     location = os.path.normpath(location)
 

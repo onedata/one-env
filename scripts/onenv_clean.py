@@ -32,6 +32,9 @@ def clean_deployment(all_deployments: bool = False,
         else:
             for release in releases:
                 helm.clean_release(release)
+            # ensure default deployment is deleted
+            # useful in case of k8s errors on bamboo
+            helm.clean_release()
     else:
         helm.clean_release()
 
