@@ -90,12 +90,20 @@ def exec_cmd(pod: str, command: Any, interactive: bool = False,
     return cmd
 
 
-def logs_cmd(pod: str, follow: bool = False) -> List[str]:
+def logs_cmd(pod: str, follow: bool = False,
+             container: Optional[str] = None) -> List[str]:
+    cmd = ['kubectl', '--namespace', user_config.get_current_namespace(),
+           'logs']
+
     if follow:
-        return ['kubectl', '--namespace', user_config.get_current_namespace(),
-                'logs', '-f', pod]
-    return ['kubectl', '--namespace', user_config.get_current_namespace(),
-            'logs', pod]
+        cmd.append('-f')
+
+    cmd.append(pod)
+
+    if container:
+        cmd.extend(['-c', container])
+
+    return cmd
 
 
 def desc_stateful_set_cmd() -> List[str]:
@@ -213,6 +221,14 @@ def get_container_status(container_name: str,
         for status in container_statuses:
             if status.name == container_name:
                 return status
+    return None
+
+
+def get_container_image(container_name: str,
+                        pod: V1Pod) -> Optional[str]:
+    for container_status in pod.status.container_statuses:
+        if container_status.name == container_name:
+            return container_status.image
     return None
 
 
@@ -342,16 +358,17 @@ def file_exists_in_pod(pod: str, path: str) -> bool:
 
 def pod_logs(pod: V1Pod, interactive: bool = False, follow: bool = False,
              infinite: bool = False,
-             stderr: Union[None, int, IO[Any]] = subprocess.DEVNULL) -> Optional[str]:
+             stderr: Union[None, int, IO[Any]] = subprocess.DEVNULL,
+             container: Optional[str] = None) -> Optional[str]:
     pod_name = get_name(pod)
     if interactive:
         if follow:
-            logs_follow(pod, infinite=infinite)
+            logs_follow(pod, infinite=infinite, container=container)
         else:
-            shell.call(logs_cmd(pod_name, False))
+            shell.call(logs_cmd(pod_name, False, container=container))
         return None
-    else:
-        return shell.check_output(logs_cmd(pod_name), stderr)
+
+    return shell.check_output(logs_cmd(pod_name, container=container), stderr)
 
 
 def end_log(res, logs_follow_fun, *args, infinite=False) -> None:
@@ -387,10 +404,11 @@ def logs(condition, *args):
     terminal.horizontal_line()
 
 
-def logs_follow(pod: V1Pod, infinite: bool = False) -> None:
+def logs_follow(pod: V1Pod, infinite: bool = False,
+                container: Optional[str] = None) -> None:
     pod_name = get_name(pod)
     logs(is_pod_running, pod)
-    res = shell.call(logs_cmd(pod_name, True))
+    res = shell.call(logs_cmd(pod_name, True, container=container))
     end_log(res, logs_follow, pod, infinite=infinite)
 
 
@@ -484,7 +502,7 @@ def match_pod_and_run(pod_substring: str, fun: Callable[..., Optional[Any]],
             terminal.error('There are no pods running')
         return None
 
-    elif len(matching_pods) == 1:
+    if len(matching_pods) == 1:
         if fun_args:
             return fun(matching_pods[0], *fun_args)
         return fun(matching_pods[0])

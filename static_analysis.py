@@ -27,7 +27,7 @@ def main():
 
     static_analysis_parser.add_argument(
         '-i', '--image',
-        default='onedata/python_static_analyser:v1',
+        default='onedata/python_static_analyser:v2',
         help='Docker image'
     )
 
