@@ -157,6 +157,8 @@ Other requirements:
 * rsync version 3.1.x
 * helm
 * kubectl
+* helm diff plugin (https://github.com/databus23/helm-diff) - required 
+only for diff option in `onenv upgrade` command
 
 
 Common problems

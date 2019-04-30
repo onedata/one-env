@@ -12,7 +12,7 @@ __license__ = "This software is released under the MIT license cited in " \
 import os
 from itertools import chain
 from threading import Thread
-from typing import List, IO, Any, Dict
+from typing import List, IO, Any, Dict, Optional
 
 import yaml
 
@@ -20,10 +20,13 @@ from .node import Node
 from ..k8s import pods
 from .. import terminal
 from ..one_env_dir import deployment_data
-from ..shell import call_and_check_return_code
+from ..shell import call_and_check_return_code, call
 from ..names_and_paths import (SERVICE_ONECLIENT, ONECLIENT_BIN_PATH,
                                get_service_type, rel_etc_dir, abs_etc_dir,
-                               APP_ONEZONE)
+                               rel_logs_dir, abs_logs_dir,
+                               abs_mnesia_dir, APP_NAME_TO_APP_TYPE_MAPPING,
+                               APP_TYPE_WORKER, APP_TYPE_PANEL,
+                               APP_TYPE_CLUSTER_MANAGER, rel_mnesia_dir)
 
 
 CERT_DIRS = ['certs', 'cacerts']
@@ -32,6 +35,56 @@ OP_OZ_DIRS_TO_SYNC = ['_build', 'priv', 'src', 'include']
 SOURCES_READY_FILE_PATH = '/tmp/sources_ready.txt'
 
 DEFAULT_POD_TIMEOUT = 300
+
+PERSISTENCE_DIR = '/volumes/persistence'
+PERSISTENCE_PATHS_FUNCTIONS = {
+    APP_TYPE_WORKER: {
+        'abs_paths': [abs_etc_dir, abs_logs_dir],
+        'rel_paths': [rel_etc_dir, rel_logs_dir]
+    },
+    APP_TYPE_PANEL: {
+        'abs_paths': [abs_etc_dir, abs_logs_dir, abs_mnesia_dir],
+        'rel_paths': [rel_etc_dir, rel_logs_dir, rel_mnesia_dir]
+    },
+    APP_TYPE_CLUSTER_MANAGER: {
+        'abs_paths': [abs_etc_dir, abs_logs_dir],
+        'rel_paths': [rel_etc_dir, rel_logs_dir]
+    }
+}
+
+
+def get_persistence_dirs(app_name: str) -> Dict[str, List[str]]:
+    app_type = APP_NAME_TO_APP_TYPE_MAPPING[app_name]
+    path_functions = PERSISTENCE_PATHS_FUNCTIONS.get(app_type)
+    return {'abs_paths': [fun(app_name)
+                          for fun in path_functions.get('abs_paths', [])],
+            'rel_paths': [fun(app_name)
+                          for fun in path_functions.get('rel_paths', [])]}
+
+
+def create_persistence_symlinks(sources_path: str, pod_name: str,
+                                app_name: str, rsync_persistence_dirs: bool,
+                                log_file: Optional[IO[Any]] = None) -> None:
+    persistence_paths = get_persistence_dirs(app_name)
+    src_paths = [os.path.join(PERSISTENCE_DIR, abs_dir_path[1:])
+                 for abs_dir_path in persistence_paths['abs_paths']]
+    dest_paths = [os.path.join(sources_path, rel_dir_path)
+                  for rel_dir_path in persistence_paths['rel_paths']]
+
+    for src_path, dest_path in zip(src_paths, dest_paths):
+        if not pods.file_exists_in_pod(pod_name, src_path):
+            mkdir_cmd = ['bash', '-c', 'mkdir -p {}'.format(src_path)]
+            call(pods.exec_cmd(pod_name, mkdir_cmd))
+
+        if not pods.file_exists_in_pod(pod_name, os.path.dirname(dest_path)):
+            mkdir_cmd = ['bash', '-c',
+                         'mkdir -p {}'.format(os.path.dirname(dest_path))]
+            call(pods.exec_cmd(pod_name, mkdir_cmd))
+        pods.create_symlink(pod_name, src_path, dest_path)
+
+        if rsync_persistence_dirs:
+            rsync_file(dest_path, pod_name,
+                       '{}:{}'.format(pod_name, dest_path), log_file)
 
 
 def modify_onepanel_app_config(node_cfg: Node, panel_name: str, pod_name: str,
@@ -57,6 +110,10 @@ def modify_onepanel_app_config(node_cfg: Node, panel_name: str, pod_name: str,
                                stdout=log_file)
 
 
+def is_ready_file_present_in_pod(pod_name: str) -> bool:
+    return pods.file_exists_in_pod(pod_name, SOURCES_READY_FILE_PATH)
+
+
 def create_ready_file_cmd(panel_path: str = None) -> List[str]:
     cmd = ['bash', '-c']
 
@@ -68,64 +125,28 @@ def create_ready_file_cmd(panel_path: str = None) -> List[str]:
     return cmd
 
 
-def copy_within_pod(pod_name: str, from_path: str, to_path: str,
-                    log_file: IO[Any], is_directory: bool = False):
-    if pods.file_exists_in_pod(pod_name, from_path):
-        cmd = ['bash', '-c']
-        recursive_opt = '-r' if is_directory else ''
-        cmd.append('cp {} {} {}'.format(recursive_opt, from_path, to_path))
-
-        terminal.info('Copying {} to {} on pod {}'
-                      .format(from_path, to_path, pod_name))
-        call_and_check_return_code(pods.exec_cmd(pod_name, cmd),
-                                   stdout=log_file)
-    else:
-        log_file.write('Skipping copying file {} as it does not exists in '
-                       'pod.\n'.format(from_path))
-
-
-def copy_certs(app_name: str, sources_path: str, pod_name: str,
-               log_file: IO[Any]) -> None:
-    for cert_dir in CERT_DIRS:
-        original_path = os.path.join(abs_etc_dir(app_name), cert_dir)
-        destination_path = os.path.join(sources_path, rel_etc_dir(app_name))
-        copy_within_pod(pod_name, original_path, destination_path, log_file,
-                        is_directory=True)
-
-
-def copy_overlay_cfg(app_name: str, sources_path: str,
-                     pod_name: str, log_file: IO[Any]) -> None:
-    original_path = os.path.join(abs_etc_dir(app_name), 'overlay.config')
-    destination_path = os.path.join(sources_path, rel_etc_dir(app_name))
-    copy_within_pod(pod_name, original_path, destination_path, log_file)
-
-
-def copy_auth_cfg(app_name: str, sources_path: str,
-                  pod_name: str, log_file: IO[Any]):
-    original_path = os.path.join(abs_etc_dir(app_name), 'auth.config')
-    destination_path = os.path.join(sources_path, rel_etc_dir(app_name))
-    copy_within_pod(pod_name, original_path, destination_path, log_file)
-
-
 def rsync_file(file_path: str, pod_name: str, pod_dest_path: str,
-               log_file: IO[Any]):
+               log_file: IO[Any], excludes: Optional[List[str]] = None):
     if os.path.isdir(file_path):
         mkdir_cmd = ['bash', '-c', 'mkdir -p {}'.format(file_path)]
         call_and_check_return_code(pods.exec_cmd(pod_name, mkdir_cmd),
                                    stdout=log_file)
     if os.path.exists(file_path):
-        call_and_check_return_code(pods.rsync_cmd(file_path, pod_dest_path),
+        call_and_check_return_code(pods.rsync_cmd(file_path, pod_dest_path,
+                                                  excludes=excludes),
                                    stdout=log_file)
 
 
 def rsync_sources_for_app(pod_name: str, sources_path: str, dest_path: str,
-                          files_to_rsync: List[str], log_file: IO[Any]) -> None:
+                          files_to_rsync: List[str], log_file: IO[Any],
+                          excludes: Optional[List[str]] = None) -> None:
     pod_dest_path = '{}:{}'.format(pod_name, dest_path)
     threads = []
     for file_to_sync in files_to_rsync:
         file_path = os.path.join(sources_path, file_to_sync)
         thread = Thread(target=rsync_file, args=(file_path, pod_name,
-                                                 pod_dest_path, log_file))
+                                                 pod_dest_path, log_file,
+                                                 excludes))
         thread.start()
         threads.append(thread)
     if not files_to_rsync:
@@ -175,52 +196,52 @@ def rsync_sources_for_oc_deployment(pod_substring: str,
         thread.join()
 
 
-def rsync_sources_for_oz_op(pod_name: str, nodes_cfg: Dict[str, Dict],
+def rsync_sources_for_oz_op(pod_name: str, node_cfg: Node,
                             deployment_data_dict: Dict[str, Dict],
-                            log_file_path: str, service_type: str,
-                            timeout: int) -> None:
-    pods.wait_for_container(service_type, pod_name,
-                            timeout=timeout)
+                            log_file_path: str, timeout: int,
+                            rsync_persistence_dirs: bool = False) -> None:
     pod = pods.match_pods(pod_name)[0]
+    pods.wait_for_container(pods.get_service_type(pod), pod_name,
+                            timeout=timeout)
     service_name = pods.get_chart_name(pod)
-    node_name = 'n{}'.format(pods.get_node_num(pod_name))
     panel_name = 'oz_panel' if 'zone' in service_name else 'op_panel'
-    node_cfg = nodes_cfg[service_name][node_name]
     pod_sources_cfg = deployment_data_dict.get('sources').get(pod_name).items()
 
-    terminal.info('Rsyncing sources for pod {}. All logs can be found in {}.'
-                  .format(pod_name, log_file_path))
-    with open(log_file_path, 'w') as log_file:
-        panel_from_sources = any('panel' in s for s, _ in pod_sources_cfg)
-        panel_path = ''
+    if not is_ready_file_present_in_pod(pod_name):
+        terminal.info('Rsyncing sources for pod {}. All logs can be found '
+                      'in {}.'.format(pod_name, log_file_path))
+        with open(log_file_path, 'w') as log_file:
+            panel_from_sources = any('panel' in s for s, _ in pod_sources_cfg)
+            panel_path = ''
 
-        for app_name, sources_path in pod_sources_cfg:
-            rsync_sources_for_app(pod_name, sources_path, sources_path,
-                                  OP_OZ_DIRS_TO_SYNC, log_file)
-            copy_overlay_cfg(app_name, sources_path, pod_name, log_file)
-            if 'panel' in app_name:
+            for app_name, sources_path in pod_sources_cfg:
+                create_persistence_symlinks(sources_path, pod_name, app_name,
+                                            rsync_persistence_dirs=rsync_persistence_dirs,
+                                            log_file=log_file)
+                rsync_sources_for_app(pod_name, sources_path, sources_path,
+                                      OP_OZ_DIRS_TO_SYNC, log_file,
+                                      excludes=['*/etc', '*/log'])
+                if 'panel' in app_name:
+                    modify_onepanel_app_config(node_cfg, panel_name, pod_name,
+                                               log_file, sources_path)
+                    panel_path = sources_path
+
+            if not panel_from_sources:
                 modify_onepanel_app_config(node_cfg, panel_name, pod_name,
-                                           log_file, sources_path)
-                panel_path = sources_path
-                copy_certs(app_name, sources_path, pod_name, log_file)
-            if app_name == APP_ONEZONE:
-                copy_auth_cfg(app_name, sources_path, pod_name, log_file)
-
-        if not panel_from_sources:
-            modify_onepanel_app_config(node_cfg, panel_name, pod_name,
-                                       log_file)
-            call_and_check_return_code(pods.exec_cmd(pod_name,
-                                                     create_ready_file_cmd()),
-                                       stdout=log_file)
-        else:
-            call_and_check_return_code(
-                pods.exec_cmd(pod_name, create_ready_file_cmd(panel_path)),
-                stdout=log_file)
-        terminal.info('Rsyncing sources for pod {} done'.format(pod_name))
+                                           log_file)
+                call_and_check_return_code(pods.exec_cmd(pod_name,
+                                                         create_ready_file_cmd()),
+                                           stdout=log_file)
+            else:
+                call_and_check_return_code(
+                    pods.exec_cmd(pod_name, create_ready_file_cmd(panel_path)),
+                    stdout=log_file)
+            terminal.info('Rsyncing sources for pod {} done'.format(pod_name))
 
 
 def rsync_sources(deployment_dir: str, log_directory_path: str,
-                  nodes_cfg: Dict[str, Dict], timeout: int) -> None:
+                  nodes_cfg: Dict[str, Dict], timeout: int,
+                  rsync_persistence_dirs: bool = False) -> None:
     deployment_data_path = os.path.join(deployment_dir, 'deployment_data.yml')
     with open(deployment_data_path, 'r') as deployment_data_file:
         deployment_data_dict = yaml.load(deployment_data_file)
@@ -237,12 +258,17 @@ def rsync_sources(deployment_dir: str, log_directory_path: str,
                 thread.start()
                 threads.append(thread)
             else:
-                thread = Thread(target=rsync_sources_for_oz_op,
-                                args=(pod_substring, nodes_cfg,
-                                      deployment_data_dict, log_file_path,
-                                      service_type, timeout))
-                thread.start()
-                threads.append(thread)
+                pod = pods.match_pods(pod_substring)[0]
+                service_name = pods.get_chart_name(pod)
+                node_name = pods.get_node_name(pod_substring)
+                node_cfg = nodes_cfg.get(service_name, {}).get(node_name)
+                if node_cfg:
+                    thread = Thread(target=rsync_sources_for_oz_op,
+                                    args=(pod_substring, node_cfg,
+                                          deployment_data_dict, log_file_path,
+                                          timeout, rsync_persistence_dirs))
+                    thread.start()
+                    threads.append(thread)
 
         for thread in threads:
             thread.join()

@@ -12,12 +12,15 @@ import os
 import shutil
 from typing import List
 
-from . import application
+from ..k8s import pods
+from .application import Application
 from ..common import replace_in_file_using_open
-from ..names_and_paths import APP_TYPE_PANEL, APP_ONEPANEL
+from ..one_env_dir import deployment_data, deployments_dir
+from ..names_and_paths import (APP_TYPE_PANEL, APP_ONEPANEL, SERVICE_ONEZONE,
+                               ONEZONE_APPS, ONEPROVIDER_APPS)
 
 
-def modify_app_config(app: application.Application, path: str) -> None:
+def modify_app_config(app: Application, path: str) -> None:
     attr_fmt = '{}_{{}}'.format(APP_ONEPANEL
                                 if APP_TYPE_PANEL in app.name
                                 else app.name)
@@ -29,7 +32,7 @@ def modify_app_config(app: application.Application, path: str) -> None:
 
 # pylint: disable=too-few-public-methods
 class Node:
-    def __init__(self, node_name: str, apps: List[application.Application],
+    def __init__(self, node_name: str, apps: List[Application],
                  service_name: str, deployment_dir: str):
         self.node_name = node_name
         self.apps = apps
@@ -54,3 +57,32 @@ class Node:
 
         for app in self.apps:
             modify_app_config(app, self.app_config_path)
+
+    def add_node_to_nodes_cfg(self, nodes_cfg) -> None:
+        try:
+            nodes_cfg[self.service_name][self.node_name] = self
+        except KeyError:
+            nodes_cfg[self.service_name] = {self.node_name: self}
+
+    @staticmethod
+    def load_node_for_pod_from_deployment_data(pod_name: str,
+                                               service_name: str):
+        deployment_cfg = deployment_data.get()
+        node_name = pods.get_node_name(pod_name)
+        pod_cfg = deployment_cfg.get('sources', {}).get(pod_name, {})
+
+        if SERVICE_ONEZONE in service_name:
+            service_apps = ONEZONE_APPS
+        else:
+            service_apps = ONEPROVIDER_APPS
+
+        node_apps = []
+        for app_name in service_apps:
+            if app_name in pod_cfg.keys():
+                path = pod_cfg.get(app_name)
+                node_apps.append(Application(app_name, path, ''))
+            else:
+                node_apps.append(Application(app_name, '', ''))
+
+        return Node(node_name, node_apps, service_name,
+                    deployments_dir.get_current_deployment_dir())

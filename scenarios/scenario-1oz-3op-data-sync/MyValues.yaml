@@ -155,7 +155,8 @@ onedata-3p:
   onezone:
     memory: 0.5Gi
     cpu: 0.3
-
+    persistence:
+      enabled: true
     onepanel_generate_test_web_cert: true
     onepanel_trust_test_ca: true
     onepanel_debug_mode: true
@@ -211,7 +212,8 @@ onedata-3p:
   oneprovider-krakow:
     memory: 0.5Gi
     cpu: 0.3
-
+    persistence:
+      enabled: true
     suffix: &op1s krakow
     geoLatitude: 50.0647
     geoLongitude: 19.9450
@@ -337,7 +339,8 @@ onedata-3p:
   oneprovider-paris:
     memory: 0.5Gi
     cpu: 0.3
-
+    persistence:
+      enabled: true
     suffix: &op2s paris
     geoLatitude: 48.8566
     geoLongitude: 2.3522
@@ -420,7 +423,8 @@ onedata-3p:
   oneprovider-lisbon:
     memory: 0.5Gi
     cpu: 0.3
-
+    persistence:
+      enabled: true
     suffix: &op3s lisbon
     geoLatitude: 38.7223
     geoLongitude: -9.1393

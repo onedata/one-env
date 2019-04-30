@@ -71,6 +71,15 @@ SERVICE_AND_APP_TYPE_TO_APP_MAPPING = {
 }
 
 
+APP_NAME_TO_APP_TYPE_MAPPING = {
+    APP_ONEZONE: APP_TYPE_WORKER,
+    APP_ONEPROVIDER: APP_TYPE_WORKER,
+    APP_OP_PANEL: APP_TYPE_PANEL,
+    APP_OZ_PANEL: APP_TYPE_PANEL,
+    APP_CLUSTER_MANAGER: APP_CLUSTER_MANAGER
+}
+
+
 ONECLIENT_BIN_PATH = '/opt/oneclient/bin'
 
 
@@ -123,12 +132,20 @@ def rel_etc_dir(app: str) -> str:
     return join_path(rel_sources_dir(app), 'etc')
 
 
+def rel_mnesia_dir(app: str) -> str:
+    return join_path(rel_sources_dir(app), 'data', 'mnesia')
+
+
 def abs_etc_dir(app: str) -> str:
     return join_path('/', 'etc', app.replace('-', '_'))
 
 
 def abs_logs_dir(app: str) -> str:
     return join_path('/', 'var', 'log', app.replace('-', '_'))
+
+
+def abs_mnesia_dir(app: str) -> str:
+    return join_path('/', 'var', 'lib', app.replace('-', '_'), 'mnesia')
 
 
 def service_and_app_type_to_app(chart: str, app_type: str) -> str:
