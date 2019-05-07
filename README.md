@@ -173,7 +173,18 @@ Solution: make sure `hostHomeDir` and `kubeHostHomeDir` are set correctly in
 3. Problem: rsync command fails with error similar to
 `protocol version mismatch -- is your shell clean?` \
 Solution: make sure you are using `-dev` images.
-4. Problem: `./onenv watch` command fails with error similar to
+4. Problem: `./onenv up` hangs. \
+Solution: try to list helm releases using `helm ls` command. If errors about 
+socat occurs make sure you have socat installed.
+5. Problem: pods fails to pull image. \
+Solution: in case of minikube with vm-driver set to none or kubeadm, make sure 
+that docker config.json with auth credentials is present in `/`. 
+This is related to some bug in k8s. In case of minikube with vm-driver set to 
+other that none, images have to be downloaded for docker used by minikube (not 
+the local one). It can be done either by entering to virtual machine using 
+`minikube ssh` command or by `eval $(minikube docker-env)` command, that allows 
+to work with minikube docker in current shell. 
+6. Problem: `./onenv watch` command fails with error similar to
 `limit of inotify watches reached`. \
 Solution: increase the inotify file watch limit. On linux you can do this using 
 following commands:
@@ -190,3 +201,4 @@ sudo sysctl -p
 echo fs.inotify.max_user_watches=10000 | sudo tee -a /etc/sysctl.conf
 sudo sysctl -p
 ```
+
