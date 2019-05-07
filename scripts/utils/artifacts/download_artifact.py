@@ -46,7 +46,7 @@ def download_specific_or_default(*, ssh: SSHClient, plan: str, branch: str,
 def download_default_artifact(*, ssh: SSHClient, plan: str, branch: str,
                               hostname: str, port: int, username: str,
                               local_path: str) -> str:
-    exc_log = ('Pulling artifact of plan {}, from branch {} failed.'
+    exc_log = ('Pulling artifact of plan {}, from branch {} failed. Exiting...'
                .format(plan, branch))
     return download_artifact_safe(ssh=ssh,
                                   plan=plan,
@@ -55,7 +55,9 @@ def download_default_artifact(*, ssh: SSHClient, plan: str, branch: str,
                                   port=port,
                                   username=username,
                                   local_path=local_path,
-                                  exc_log=exc_log)
+                                  exc_log=exc_log,
+                                  exc_handler=exit,
+                                  exc_handler_pos_args=(1,))
 
 
 def download_artifact_safe(*, ssh: SSHClient, plan: str, branch: str,
@@ -77,7 +79,10 @@ def download_artifact_safe(*, ssh: SSHClient, plan: str, branch: str,
     except (SCPException, SSHException):
         print(exc_log)
         if exc_handler:
-            return exc_handler(*exc_handler_pos_args, **exc_handler_kw_args)
+            return (exc_handler(*exc_handler_pos_args)
+                    if exc_handler_kw_args is None
+                    else exc_handler(*exc_handler_pos_args,
+                                     **exc_handler_kw_args))
         return None
 
 

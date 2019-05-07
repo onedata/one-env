@@ -62,7 +62,8 @@ def download_missing_artifact(*, plan: str, branch: str, ssh: SSHClient,
         # artifact
         info('Getting artifact for plan {}\'s from branch {}'
              .format(plan, branch))
-        exc_log = 'Branch {} in plan {} not found.'.format(branch, plan)
+        exc_log = ('Branch {} in plan {} not found. Exiting...'
+                   .format(branch, plan))
         res = download_artifact_safe(ssh=ssh,
                                      branch=branch,
                                      plan=plan,
@@ -70,7 +71,9 @@ def download_missing_artifact(*, plan: str, branch: str, ssh: SSHClient,
                                      port=port,
                                      username=username,
                                      local_path=target_dir,
-                                     exc_log=exc_log)
+                                     exc_log=exc_log,
+                                     exc_handler=exit,
+                                     exc_handler_pos_args=(1, ))
     else:
         # user didn't set particular branch - print info about branches,
         # try download artifact
