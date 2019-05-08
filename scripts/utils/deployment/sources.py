@@ -55,7 +55,7 @@ PERSISTENCE_PATHS_FUNCTIONS = {
 
 def get_persistence_dirs(app_name: str) -> Dict[str, List[str]]:
     app_type = APP_NAME_TO_APP_TYPE_MAPPING[app_name]
-    path_functions = PERSISTENCE_PATHS_FUNCTIONS.get(app_type)
+    path_functions = PERSISTENCE_PATHS_FUNCTIONS.get(app_type, {})
     return {'abs_paths': [fun(app_name)
                           for fun in path_functions.get('abs_paths', [])],
             'rel_paths': [fun(app_name)

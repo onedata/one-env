@@ -10,12 +10,12 @@ __license__ = "This software is released under the MIT license cited in " \
 import os
 from typing import Dict, List, Tuple
 
+from .node import Node
 from .. import yaml_utils
+from . import sources_paths
 from ..common import get_curr_time
+from .application import Application
 from ..one_env_dir import user_config
-from ..deployment import sources_paths
-from ..deployment.node import Node
-from ..deployment.application import Application
 from ..names_and_paths import (SERVICE_ONEZONE, ONEZONE_APPS, ONEPROVIDER_APPS,
                                SERVICE_ONECLIENT, get_matching_oneclient,
                                get_service_type)

@@ -64,9 +64,8 @@ class Node:
         except KeyError:
             nodes_cfg[self.service_name] = {self.node_name: self}
 
-    @staticmethod
-    def load_node_for_pod_from_deployment_data(pod_name: str,
-                                               service_name: str):
+    @classmethod
+    def from_deployment_data(cls, pod_name: str, service_name: str):
         deployment_cfg = deployment_data.get()
         node_name = pods.get_node_name(pod_name)
         pod_cfg = deployment_cfg.get('sources', {}).get(pod_name, {})
@@ -84,5 +83,5 @@ class Node:
             else:
                 node_apps.append(Application(app_name, '', ''))
 
-        return Node(node_name, node_apps, service_name,
-                    deployments_dir.get_current_deployment_dir())
+        return cls(node_name, node_apps, service_name,
+                   deployments_dir.get_current_deployment_dir())

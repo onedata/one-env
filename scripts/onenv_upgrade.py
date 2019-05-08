@@ -11,7 +11,7 @@ __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
 import argparse
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Dict
 
 import yaml
 from kubernetes.client import V1Pod, V1StatefulSet
@@ -36,9 +36,10 @@ def upgrade_deployment_cmd(files_paths: Optional[List[str]] = None,
                            set_values: Optional[helm.SetValues] = None,
                            charts_path: Optional[str] = None) -> List[str]:
     dump_prev_values_to_file()
-    values_files = ([deployments_dir.get_prev_values_path()] + files_paths
-                    if files_paths
-                    else [deployments_dir.get_prev_values_path()])
+    if files_paths:
+        values_files = [deployments_dir.get_prev_values_path()] + files_paths
+    else:
+        values_files = [deployments_dir.get_prev_values_path()]
     return helm.upgrade_cmd(values_files=values_files,
                             set_values=set_values,
                             charts_path=charts_path)
@@ -86,8 +87,8 @@ def rollback(version: str, show_diff: bool) -> None:
 def rsync_sources_for_pods(pod_list: List[V1Pod], timeout: int = 60) -> None:
     nodes_cfg = {}
     for pod in pod_list:
-        node = Node.load_node_for_pod_from_deployment_data(get_name(pod),
-                                                           get_chart_name(pod))
+        node = Node.from_deployment_data(get_name(pod),
+                                         get_chart_name(pod))
         node.add_node_to_nodes_cfg(nodes_cfg)
     rsync_sources(deployments_dir.get_current_deployment_dir(),
                   deployments_dir.get_current_log_dir(), nodes_cfg, timeout,
@@ -145,19 +146,19 @@ def main() -> None:
         default=None
     )
 
+    type_group.add_argument(
+        '-r', '--rollback',
+        action='store_true',
+        help='if specified rollback to one of the previous deployment '
+             'versions (revisions) will be performed.'
+    )
+
     upgrade_args_parser.add_argument(
         '-s', '--sources',
         action='store_true',
         help='if specified updates timestamp for sources in charts. This '
              'triggers restarting service pods and it is required if the only '
              'change between deployments is change in sources.'
-    )
-
-    type_group.add_argument(
-        '-r', '--rollback',
-        action='store_true',
-        help='if specified rollback to one of the previous deployment '
-             'versions (revisions) will be performed.'
     )
 
     upgrade_args_parser.add_argument(
