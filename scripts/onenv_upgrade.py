@@ -11,7 +11,7 @@ __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
 import argparse
-from typing import List, Tuple, Optional, Dict
+from typing import List, Tuple, Optional
 
 import yaml
 from kubernetes.client import V1Pod, V1StatefulSet
