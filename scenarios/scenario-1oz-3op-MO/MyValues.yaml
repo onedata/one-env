@@ -648,7 +648,8 @@ onedata-3p:
   nfs_enabled: &nfs_enabled true
   gluster_enabled: &gluster_enabled true
   swift_enabled: &swift_enabled false
-  webdav_enabled: &webdav_enabled true
+  webdav_enabled: &webdav_enabled false
+  dcache_enabled: &dcache_enabled false
 
   # Explicately wait for onezone pod to enter ready state before starting oneproviders
   wait-for-onezone-enabled: &wait-for-onezone-enabled true
@@ -719,15 +720,16 @@ onedata-3p:
         enabled: true
     onedata_anti_affinity_enabled: *onedata_anti_affinity_enabled
     panelOverlayConfig: |-
-      [
-          {onepanel, [
-              {dns_expect_zone_delegation, false}
-          ]}
-      ].
-    workerOverlayConfig: |-
       [].
+    workerOverlayConfig: |-
+      [
+        {oz_worker, [
+          {disable_gui_package_verification, true}
+        ]}
+      ].
 
     onepanel_users: *all_users
+    # onezone_admin_users: []
 
     token-dispenser:
       enabled: &token_dispenser_enabled true
@@ -872,6 +874,10 @@ onedata-3p:
       enabled: *webdav_enabled
       suffix: *op1s
       luma-enabled: *luma_enabled_webdav
+    volume-dcache:
+      enabled: *dcache_enabled
+      suffix: *op1s
+      luma-enabled: *luma_enabled_webdav
 
     external-storages:
       << : *external-storages
@@ -956,6 +962,10 @@ onedata-3p:
       luma-enabled: *luma_enabled_webdav
       volume-data-sync:
         enabled: true
+    volume-dcache:
+      enabled: *dcache_enabled
+      suffix: *op1s
+      luma-enabled: *luma_enabled_webdav
 
     external-storages:
       << : *external-storages
@@ -1037,6 +1047,10 @@ onedata-3p:
     volume-webdav:
       enabled: *webdav_enabled
       suffix: *op3s
+      luma-enabled: *luma_enabled_webdav
+    volume-dcache:
+      enabled: *dcache_enabled
+      suffix: *op1s
       luma-enabled: *luma_enabled_webdav
 
     external-storages:

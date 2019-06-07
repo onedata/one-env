@@ -97,6 +97,7 @@ onedata-3p:
   onedata_anti_affinity_enabled: &onedata_anti_affinity_enabled false
 
   oneproviders_generate_certificates: &oneproviders_generate_certificates false
+  onedata_persistence: &onedata_persistence false
 
   oneproviders_nodes_count: &oneproviders_nodes_count 1
   oneprovider_cluster_configs: &oneprovider_cluster_configs
@@ -120,6 +121,8 @@ onedata-3p:
   nfs_enabled: &nfs_enabled false
   gluster_enabled: &gluster_enabled false
   swift_enabled: &swift_enabled false
+  webdav_enabled: &webdav_enabled false
+  dcache_enabled: &dcache_enabled false
 
   volume_data_sync_enabled: &volume_data_sync_enabled false
 
@@ -167,6 +170,8 @@ onedata-3p:
       enabled: &luma_enabled_gluster false
     nfs:
       enabled: &luma_enabled_nfs false
+    wevdav:
+      enabled: &luma_enabled_webdav false
 
   # Onezone configuration
   onezone:
@@ -193,7 +198,11 @@ onedata-3p:
     panelOverlayConfig: |-
       [].
     workerOverlayConfig: |-
-      [].
+      [
+        {oz_worker, [
+          {disable_gui_package_verification, true}
+        ]}
+      ].
 
     onezone_main_admin: &onezone_main_admin
       name: admin
@@ -201,6 +210,7 @@ onedata-3p:
     onezoneAdmin: *onezone_main_admin
 
     onepanel_users: *all_users
+    # onezone_admin_users: []
 
     token-dispenser:
       enabled: &token_dispenser_enabled true
@@ -259,6 +269,8 @@ onedata-3p:
 
     generate-certificates:
       enabled: *oneproviders_generate_certificates
+    persistence:
+      enabled: *onedata_persistence
 
     luma:
       suffix: *op1s
@@ -339,6 +351,14 @@ onedata-3p:
       enabled: *swift_enabled
       suffix: *op1s
       luma-enabled: *luma_enabled_swift
+    volume-webdav:
+      enabled: *webdav_enabled
+      suffix: *op1s
+      luma-enabled: *luma_enabled_webdav
+    volume-dcache:
+      enabled: *dcache_enabled
+      suffix: *op1s
+      luma-enabled: *luma_enabled_webdav
 
     external-storages:
       << : *external-storages
