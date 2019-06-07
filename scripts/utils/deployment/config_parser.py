@@ -43,6 +43,15 @@ def set_onezone_main_admin(cfg: Dict[str, Dict],
     cfg['global'] = global_cfg
 
 
+def set_emergency_credentials(cfg: Dict[str, Dict], passphrase: str) -> None:
+    global_cfg = cfg.get('global', {})
+    if not global_cfg.get('onepanelEmergencyAccount'):
+        global_cfg['onepanelEmergencyAccount'] = {'name': 'onepanel',
+                                                  'password': passphrase}
+    cfg['global'] = global_cfg
+    print(cfg)
+
+
 def enable_oneclients(my_values_file: IO[Any]) -> None:
     my_values_file.write('oneclients_enabled: &oneclients_enabled true\n')
 
