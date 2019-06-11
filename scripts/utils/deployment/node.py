@@ -10,10 +10,11 @@ __license__ = "This software is released under the MIT license cited in " \
 
 import os
 import shutil
-from typing import List
+from typing import List, Optional
 
 from ..k8s import pods
 from .application import Application
+from .sources_paths import get_sources_location
 from ..common import replace_in_file_using_open
 from ..one_env_dir import deployment_data, deployments_dir
 from ..names_and_paths import (APP_TYPE_PANEL, APP_ONEPANEL, SERVICE_ONEZONE,
@@ -65,7 +66,8 @@ class Node:
             nodes_cfg[self.service_name] = {self.node_name: self}
 
     @classmethod
-    def from_deployment_data(cls, pod_name: str, service_name: str):
+    def from_deployment_data(cls, pod_name: str, service_name: str,
+                             new_src_path: Optional[str] = None):
         deployment_cfg = deployment_data.get()
         node_name = pods.get_node_name(pod_name)
         pod_cfg = deployment_cfg.get('sources', {}).get(pod_name, {})
@@ -78,8 +80,13 @@ class Node:
         node_apps = []
         for app_name in service_apps:
             if app_name in pod_cfg.keys():
-                path = pod_cfg.get(app_name)
-                node_apps.append(Application(app_name, path, ''))
+                if new_src_path:
+                    app_path = get_sources_location(app_name,
+                                                    paths_to_check=[new_src_path])
+                    deployment_data.set_app_path(pod_name, app_name, app_path)
+                else:
+                    app_path = pod_cfg.get(app_name)
+                node_apps.append(Application(app_name, app_path, ''))
             else:
                 node_apps.append(Application(app_name, '', ''))
 

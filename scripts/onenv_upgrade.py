@@ -48,20 +48,23 @@ def upgrade_deployment_cmd(files_paths: Optional[List[str]] = None,
 def upgrade_stateful_set(stateful_set: V1StatefulSet,
                          set_values: List[Tuple[str, str]],
                          local_charts_path: Optional[str],
-                         show_diff: bool) -> None:
+                         show_diff: bool,
+                         src_path: Optional[str] = None) -> None:
     cmd = upgrade_deployment_cmd(set_values=set_values,
                                  charts_path=local_charts_path)
     if show_diff:
         diff(cmd)
     else:
         call(cmd)
-        rsync_sources_for_pods(get_stateful_set_pods(stateful_set))
+        rsync_sources_for_pods(get_stateful_set_pods(stateful_set),
+                               src_path=src_path)
 
 
 def upgrade_deployment(file_path: str,
                        set_values: Optional[helm.SetValues] = None,
                        local_charts_path: Optional[str] = None,
-                       show_diff: bool = False) -> None:
+                       show_diff: bool = False,
+                       src_path: Optional[str] = None) -> None:
     cmd = upgrade_deployment_cmd(files_paths=[file_path],
                                  set_values=set_values,
                                  charts_path=local_charts_path)
@@ -69,10 +72,11 @@ def upgrade_deployment(file_path: str,
         diff(cmd)
     else:
         call(cmd)
-        rsync_sources_for_pods(pods.list_pods())
+        rsync_sources_for_pods(pods.list_pods(), src_path=src_path)
 
 
-def rollback(version: str, show_diff: bool) -> None:
+def rollback(version: str, show_diff: bool,
+             src_path: Optional[str] = None) -> None:
     cmd = helm.rollback_cmd(version)
     if show_diff:
         if version == '0':
@@ -81,14 +85,17 @@ def rollback(version: str, show_diff: bool) -> None:
         diff(cmd)
     else:
         call(cmd)
-        rsync_sources_for_pods(pods.list_pods())
+        rsync_sources_for_pods(pods.list_pods(), src_path=src_path)
 
 
-def rsync_sources_for_pods(pod_list: List[V1Pod], timeout: int = 60) -> None:
+def rsync_sources_for_pods(pod_list: List[V1Pod],
+                           src_path: Optional[str] = None,
+                           timeout: int = 60) -> None:
     nodes_cfg = {}
     for pod in pod_list:
         node = Node.from_deployment_data(get_name(pod),
-                                         get_chart_name(pod))
+                                         get_chart_name(pod),
+                                         src_path)
         node.add_node_to_nodes_cfg(nodes_cfg)
     rsync_sources(deployments_dir.get_current_deployment_dir(),
                   deployments_dir.get_current_log_dir(), nodes_cfg, timeout,
@@ -162,6 +169,13 @@ def main() -> None:
     )
 
     upgrade_args_parser.add_argument(
+        '-p', '--sources-path',
+        help='allows to specify path, where sources are stored. Thanks to '
+             'that it is possible to have two different locations for sources '
+             'build respectively for old and new version.'
+    )
+
+    upgrade_args_parser.add_argument(
         '-v', '--rollback-version',
         help='deployment version to which rollback should be performed. '
              'By default rollback to previous version is performed.',
@@ -197,6 +211,7 @@ def main() -> None:
     local_charts_path = upgrade_args.local_charts_path
     stateful_set_substring = upgrade_args.stateful_set_substring
     show_diff = upgrade_args.show_diff
+    src_path = upgrade_args.sources_path
 
     if stateful_set_substring:
         if any([upgrade_args.sources, upgrade_args.image]):
@@ -210,10 +225,12 @@ def main() -> None:
 
             if upgrade_args.yaml_values:
                 upgrade_deployment(upgrade_args.yaml_values, set_values,
-                                   local_charts_path, show_diff)
+                                   local_charts_path, show_diff,
+                                   src_path=src_path)
             else:
                 upgrade_stateful_set(stateful_set, set_values,
-                                     local_charts_path, show_diff)
+                                     local_charts_path, show_diff,
+                                     src_path=src_path)
         else:
             error('--sources or --image option has to be specified when '
                   'stateful set is given.')
@@ -222,10 +239,11 @@ def main() -> None:
     elif upgrade_args.yaml_values:
         upgrade_deployment(upgrade_args.yaml_values,
                            local_charts_path=local_charts_path,
-                           show_diff=show_diff)
+                           show_diff=show_diff,
+                           src_path=src_path)
 
     elif upgrade_args.rollback:
-        rollback(upgrade_args.rollback_version, show_diff)
+        rollback(upgrade_args.rollback_version, show_diff, src_path=src_path)
 
 
 if __name__ == '__main__':
