@@ -9,10 +9,23 @@ global:
   imagePullPolicy: "Always"
   #hostNetwork: true
 
+oneprovider-krakow:
+  enabled: true
+oneprovider-paris:
+  enabled: true
+oneprovider-lisbon:
+  enabled: true
+
 allOneproviders: &allOneproviders
   - krakow
   - lisbon
   - paris
+
+deployment_enabled: &deployment_enabled true
+
+lumaJobEnabled: false
+
+groups: &all_groups []
 
 users: &all_users
   - &user_joe
@@ -21,20 +34,16 @@ users: &all_users
     lastName: Morgan
     idps:
       onepanel:
-        mode: config
-        type: regular
         enabled: true
+        type: regular
+        mode: config
     password: password
     email: joe@example.com
     oneclient: *allOneproviders
     luma: []
     groups: []
 
-groups: &all_groups []
 spaces: []
-
-deployment_enabled: &deployment_enabled true
-lumaJobEnabled: false
 
 # Those variables are the unfortunate necessity of an issue discussed here:
 # https://github.com/kubernetes/helm/issues/2479]
@@ -60,16 +69,18 @@ volume-gluster:
   enabled: *gluster_enabled
 volume-swift:
   enabled: *swift_enabled
+volume-webdav:
+  enabled: *webdav_enabled
 volume-data-sync:
   enabled: *volume_data_sync_enabled
   
 onedata-3p: 
   enabled: *deployment_enabled
-  oz_image: &oz_image docker.onedata.org/onezone:ID-ea8c478d27
-  op_image: &op_image docker.onedata.org/oneprovider:ID-a37097b725
-  oc_image: &oc_image docker.onedata.org/oneclient:ID-9c4bb62304
-  cli_image: &cli_image docker.onedata.org/rest-cli:ID-e5fb6602e4
-  luma_image: &luma_image docker.onedata.org/luma:ID-8e2da56615
+  oz_image: &oz_image onedata/onezone:18.02.0-rc13
+  op_image: &op_image onedata/oneprovider:18.02.0-rc13
+  oc_image: &oc_image onedata/oneclient:18.02.0-rc13
+  cli_image: &cli_image onedata/rest-cli:18.02.0-rc13
+  luma_image: &luma_image onedata/luma:18.02.0-rc10
 
   log_level: &log_level "info"
   onepanel_batch_mode_enabled: &onepanel_batch_mode_enabled true
@@ -77,6 +88,7 @@ onedata-3p:
   onedata_anti_affinity_enabled: &onedata_anti_affinity_enabled true
 
   oneproviders_generate_certificates: &oneproviders_generate_certificates false
+  onedata_persistence: &onedata_persistence false
 
   oneproviders_nodes_count: &oneproviders_nodes_count 1
   oneprovider_cluster_configs: &oneprovider_cluster_configs
@@ -103,7 +115,7 @@ onedata-3p:
   nfs_enabled: &nfs_enabled false
   gluster_enabled: &gluster_enabled true
   swift_enabled: &swift_enabled false
- 
+  webdav_enabled: &webdav_enabled false
   volume_data_sync_enabled: &volume_data_sync_enabled false
 
   # Explicately wait for onezone pod to enter ready state before starting oneproviders
@@ -150,15 +162,17 @@ onedata-3p:
       enabled: &luma_enabled_gluster false
     nfs:
       enabled: &luma_enabled_nfs false
+    wevdav:
+      enabled: &luma_enabled_webdav false
 
   # Onezone configuration
   onezone:
     memory: 0.5Gi
     cpu: 0.3
-
     onepanel_generate_test_web_cert: true
     onepanel_trust_test_ca: true
     onepanel_debug_mode: true
+
     image: *oz_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
     log_level: *log_level
@@ -178,11 +192,6 @@ onedata-3p:
       [].
     workerOverlayConfig: |-
       [].
-
-    onezone_main_admin: &onezone_main_admin
-      name: admin
-      password: password
-    onezoneAdmin: *onezone_main_admin
 
     onepanel_users: *all_users
 
@@ -211,13 +220,13 @@ onedata-3p:
   oneprovider-krakow:
     memory: 0.5Gi
     cpu: 0.3
+    onepanel_debug_mode: true
+    onepanel_generate_test_web_cert: true
+    onepanel_trust_test_ca: true
 
     suffix: &op1s krakow
     geoLatitude: 50.0647
     geoLongitude: 19.9450
-    onepanel_debug_mode: true
-    onepanel_generate_test_web_cert: true
-    onepanel_trust_test_ca: true
 
     image: *op_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
@@ -240,13 +249,15 @@ onedata-3p:
 
     generate-certificates: 
       enabled: *oneproviders_generate_certificates
+    persistence:
+      enabled: *onedata_persistence
 
     luma:
       suffix: *op1s
       << : *luma_global
 
     volume-data-sync:
-      enabled: true #*volume_data_sync_enabled
+      enabled: true
       volumes:
       - name: volume-data-sync-rw
         luma-enabled: false
@@ -330,6 +341,10 @@ onedata-3p:
       enabled: *swift_enabled
       suffix: *op1s
       luma-enabled: *luma_enabled_swift
+    volume-webdav:
+      enabled: *webdav_enabled
+      suffix: *op1s
+      luma-enabled: *luma_enabled_webdav
 
     external-storages:
       << : *external-storages
@@ -337,13 +352,13 @@ onedata-3p:
   oneprovider-paris:
     memory: 0.5Gi
     cpu: 0.3
+    onepanel_debug_mode: true
+    onepanel_generate_test_web_cert: true
+    onepanel_trust_test_ca: true
 
     suffix: &op2s paris
     geoLatitude: 48.8566
     geoLongitude: 2.3522
-    onepanel_debug_mode: true
-    onepanel_generate_test_web_cert: true
-    onepanel_trust_test_ca: true
 
     image: *op_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
@@ -366,6 +381,8 @@ onedata-3p:
 
     generate-certificates: 
       enabled: *oneproviders_generate_certificates
+    persistence:
+      enabled: *onedata_persistence
 
     luma:
       suffix: *op2s
@@ -413,6 +430,12 @@ onedata-3p:
       enabled: *swift_enabled
       suffix: *op2s
       luma-enabled: *luma_enabled_swift
+    volume-webdav:
+      enabled: *webdav_enabled
+      suffix: *op2s
+      luma-enabled: *luma_enabled_webdav
+      volume-data-sync:
+        enabled: true
 
     external-storages:
       << : *external-storages
@@ -420,13 +443,13 @@ onedata-3p:
   oneprovider-lisbon:
     memory: 0.5Gi
     cpu: 0.3
+    onepanel_debug_mode: true
+    onepanel_generate_test_web_cert: true
+    onepanel_trust_test_ca: true
 
     suffix: &op3s lisbon
     geoLatitude: 38.7223
     geoLongitude: -9.1393
-    onepanel_debug_mode: true
-    onepanel_generate_test_web_cert: true
-    onepanel_trust_test_ca: true
 
     image: *op_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
@@ -449,6 +472,8 @@ onedata-3p:
 
     generate-certificates: 
       enabled: *oneproviders_generate_certificates
+    persistence:
+      enabled: *onedata_persistence
 
     luma:
       suffix: *op3s
@@ -496,6 +521,10 @@ onedata-3p:
       enabled: *swift_enabled
       suffix: *op3s
       luma-enabled: *luma_enabled_swift
+    volume-webdav:
+      enabled: *webdav_enabled
+      suffix: *op3s
+      luma-enabled: *luma_enabled_webdav
 
     external-storages:
       << : *external-storages

@@ -156,7 +156,7 @@ def main() -> None:
     )
 
     oneclient_args_parser.add_argument(
-        '-t', '--sources-type',
+        '--sources-type',
         action='store',
         choices=('debug', 'release'),
         help='allows to specify which oneclient binary should be used. '

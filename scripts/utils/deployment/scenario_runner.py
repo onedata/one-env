@@ -16,6 +16,7 @@ from typing import Dict
 import yaml
 
 from .. import terminal
+from . import CHARTS_VERSION
 from ..k8s import helm, pods
 from ...onenv_wait import wait
 from ..deployment import sources
@@ -26,9 +27,6 @@ from ...onenv_status import deployment_status, user_config
 from ..names_and_paths import (CROSS_SUPPORT_JOB_REPO_PATH,
                                CROSS_SUPPORT_JOB,
                                service_name_to_alias_mapping)
-
-
-CHART_VERSION = '0.2.15-rc1'
 
 
 def get_scenario_key(sources_val_path: str) -> str:
@@ -132,7 +130,7 @@ def run_scenario(deployment_dir: str, local_chart_path: str, debug: bool,
         helm_install_cmd.extend(['-f', base_sources_cfg_path])
 
     if not local_chart_path:
-        helm_install_cmd.extend(['--version', CHART_VERSION])
+        helm_install_cmd.extend(['--version', CHARTS_VERSION])
 
     subprocess.check_call(helm_install_cmd,
                           cwd=os.path.join(deployment_charts_path),
@@ -141,7 +139,7 @@ def run_scenario(deployment_dir: str, local_chart_path: str, debug: bool,
 
     if env_cfg.get('sources'):
         sources.rsync_sources(deployment_dir, deployment_logdir_path,
-                              nodes_cfg, timeout)
+                              nodes_cfg, timeout, rsync_persistence_dirs=True)
 
     if env_cfg.get('os-config'):
         configure_os(env_cfg.get('os-config'), timeout)

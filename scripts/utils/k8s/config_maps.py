@@ -13,11 +13,11 @@ import yaml
 from kubernetes.client import V1ConfigMap
 
 from ..one_env_dir import user_config
-from ..k8s.kubernetes_utils import get_kube_client, match_component
+from ..k8s.kubernetes_utils import get_core_v1_api_client, match_component
 
 
 def list_config_maps() -> List[V1ConfigMap]:
-    kube_client = get_kube_client()
+    kube_client = get_core_v1_api_client()
     namespace = user_config.get_current_namespace()
     config_maps = kube_client.list_namespaced_config_map(namespace)
     return config_maps.items
