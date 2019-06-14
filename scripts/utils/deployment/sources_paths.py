@@ -33,7 +33,7 @@ RELEASE_DIRS_TO_CHECK = {
     SERVICE_ONECLIENT: ['oneclient']
 }
 
-DEFAULT_PATHS_TO_CHECK = ['../18.02.0-rc13', '../', '../../', LOCAL_ARTIFACTS_DIR]
+DEFAULT_PATHS_TO_CHECK = ['../', '../../', LOCAL_ARTIFACTS_DIR]
 
 
 def get_onepanel_sources_locations() -> Tuple[Optional[str], Optional[str]]:
