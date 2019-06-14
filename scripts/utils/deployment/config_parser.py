@@ -73,6 +73,9 @@ def parse_my_values(my_values_path: str, env_cfg: Dict[str, Any]) -> None:
         if env_cfg.get('onedataCli'):
             f.write('{0}: &{0} true\n'.format('onedata_cli_enabled'))
 
+        if env_cfg.get('persistence'):
+            f.write('{0}: &{0} true\n'.format('onedata_persistence'))
+
         if env_cfg.get('elasticSearch'):
             f.write('{0}: &{0} true\n'.format('elasticsearch_enabled'))
 

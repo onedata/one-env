@@ -9,9 +9,11 @@ __license__ = "This software is released under the MIT license cited in " \
 
 import os
 import re
+import time
 import shutil
 import random
 import string
+import datetime
 import fileinput
 from typing import Optional, Tuple, List
 
@@ -76,3 +78,9 @@ def get_git_repo(path: str) -> str:
     url = check_output(['git', 'config', '--get', 'remote.origin.url'],
                        cwd=path)
     return os.path.splitext(os.path.basename(url))[0]
+
+
+def get_curr_time():
+    return (datetime.datetime
+            .fromtimestamp(time.time())
+            .strftime('%Y.%m.%d-%H.%M.%S'))
