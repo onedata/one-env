@@ -90,50 +90,32 @@ groups: &all_groups
       gid: 60003
 
 all_group_privileges: &all_group_privileges
-  - group_view
-  - group_update
+  - group_create_space
   - group_delete
-  - group_view_privileges
-  - group_set_privileges
-  - group_add_user
-  - group_remove_user
-  - group_add_parent
-  - group_leave_parent
-  - group_add_child
-  - group_remove_child
-  - group_add_space
+  - group_invite_group
+  - group_invite_user
+  - group_join_group
+  - group_join_space
   - group_leave_space
-  - group_add_cluster
-  - group_leave_cluster
-  - group_create_handle_service
-  - group_leave_handle_service
-  - group_create_handle
-  - group_leave_handle
+  - group_remove_group
+  - group_remove_user
+  - group_set_privileges
+  - group_update
+  - group_view
 
 all_space_privileges: &all_space_privileges
-  - space_view
-  - space_update
   - space_delete
-  - space_view_privileges
-  - space_set_privileges
-  - space_read_data
-  - space_write_data
+  - space_invite_group
+  - space_invite_provider
+  - space_invite_user
   - space_manage_shares
-  - space_manage_indexes
-  - space_query_indexes
-  - space_view_statistics
-  - space_view_transfers
-  - space_schedule_replication
-  - space_cancel_replication
-  - space_schedule_eviction
-  - space_cancel_eviction
-  - space_add_user
-  - space_remove_user
-  - space_add_group
   - space_remove_group
-  - space_add_provider
   - space_remove_provider
-
+  - space_remove_user
+  - space_set_privileges
+  - space_update
+  - space_view
+  - space_write_data
 
 users: &all_users
   - &user_joe
@@ -308,13 +290,30 @@ groups_graph:
 
 spaces:
   # Proper spaces
-  - name: "krk-3"
+  - &krk_p
+    name: "krk-p"
     # TODO: change to owner
     user: *user_joe
     # TODO: change to supportedby
+    users:
+      - user: *user_tom
+        privileges: *all_space_privileges
+      - user: *user_meg
+        privileges: *all_space_privileges
+      - user: *user_karen
+        privileges: *all_space_privileges
+    groups:
+      - group: *group_alpha
+        privileges: *all_space_privileges
+      - group: *group_beta
+        privileges: *all_space_privileges
+      - group: *group_gamma
+        privileges: *all_space_privileges
+      - group: *group_delta
+        privileges: *all_space_privileges
     supports:
       - provider: "krakow"
-        storage_name: "s3"
+        storage_name: "posix"
         size: '1073741824'
   - name: "par-n"
     user: *user_joe
@@ -339,6 +338,18 @@ spaces:
     supports:
       - provider: "paris"
         storage_name: "webdav"
+        size: '1073741824'
+        mountInRoot: true
+        import:
+          strategy: "simple_scan"
+        update:
+          strategy: "simple_scan"
+          deleteEnable: true
+  - name: "krk-di"
+    user: *user_joe
+    supports:
+      - provider: "krakow"
+        storage_name: "dcache"
         size: '1073741824'
         mountInRoot: true
         import:
@@ -394,6 +405,22 @@ spaces:
   # Proper spaces with import
   - name: "krk-pirw-par-3-lis-n"
     user: *user_joe
+    users:
+      - user: *user_tom
+        privileges: *all_space_privileges
+      - user: *user_meg
+        privileges: *all_space_privileges
+      - user: *user_karen
+        privileges: *all_space_privileges
+    groups:
+      - group: *group_alpha
+        privileges: *all_space_privileges
+      - group: *group_beta
+        privileges: *all_space_privileges
+      - group: *group_gamma
+        privileges: *all_space_privileges
+      - group: *group_delta
+        privileges: *all_space_privileges
     supports:
       - provider: "krakow"
         storage_name: "volume-data-sync-rw"
@@ -592,6 +619,8 @@ luma:
   enabled: *luma_enabled
 oneclient:
   enabled: *oneclients_enabled
+jupyter-notebook:
+  enabled: *jupyter_notebook_enabled
 onedata-cli:
   enabled: *onedata_cli_enabled
 volume-s3:
@@ -606,6 +635,8 @@ volume-swift:
   enabled: *swift_enabled
 volume-webdav:
   enabled: *webdav_enabled
+volume-dcache:
+  enabled: *dcache_enabled
 
 onedata-3p:
   enabled: *deployment_enabled
@@ -634,7 +665,7 @@ onedata-3p:
   oneprovidersWorkerOverlayConfig: &oneprovidersWorkerOverlayConfig |-
     [].
 
-  oneclients_enabled: &oneclients_enabled false
+  oneclients_enabled: &oneclients_enabled true
   oneclientFlags: &oneclientFlags --force-fullblock-read
   oneclientDirectIOEnabled: &oneclientDirectIOEnabled true
 
@@ -648,8 +679,8 @@ onedata-3p:
   nfs_enabled: &nfs_enabled true
   gluster_enabled: &gluster_enabled true
   swift_enabled: &swift_enabled false
-  webdav_enabled: &webdav_enabled false
-  dcache_enabled: &dcache_enabled false
+  webdav_enabled: &webdav_enabled true
+  dcache_enabled: &dcache_enabled true
 
   # Explicately wait for onezone pod to enter ready state before starting oneproviders
   wait-for-onezone-enabled: &wait-for-onezone-enabled true
@@ -684,7 +715,7 @@ onedata-3p:
     lumaCacheTimeout: 5
     lumaApiKey: example_api_key
     posix:
-      enabled: &luma_enabled_posix true
+      enabled: &luma_enabled_posix false
     s3:
       enabled: &luma_enabled_s3 false
     ceph:
@@ -729,13 +760,12 @@ onedata-3p:
       ].
 
     onepanel_users: *all_users
-    # onezone_admin_users: []
 
     token-dispenser:
       enabled: &token_dispenser_enabled true
 
     elasticsearch:
-      enabled: &elasticsearch_enabled false
+      enabled: &elasticsearch_enabled true
 
     keycloak: &keycloak
       enabled: &keycloak_enabled true
@@ -964,7 +994,7 @@ onedata-3p:
         enabled: true
     volume-dcache:
       enabled: *dcache_enabled
-      suffix: *op1s
+      suffix: *op2s
       luma-enabled: *luma_enabled_webdav
 
     external-storages:
@@ -1050,7 +1080,7 @@ onedata-3p:
       luma-enabled: *luma_enabled_webdav
     volume-dcache:
       enabled: *dcache_enabled
-      suffix: *op1s
+      suffix: *op3s
       luma-enabled: *luma_enabled_webdav
 
     external-storages:

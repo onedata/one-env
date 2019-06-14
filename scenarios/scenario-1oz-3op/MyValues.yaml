@@ -14,104 +14,16 @@ oneprovider-paris:
 oneprovider-lisbon:
   enabled: true
 
-lumaJobEnabled: false
 allOneproviders: &allOneproviders
   - krakow
   - paris
   - lisbon
 
-keycloakInstance: *keycloak
 deployment_enabled: &deployment_enabled true
 
-groups: &all_groups []
-#  - &group_alpha
-#    name: alpha
-#    idps:
-#      onezone:
-#        enabled: true
-#    luma:
-#      - name: krakow
-#        storages:
-#          - name: volume-data-sync-rw-luma
-#            gid: 42001
-#          - name: posix
-#            gid: 42001
-#  - &group_beta
-#    name: beta
-#    idps:
-#      onezone:
-#        enabled: true
-#    posix:
-#      gid: 50002
-#  - &group_gamma
-#    name: gamma
-#    idps:
-#      onezone:
-#        enabled: true
-#    posix:
-#      gid: 50003
-#  - &group_delta
-#    name: delta
-#    idps:
-#      onezone:
-#        enabled: true
-#    posix:
-#      gid: 50004
-#  # Keycloak open-id groups
-#  - &group_un
-#    name: un
-#    idps:
-#      keycloak:
-#        children: [ *group_deux  ]
-#        enabled: true
-#    posix:
-#      gid: 60001
-#  - &group_deux
-#    name: deux
-#    idps:
-#      keycloak:
-#        children: [ *group_trois ]
-#        child: true
-#        enabled: true
-#    posix:
-#      gid: 60002
-#  - &group_trois
-#    name: trois
-#    idps:
-#      keycloak:
-#        users: [ *user_marie, *user_pier ]
-#        child: true
-#        enabled: true
-#    posix:
-#      gid: 60003
+lumaJobEnabled: false
 
-#all_group_privileges: &all_group_privileges
-#  - group_create_space
-#  - group_delete
-#  - group_invite_group
-#  - group_invite_user
-#  - group_join_group
-#  - group_join_space
-#  - group_leave_space
-#  - group_remove_group
-#  - group_remove_user
-#  - group_set_privileges
-#  - group_update
-#  - group_view
-#
-#all_space_privileges: &all_space_privileges
-#  - space_delete
-#  - space_invite_group
-#  - space_invite_provider
-#  - space_invite_user
-#  - space_manage_shares
-#  - space_remove_group
-#  - space_remove_provider
-#  - space_remove_user
-#  - space_set_privileges
-#  - space_update
-#  - space_view
-#  - space_write_data
+groups: &all_groups []
 
 users: &all_users
   - &user_joe
@@ -120,164 +32,14 @@ users: &all_users
     lastName: Morgan
     idps:
       onepanel:
-        type: regular
         enabled: true
+        type: regular
         mode: config
     password: password
     email: joe@example.com
     oneclient: *allOneproviders
     luma: []
-#      - name: krakow
-#        storages:
-#        - name: posix
-#          uid: 40001
-#          gid: 42001
-#        - name: volume-data-sync-rw-luma
-#          uid: 40001
-#          gid: 42001
     groups: []
-#      - group: *group_alpha
-#        # comment out 'privileges' to make onezone
-#        # assign default privileges
-#        privileges: *all_group_privileges
-#      - group: *group_beta
-#        privileges: *all_group_privileges
-#      - group: *group_gamma
-#        privileges: *all_group_privileges
-#      - group: *group_delta
-#        privileges: *all_group_privileges
-#      # Keycloak groups
-#      - group: *group_un
-#        privileges: *all_group_privileges
-#      - group: *group_deux
-#        privileges: *all_group_privileges
-#      - group: *group_trois
-#        privileges: *all_group_privileges
-#  - &user_tom
-#    name: tom
-#    firstName: Tom
-#    lastName: Doe
-#    idps:
-#      onepanel:
-#        type: regular
-#        enabled: true
-#    password: password
-#    email: tom@example.com
-#    oneclient: *allOneproviders
-#    groups:
-#      - group: *group_alpha
-#        privileges: *all_group_privileges
-#      - group: *group_beta
-#        privileges: *all_group_privileges
-#      - group: *group_gamma
-#        privileges: *all_group_privileges
-#      - group: *group_delta
-#        privileges: *all_group_privileges
-#  - &user_meg
-#    name: meg
-#    firstName: Meg
-#    lastName: Rayan
-#    idps:
-#      onepanel:
-#        type: regular
-#        enabled: true
-#    password: password
-#    email: meg@example.com
-#    oneclient: *allOneproviders
-#    groups:
-#      - group: *group_alpha
-#        privileges: *all_group_privileges
-#      - group: *group_beta
-#        privileges: *all_group_privileges
-#      - group: *group_gamma
-#        privileges: *all_group_privileges
-#      - group: *group_delta
-#        privileges: *all_group_privileges
-#  - &user_karen
-#    name: karen
-#    type: regular
-#    firstName: Karen
-#    lastName: Fisher
-#    idps:
-#      onepanel:
-#        type: regular
-#        enabled: true
-#    password: password
-#    email: karen@example.com
-#    oneclient: *allOneproviders
-#    groups:
-#      - group: *group_alpha
-#        privileges: *all_group_privileges
-#      - group: *group_beta
-#        privileges: *all_group_privileges
-#      - group: *group_gamma
-#        privileges: *all_group_privileges
-#      - group: *group_delta
-#        privileges: *all_group_privileges
-## keycloak users
-#  - &user_pier
-#    name: pier
-#    firstName: Pier
-#    lastName: Segal
-#    idps:
-#      keycloak:
-#        enabled: true
-#        onezoneLogin: true
-#    password: password
-#    email: pier@example.com
-#    oneclient: []
-#    luma:
-#      - name: krakow
-#        storages:
-#        - name: posix
-#          uid: 50001
-#          gid: 51001
-#    groups:
-#      - group: *group_alpha
-#        # comment out 'privileges' to make onezone
-#        # assign default privileges
-#        privileges: *all_group_privileges
-#      - group: *group_beta
-#        privileges: *all_group_privileges
-#      - group: *group_gamma
-#        privileges: *all_group_privileges
-#      - group: *group_delta
-#        privileges: *all_group_privileges
-#  - &user_marie
-#    name: marie
-#    firstName: Marie
-#    lastName: Page
-#    idps:
-#      keycloak:
-#        enabled: true
-#        onezoneLogin: false
-#    password: password
-#    email: marie@example.com
-#    oneclient: *allOneproviders
-#    luma:
-#      - name: krakow
-#        storages:
-#        - name: posix
-#          uid: 50002
-#          gid: 51002
-
-#groups_graph:
-#  - parent: *group_alpha
-#    privileges: *all_group_privileges
-#    children: [ *group_beta, *group_gamma, *group_delta ]
-#  - parent: *group_beta
-#    privileges: *all_group_privileges
-#    children: [ *group_alpha, *group_gamma, *group_delta ]
-#  - parent: *group_gamma
-#    privileges: *all_group_privileges
-#    children: [ *group_alpha, *group_beta, *group_delta ]
-#  - parent: *group_delta
-#    privileges: *all_group_privileges
-#    children: [ *group_alpha, *group_beta, *group_gamma ]
-#    # Connect keycloak group with onezone group
-#  - parent: *group_alpha
-#    privileges: *all_group_privileges
-#    children: [ *group_un ]
 
 spaces:
   - name: "krk-p-par-p-lis-p"
@@ -305,258 +67,6 @@ spaces:
       - provider: "lisbon"
         storage_name: "IdealNullStorage"
         size: '1125899906842624'
-#  # Proper spaces
-#  - name: "krk-3"
-#    # TODO: change to owner
-#    user: *user_joe
-#    # TODO: change to supportedby
-#    supports:
-#      - provider: "krakow"
-#        storage_name: "s3"
-#        size: '1073741824'
-#  - name: "par-n"
-#    user: *user_joe
-#    supports:
-#      - provider: "paris"
-#        storage_name: "nfs"
-#        size: '1073741824'
-#  - name: "lis-3"
-#    user: *user_joe
-#    supports:
-#      - provider: "lisbon"
-#        storage_name: "s3"
-#        size: '1073741824'
-#  - name: "krk-n-par-3"
-#    user: *user_joe
-#    supports:
-#      - provider: "krakow"
-#        storage_name: "nfs"
-#        size: '1073741824'
-#      - provider: "paris"
-#        storage_name: "s3"
-#        size: '1073741824'
-#  - name: "krk-3-lis-c"
-#    user: *user_joe
-#    supports:
-#      - provider: "krakow"
-#        storage_name: "s3"
-#        size: '1073741824'
-#      - provider: "lisbon"
-#        storage_name: "ceph"
-#        size: '1073741824'
-#  - name: "par-n-lis-c"
-#    user: *user_joe
-#    supports:
-#      - provider: "paris"
-#        storage_name: "nfs"
-#        size: '1073741824'
-#      - provider: "lisbon"
-#        storage_name: "ceph"
-#        size: '1073741824'
-#  - name: "krk-3-par-c-lis-n"
-#    user: *user_joe
-#    supports:
-#      - provider: "krakow"
-#        storage_name: "s3"
-#        size: '1073741824'
-#      - provider: "paris"
-#        storage_name: "ceph"
-#        size: '1073741824'
-#      - provider: "lisbon"
-#        storage_name: "nfs"
-#        size: '1073741824'
-#  - name: "krk-g"
-#    user: *user_joe
-#    supports:
-#      - provider: "krakow"
-#        storage_name: "gluster"
-#        size: '1073741824'
-#  # Proper spaces with import
-#  - name: "krk-pirw-par-3-lis-n"
-#    user: *user_joe
-#    supports:
-#      - provider: "krakow"
-#        storage_name: "volume-data-sync-rw"
-#        size: '1073741824'
-#        mountInRoot: true
-#        import:
-#          strategy: "simple_scan"
-#        update:
-#          strategy: "simple_scan"
-#          deleteEnable: true
-#      - provider: "paris"
-#        storage_name: "s3"
-#        size: '1073741824'
-#      - provider: "lisbon"
-#        storage_name: "nfs"
-#        size: '1073741824'
-#  - name: "krk-piro-par-c-lis-n"
-#    user: *user_joe
-#    supports:
-#      - provider: "krakow"
-#        storage_name: "volume-data-sync-ro"
-#        size: '1073741824'
-#        mountInRoot: true
-#        import:
-#          strategy: "simple_scan"
-#      - provider: "paris"
-#        storage_name: "ceph"
-#        size: '1073741824'
-#      - provider: "lisbon"
-#        storage_name: "nfs"
-#        size: '1073741824'
-#  # Luma enabled spaces
-#  - name: "krk-pl-par-c"
-#    user: *user_joe
-#    users:
-#      - user: *user_tom
-#        privileges: *all_space_privileges
-#      - user: *user_meg
-#        privileges: *all_space_privileges
-#      - user: *user_karen
-#        privileges: *all_space_privileges
-#    groups:
-#      - group: *group_alpha
-#        privileges: *all_space_privileges
-#      - group: *group_beta
-#        privileges: *all_space_privileges
-#      - group: *group_gamma
-#        privileges: *all_space_privileges
-#      - group: *group_delta
-#        privileges: *all_space_privileges
-#    supports:
-#      - provider: "krakow"
-#        storage_name: "posix"
-#        size: '1073741824'
-#        luma:
-#          gid: 42001
-#      - provider: "paris"
-#        storage_name: "ceph"
-#        size: '1073741824'
-#  - name: "krk-plirw-par-c"
-#    user: *user_joe
-#    users:
-#      - user: *user_tom
-#        privileges: *all_space_privileges
-#      - user: *user_meg
-#        privileges: *all_space_privileges
-#      - user: *user_karen
-#        privileges: *all_space_privileges
-#    groups:
-#      - group: *group_alpha
-#        privileges: *all_space_privileges
-#      - group: *group_beta
-#        privileges: *all_space_privileges
-#      - group: *group_gamma
-#        privileges: *all_space_privileges
-#      - group: *group_delta
-#        privileges: *all_space_privileges
-#    supports:
-#      - provider: "krakow"
-#        storage_name: "volume-data-sync-rw-luma"
-#        size: '1073741824'
-#        mountInRoot: true
-#        import:
-#          strategy: "simple_scan"
-#        update:
-#          strategy: "simple_scan"
-#          deleteEnable: true
-#        luma:
-#          gid: 42001
-#      - provider: "paris"
-#        storage_name: "ceph"
-#        size: '1073741824'
-#  # Null device spaces
-#  - name: "krk-iu"
-#    user: *user_joe
-#    supports:
-#      - provider: "krakow"
-#        storage_name: "IdealNullStorage"
-#        size: '1125899906842624'
-#  - name: "par-su"
-#    user: *user_joe
-#    supports:
-#      - provider: "paris"
-#        storage_name: "SlowNullStorage"
-#        size: '1125899906842624'
-#  - name: "par-bu"
-#    user: *user_joe
-#    supports:
-#      - provider: "paris"
-#        storage_name: "BusyNullStorage"
-#        size: '1125899906842624'
-#  - name: "lis-bu-par-bu"
-#    user: *user_joe
-#    supports:
-#      - provider: "lisbon"
-#        storage_name: "BusyNullStorage"
-#        size: '1125899906842624'
-#      - provider: "paris"
-#        storage_name: "BusyNullStorage"
-#        size: '1125899906842624'
-#  - name: "lis-iu-par-iu"
-#    user: *user_joe
-#    supports:
-#      - provider: "lisbon"
-#        storage_name: "IdealNullStorage"
-#        size: '1125899906842624'
-#      - provider: "paris"
-#        storage_name: "IdealNullStorage"
-#        size: '1125899906842624'
-#  - name: "lis-su-par-su"
-#    user: *user_joe
-#    supports:
-#      - provider: "lisbon"
-#        storage_name: "SlowNullStorage"
-#        size: '1125899906842624'
-#      - provider: "paris"
-#        storage_name: "SlowNullStorage"
-#        size: '1125899906842624'
-#  - name: "par-bu-krk-bu"
-#    user: *user_joe
-#    supports:
-#      - provider: "paris"
-#        storage_name: "BusyNullStorage"
-#        size: '1125899906842624'
-#      - provider: "krakow"
-#        storage_name: "BusyNullStorage"
-#        size: '1125899906842624'
-#  - name: "lis-bu-par-bu-krk-bu"
-#    user: *user_joe
-#    supports:
-#      - provider: "lisbon"
-#        storage_name: "BusyNullStorage"
-#        size: '1125899906842624'
-#      - provider: "paris"
-#        storage_name: "BusyNullStorage"
-#        size: '1125899906842624'
-#      - provider: "krakow"
-#        storage_name: "BusyNullStorage"
-#        size: '1125899906842624'
-#  - name: "lis-iu-par-iu-krk-iu"
-#    user: *user_joe
-#    supports:
-#      - provider: "lisbon"
-#        storage_name: "IdealNullStorage"
-#        size: '1125899906842624'
-#      - provider: "paris"
-#        storage_name: "IdealNullStorage"
-#        size: '1125899906842624'
-#      - provider: "krakow"
-#        storage_name: "IdealNullStorage"
-#        size: '1125899906842624'
-#  - name: "lis-su-par-su-krk-su"
-#    user: *user_joe
-#    supports:
-#      - provider: "lisbon"
-#        storage_name: "SlowNullStorage"
-#        size: '1125899906842624'
-#      - provider: "paris"
-#        storage_name: "SlowNullStorage"
-#        size: '1125899906842624'
-#      - provider: "krakow"
-#        storage_name: "SlowNullStorage"
-#        size: '1125899906842624'
 
 # Those variables are the unfortunate necessity of an issue discussed here:
 # https://github.com/kubernetes/helm/issues/2479]
@@ -584,16 +94,20 @@ volume-gluster:
   enabled: *gluster_enabled
 volume-swift:
   enabled: *swift_enabled
+volume-webdav:
+  enabled: *webdav_enabled
+volume-dcache:
+  enabled: *dcache_enabled
 volume-data-sync:
   enabled: *volume_data_sync_enabled
 
 onedata-3p:
   enabled: *deployment_enabled
-  oz_image: &oz_image onedata/onezone:18.02.0-rc7
-  op_image: &op_image onedata/oneprovider:18.02.0-rc7
-  oc_image: &oc_image onedata/oneclient:18.02.0-rc7
-  cli_image: &cli_image onedata/rest-cli:18.02.0-rc7
-  luma_image: &luma_image docker.onedata.org/luma:ID-8e2da56615
+  oz_image: &oz_image onedata/onezone:18.02.0-rc13
+  op_image: &op_image onedata/oneprovider:18.02.0-rc13
+  oc_image: &oc_image onedata/oneclient:18.02.0-rc13
+  cli_image: &cli_image onedata/rest-cli:18.02.0-rc13
+  luma_image: &luma_image onedata/luma:18.02.0-rc10
 
   log_level: &log_level "info"
   onepanel_batch_mode_enabled: &onepanel_batch_mode_enabled true
@@ -615,6 +129,9 @@ onedata-3p:
     [].
 
   oneclients_enabled: &oneclients_enabled false
+  oneclientFlags: &oneclientFlags ""
+  oneclientDirectIOEnabled: &oneclientDirectIOEnabled false
+
   onedata_cli_enabled: &onedata_cli_enabled false
 
   luma_enabled: &luma_enabled false
@@ -681,15 +198,17 @@ onedata-3p:
   onezone:
     memory: 0.5Gi
     cpu: 0.3
-
     onepanel_generate_test_web_cert: true
     onepanel_trust_test_ca: true
     onepanel_debug_mode: true
+
     image: *oz_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
     log_level: *log_level
     generate-certificates:
       enabled: false
+    persistence:
+      enabled: *onedata_persistence
     onezone_nodes_count: 1
     cluster_config:
       managers: [ ]
@@ -699,6 +218,7 @@ onedata-3p:
       enabled: &idp_enabled false
       generate-certificates:
         enabled: false
+    onedata_anti_affinity_enabled: *onedata_anti_affinity_enabled
     panelOverlayConfig: |-
       [].
     workerOverlayConfig: |-
@@ -714,7 +234,7 @@ onedata-3p:
     onezoneAdmin: *onezone_main_admin
 
     onepanel_users: *all_users
-    # onezone_admin_users: []
+    onezone_admin_users: []
 
     token-dispenser:
       enabled: &token_dispenser_enabled true
@@ -739,18 +259,18 @@ onedata-3p:
         clientName: onedata
         publishClientSecret: true
 
-  # What follows is the provider configuration for provider designated as:
-  # krakow
+  # What follows are the providers configurations for providers designated as:
+  # krakow, paris, and lisbon
   oneprovider-krakow:
     memory: 0.5Gi
     cpu: 0.3
+    onepanel_generate_test_web_cert: true
+    onepanel_trust_test_ca: true
+    onepanel_debug_mode: true
 
     suffix: &op1s krakow
     geoLatitude: 50.0647
     geoLongitude: 19.9450
-    onepanel_generate_test_web_cert: true
-    onepanel_trust_test_ca: true
-    onepanel_debug_mode: true
 
     image: *op_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
@@ -779,7 +299,6 @@ onedata-3p:
     luma:
       suffix: *op1s
       << : *luma_global
-
 
     volume-data-sync:
       enabled: false
@@ -828,6 +347,10 @@ onedata-3p:
       users: *all_users
       onedata_cli:
         image: *cli_image
+      oneclientFlags: *oneclientFlags
+      directIO:
+        nfs:
+          enabled: *oneclientDirectIOEnabled
     onedata-cli:
       image: *cli_image
       enabled: *onedata_cli_enabled
@@ -867,18 +390,16 @@ onedata-3p:
     external-storages:
       << : *external-storages
 
-  # What follows is the provider configuration for provider designated as:
-  # paris
   oneprovider-paris:
     memory: 0.5Gi
     cpu: 0.3
+    onepanel_generate_test_web_cert: true
+    onepanel_trust_test_ca: true
+    onepanel_debug_mode: true
 
     suffix: &op2s paris
     geoLatitude: 48.8566
     geoLongitude: 2.3522
-    onepanel_generate_test_web_cert: true
-    onepanel_trust_test_ca: true
-    onepanel_debug_mode: true
 
     image: *op_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
@@ -956,6 +477,10 @@ onedata-3p:
       users: *all_users
       onedata_cli:
         image: *cli_image
+      oneclientFlags: *oneclientFlags
+      directIO:
+        nfs:
+          enabled: *oneclientDirectIOEnabled
     onedata-cli:
       image: *cli_image
       enabled: *onedata_cli_enabled
@@ -995,18 +520,16 @@ onedata-3p:
     external-storages:
       << : *external-storages
 
-  # What follows is the provider configuration for provider designated as:
-  # lisbon
   oneprovider-lisbon:
     memory: 0.5Gi
     cpu: 0.3
+    onepanel_generate_test_web_cert: true
+    onepanel_trust_test_ca: true
+    onepanel_debug_mode: true
 
     suffix: &op3s lisbon
     geoLatitude: 38.7223
     geoLongitude: -9.1393
-    onepanel_generate_test_web_cert: true
-    onepanel_trust_test_ca: true
-    onepanel_debug_mode: true
 
     image: *op_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
@@ -1015,10 +538,10 @@ onedata-3p:
     wait-for-onezone:
       enabled: *wait-for-onezone-enabled
 
-    onedata_anti_affinity_enabled: *onedata_anti_affinity_enabled
-
     oneprovider_nodes_count: *oneproviders_nodes_count
     cluster_config: *oneprovider_cluster_configs
+
+    onedata_anti_affinity_enabled: *onedata_anti_affinity_enabled
 
     panelOverlayConfig: *oneprovidersPanelOverlayConfig
     workerOverlayConfig: *oneprovidersWorkerOverlayConfig
@@ -1035,7 +558,6 @@ onedata-3p:
     luma:
       suffix: *op3s
       << : *luma_global
-
 
     volume-data-sync:
       enabled: false
@@ -1084,6 +606,10 @@ onedata-3p:
       users: *all_users
       onedata_cli:
         image: *cli_image
+      oneclientFlags: *oneclientFlags
+      directIO:
+        nfs:
+          enabled: *oneclientDirectIOEnabled
     onedata-cli:
       image: *cli_image
       enabled: *onedata_cli_enabled

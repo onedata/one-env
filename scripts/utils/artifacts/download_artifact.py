@@ -65,7 +65,7 @@ def download_artifact_safe(*, ssh: SSHClient, plan: str, branch: str,
                            local_path: str,
                            exc_handler: Optional[Callable[..., Any]] = None,
                            exc_handler_pos_args: Tuple[Any, ...] = (),
-                           exc_handler_kw_args: Dict[str, Any] = None,
+                           exc_handler_kw_args: Optional[Dict[str, Any]] = None,
                            exc_log: str = '') -> Optional[str]:
     def signal_handler(_signum, _frame):
         ssh.connect(hostname, port=port, username=username)

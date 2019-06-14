@@ -43,13 +43,13 @@ def set_onezone_main_admin(cfg: Dict[str, Dict],
     cfg['global'] = global_cfg
 
 
-def set_emergency_credentials(cfg: Dict[str, Dict], passphrase: str) -> None:
+def set_emergency_credentials(cfg: Dict[str, Dict], creds: List[str]) -> None:
     global_cfg = cfg.get('global', {})
     if not global_cfg.get('onepanelEmergencyAccount'):
-        global_cfg['onepanelEmergencyAccount'] = {'name': 'onepanel',
-                                                  'password': passphrase}
+        username, password = creds
+        global_cfg['onepanelEmergencyAccount'] = {'name': username,
+                                                  'password': password}
     cfg['global'] = global_cfg
-    print(cfg)
 
 
 def enable_oneclients(my_values_file: IO[Any]) -> None:
@@ -72,6 +72,9 @@ def parse_my_values(my_values_path: str, env_cfg: Dict[str, Any]) -> None:
 
         if env_cfg.get('onedataCli'):
             f.write('{0}: &{0} true\n'.format('onedata_cli_enabled'))
+
+        if env_cfg.get('persistence'):
+            f.write('{0}: &{0} true\n'.format('onedata_persistence'))
 
         if env_cfg.get('elasticSearch'):
             f.write('{0}: &{0} true\n'.format('elasticsearch_enabled'))

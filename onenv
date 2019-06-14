@@ -17,7 +17,7 @@ import importlib
 SCRIPT_DESCRIPTION = 'Runs onenv commands'
 ONENV_COMMANDS = ('attach', 'clean', 'exec', 'export', 'gui', 'hosts', 'init',
                   'logs', 'oneclient', 'patch', 'pull_artifacts', 'status',
-                  'up', 'update', 'wait', 'watch')
+                  'up', 'update', 'upgrade', 'wait', 'watch')
 EPILOG = '''
 Onenv commands:
        attach         - attaches directly to erlang VM in chosen pod 
@@ -42,6 +42,9 @@ Onenv commands:
        status         - displays the status of current onedata deployment 
        up             - sets up a onedata deployment on kubernetes cluster 
        update         - updates sources for current deployment or given pod 
+       upgrade        - allows to upgrade given service (started either from 
+                        sources or packages). It is also possible to upgrade 
+                        helm deployment itself. 
        wait           - waits for current deployment to be ready 
        watch          - starts watcher for current deployment or given pod
 '''

@@ -29,7 +29,7 @@ from .utils.names_and_paths import (APP_OP_PANEL, APP_OZ_PANEL, APP_ONEZONE,
 
 NEW_PODS_TIMEOUT = 60
 
-GUI_DIRS_TO_SYNC = ['_build/default/rel/*/data/gui_static']
+GUI_DIRS_TO_SYNC = ['_build/default/rel/*/etc/gui_static']
 BACKEND_DIRS_TO_SYNC = ['_build/default/lib', 'src', 'include']
 ALL_DIRS_TO_SYNC = GUI_DIRS_TO_SYNC + BACKEND_DIRS_TO_SYNC
 

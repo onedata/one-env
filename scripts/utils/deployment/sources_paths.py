@@ -10,7 +10,7 @@ __license__ = "This software is released under the MIT license cited in " \
 import os
 import sys
 import contextlib
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 
 from ..artifacts import LOCAL_ARTIFACTS_DIR
 from .. import terminal
@@ -33,6 +33,8 @@ RELEASE_DIRS_TO_CHECK = {
     SERVICE_ONECLIENT: ['oneclient']
 }
 
+DEFAULT_PATHS_TO_CHECK = ['../', '../../', LOCAL_ARTIFACTS_DIR]
+
 
 def get_onepanel_sources_locations() -> Tuple[Optional[str], Optional[str]]:
     ozp_src_path = get_sources_location(APP_OZ_PANEL, exit_on_error=False)
@@ -54,12 +56,12 @@ def get_onepanel_sources_locations() -> Tuple[Optional[str], Optional[str]]:
     return ozp_src_path, opp_src_path
 
 
-def get_sources_location(app: str,
-                         exit_on_error: bool = True) -> Optional[str]:
+def get_sources_location(app: str, exit_on_error: bool = True,
+                         paths_to_check: Optional[List[str]] = None) -> Optional[str]:
     dirs_to_check = RELEASE_DIRS_TO_CHECK.get(app, [])
+    paths_to_check = paths_to_check if paths_to_check else DEFAULT_PATHS_TO_CHECK
     location, checked_path = find_files_in_relative_paths(dirs_to_check,
-                                                          ['../', '../../',
-                                                           LOCAL_ARTIFACTS_DIR])
+                                                          paths_to_check)
 
     if not location:
         if exit_on_error:
@@ -125,7 +127,7 @@ def locate_oz_op(app: str, service: str, service_type: str,
         sys.exit(1)
 
     # Save sources path to deployment data file
-    deployment_data.add_source(pod_name, app, location)
+    deployment_data.set_app_path(pod_name, app, location)
     return location
 
 
