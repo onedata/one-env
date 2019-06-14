@@ -729,7 +729,7 @@ onedata-3p:
       ].
 
     onepanel_users: *all_users
-    # onezone_admin_users: []
+    onezone_admin_users: []
 
     token-dispenser:
       enabled: &token_dispenser_enabled true
