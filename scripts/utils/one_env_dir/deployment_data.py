@@ -72,7 +72,7 @@ def add_oneclient_deployment(oc_pod_substring: str, location: str) -> None:
                    location)
 
 
-def add_source(pod_name: str, app: str, location: str) -> None:
+def set_app_path(pod_name: str, app: str, location: str) -> None:
     add_to_src_cfg('sources', pod_name, app, location)
 
 

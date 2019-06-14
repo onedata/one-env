@@ -67,3 +67,16 @@ def new() -> str:
     prune_deployments_history()
 
     return dir_path
+
+
+def get_upgrade_data_dir() -> str:
+    return os.path.join(get_current_deployment_dir(), 'upgrade_data')
+
+
+def get_prev_values_path() -> str:
+    return os.path.join(get_upgrade_data_dir(), 'prev_values.yaml')
+
+
+def ensure_upgrade_data_dir_exists() -> None:
+    if not os.path.exists(get_upgrade_data_dir()):
+        os.makedirs(get_upgrade_data_dir())

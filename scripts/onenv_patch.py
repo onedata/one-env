@@ -15,13 +15,14 @@ from typing import Dict, List
 
 from .utils.k8s import helm, pods
 from .utils import arg_help_formatter, yaml_utils
-from .utils.deployment.scenario_runner import CHART_VERSION
+from .utils.deployment.scenario_runner import CHARTS_VERSION
 from .utils.one_env_dir import user_config, deployments_dir, deployment_data
 from .utils.deployment.scenario_runner import update_charts_dependencies
 from .utils.deployment.config_parser import (parse_spaces_cfg,
                                              parse_users_config,
                                              parse_groups_config,
                                              set_release_name_override,
+                                             set_emergency_credentials,
                                              set_onezone_main_admin)
 from .utils.names_and_paths import (CROSS_SUPPORT_JOB_REPO_PATH,
                                     CROSS_SUPPORT_JOB, ONEDATA_3P)
@@ -42,7 +43,8 @@ def parse_onedata3p_conf(patch: Dict[str, Dict]) -> None:
 
 def patch_deployment(patch: str, patch_release_name: str,
                      deployment_release_name: str, local_charts_path: str,
-                     admin: List[str]) -> None:
+                     admin: List[str],
+                     emergency_credentials: List[str]) -> None:
     deployment_dir_path = deployments_dir.get_current_deployment_dir()
     deployment_charts_path = os.path.join(deployment_dir_path, 'charts')
     deployment_logdir_path = os.path.join(deployment_dir_path, 'logs')
@@ -60,6 +62,7 @@ def patch_deployment(patch: str, patch_release_name: str,
     parse_onedata3p_conf(landscape)
     set_release_name_override(landscape, deployment_release_name)
     set_onezone_main_admin(landscape, admin)
+    set_emergency_credentials(landscape, emergency_credentials)
 
     parse_groups_config(landscape.get('groups'), landscape)
     parse_users_config(landscape.get('users'), landscape, True)
@@ -81,7 +84,7 @@ def patch_deployment(patch: str, patch_release_name: str,
         helm_install_cmd = helm.install_cmd(CROSS_SUPPORT_JOB_REPO_PATH,
                                             [deployment_patch_path],
                                             release_name=patch_release_name)
-        helm_install_cmd.extend(['--version', CHART_VERSION])
+        helm_install_cmd.extend(['--version', CHARTS_VERSION])
 
     subprocess.check_call(helm_install_cmd, cwd=deployment_charts_path,
                           stderr=subprocess.STDOUT)
@@ -120,6 +123,15 @@ def main() -> None:
     )
 
     patch_args_parser.add_argument(
+        '--emergency-credentials',
+        default=['admin', 'password'],
+        nargs=2,
+        help='emergency credentials in form: -u username password',
+        metavar=('username', 'password'),
+        dest='emergency_credentials'
+    )
+
+    patch_args_parser.add_argument(
         '-drn', '--deployment-release-name',
         action='store',
         default=user_config.get_current_release_name(),
@@ -142,7 +154,7 @@ def main() -> None:
     patch_deployment(patch_args.patch, patch_args.patch_release_name,
                      patch_args.deployment_release_name,
                      patch_args.local_charts_path,
-                     patch_args.admin)
+                     patch_args.admin, patch_args.emergency_credentials)
 
 
 if __name__ == '__main__':

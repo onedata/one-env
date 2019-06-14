@@ -75,6 +75,10 @@ lumaImage: "docker.onedata.org/luma:ID-8e2da56615"
 forceImagePull: false
 
 
+# When set to true, persists data stored in /volumes/persistence.
+# This is used during upgrades (see onenv upgrade)
+persistence: true
+
 # Determines if spaces should be created. It can be either boolean value or
 # list of spaces that should be created.
 #

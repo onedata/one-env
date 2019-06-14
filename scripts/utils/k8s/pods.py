@@ -14,6 +14,7 @@ import signal
 import contextlib
 import subprocess
 from collections import defaultdict
+from collections.abc import Iterable
 from typing import List, Callable, Dict, Union, IO, Any, Optional
 
 from kubernetes.client import (V1Pod, V1EnvVar, V1Volume, V1PersistentVolume,
@@ -22,7 +23,8 @@ from kubernetes.client import (V1Pod, V1EnvVar, V1Volume, V1PersistentVolume,
 from ..deployment import sources_paths
 from ..one_env_dir import user_config
 from .. import shell, terminal
-from ..k8s.kubernetes_utils import get_name, get_kube_client
+from ..k8s.kubernetes_utils import (get_name, get_core_v1_api_client,
+                                    match_components_verbose)
 from ..names_and_paths import (APP_TYPE_WORKER, service_and_app_type_to_app,
                                service_name_to_alias_mapping)
 
@@ -124,10 +126,16 @@ def copy_from_pod_cmd(source_path: str, destination: str) -> List[str]:
 
 
 def rsync_cmd(source_path: str, destination_path: str,
-              delete: Optional[bool] = None) -> List[str]:
+              delete: Optional[bool] = None,
+              excludes: Optional[List[str]] = None) -> List[str]:
     namespace = user_config.get_current_namespace()
     options = '--delete' if delete else ''
     cmd = ['rsync', '--info=progress2', '--archive', '--blocking-io']
+
+    if excludes:
+        for exclude in excludes:
+            cmd.append('--exclude={}'.format(exclude))
+
     if options:
         cmd.append(options)
 
@@ -163,6 +171,10 @@ def get_client_provider_host(pod: V1Pod) -> Optional[str]:
 
 def get_node_num(pod_name: str) -> str:
     return pod_name.split('-')[-1]
+
+
+def get_node_name(pod_name: str) -> str:
+    return 'n{}'.format(get_node_num(pod_name))
 
 
 def get_service_type(pod: V1Pod) -> Optional[str]:
@@ -259,12 +271,12 @@ def is_pod_running(pod: V1Pod) -> bool:
 
 
 def list_pvs() -> List[V1PersistentVolume]:
-    kube = get_kube_client()
+    kube = get_core_v1_api_client()
     return kube.list_persistent_volume().items
 
 
 def list_pods_and_jobs() -> List[V1Pod]:
-    kube = get_kube_client()
+    kube = get_core_v1_api_client()
     namespace = user_config.get_current_namespace()
     return kube.list_namespaced_pod(namespace).items
 
@@ -353,6 +365,11 @@ def describe_stateful_set() -> str:
 
 def file_exists_in_pod(pod: str, path: str) -> bool:
     ret = shell.get_return_code(exec_cmd(pod, ['test', '-e', path]))
+    return ret == 0
+
+
+def create_symlink(pod: str, src, path: str) -> bool:
+    ret = shell.get_return_code(exec_cmd(pod, ['ln', '-s', src, path]))
     return ret == 0
 
 
@@ -471,49 +488,19 @@ def match_pods(substring: str) -> List[V1Pod]:
                        pods_list))
 
 
-def print_pod_choosing_hint() -> None:
-    print('')
-    terminal.info('To choose a pod, provide its full name or any '
-                  'matching, unambiguous string. You can use dashes '
-                  '("{}") for a wildcard character, e.g.: {} will match {}.'
-                  .format(terminal.green_str('-'),
-                          terminal.green_str('z-1'),
-                          terminal.green_str('dev-onezone-node-1-0')))
-
-
 def match_pod_and_run(pod_substring: str, fun: Callable[..., Optional[Any]],
                       *fun_args, allow_multiple: bool = False) -> Optional[Any]:
-    if not pod_substring:
-        terminal.error('Please choose a pod:')
-        print_pods(list_pods())
-        print_pod_choosing_hint()
-        return None
+    matching_pods = match_components_verbose(pod_substring, list_pods,
+                                             allow_multiple)
+    if matching_pods:
+        if isinstance(matching_pods, V1Pod):
+            if fun_args:
+                return fun(matching_pods, *fun_args)
+            return fun(matching_pods)
 
-    matching_pods = match_pods(pod_substring)
-
-    if not matching_pods:
-        pods = list_pods()
-        if pods:
-            terminal.error('There are no pods matching \'{}\'. '
-                           'Choose one of:'.format(pod_substring))
-            print_pods(pods)
-            print_pod_choosing_hint()
-        else:
-            terminal.error('There are no pods running')
-        return None
-
-    if len(matching_pods) == 1:
-        if fun_args:
-            return fun(matching_pods[0], *fun_args)
-        return fun(matching_pods[0])
-
-    if allow_multiple:
-        for pod in matching_pods:
-            fun(pod, fun_args, multiple=True)
-    else:
-        terminal.error('There is more than one matching pod:')
-        print_pods(matching_pods)
-        print_pod_choosing_hint()
+        if allow_multiple and isinstance(matching_pods, Iterable):
+            for pod in matching_pods:
+                fun(pod, fun_args, multiple=True)
     return None
 
 

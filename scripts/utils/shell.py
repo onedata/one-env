@@ -8,7 +8,7 @@ __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
 import subprocess as sp
-from typing import List, Union, IO, Any
+from typing import List, Union, IO, Any, Optional
 
 
 from .terminal import error
@@ -16,7 +16,7 @@ from .terminal import error
 File = Union[None, int, IO[Any]]
 
 
-def call(tokens: List[str], cwd: str = None) -> int:
+def call(tokens: List[str], cwd: Optional[str] = None) -> int:
     return sp.call(tokens, cwd=cwd)
 
 
@@ -27,7 +27,7 @@ def get_return_code(tokens: List[str], stdout: File = sp.DEVNULL,
 
 
 def check_output(tokens: List[str],
-                 stderr: File = sp.DEVNULL, cwd: str = None,) -> str:
+                 stderr: File = sp.DEVNULL, cwd: Optional[str] = None,) -> str:
     output = sp.check_output(tokens, stderr=stderr, cwd=cwd)
     return output.decode('utf-8').strip()
 
