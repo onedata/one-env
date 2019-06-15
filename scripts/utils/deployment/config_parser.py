@@ -33,15 +33,6 @@ def set_release_name_override(cfg: Dict[str, Dict], release_name: str) -> None:
     cfg['global'] = global_cfg
 
 
-def set_emergency_credentials(cfg: Dict[str, Dict], creds: List[str]) -> None:
-    global_cfg = cfg.get('global', {})
-    if not global_cfg.get('onepanelEmergencyAccount'):
-        username, password = creds
-        global_cfg['onepanelEmergencyAccount'] = {'name': username,
-                                                  'password': password}
-    cfg['global'] = global_cfg
-
-
 def set_onezone_main_admin(cfg: Dict[str, Dict],
                            admin_creds: List[str]) -> None:
     global_cfg = cfg.get('global', {})
@@ -49,6 +40,15 @@ def set_onezone_main_admin(cfg: Dict[str, Dict],
         admin_username, admin_password = admin_creds
         global_cfg['onezoneMainAdmin'] = {'name': admin_username,
                                           'password': admin_password}
+    cfg['global'] = global_cfg
+
+
+def set_emergency_credentials(cfg: Dict[str, Dict], creds: List[str]) -> None:
+    global_cfg = cfg.get('global', {})
+    if not global_cfg.get('onepanelEmergencyAccount'):
+        username, password = creds
+        global_cfg['onepanelEmergencyAccount'] = {'name': username,
+                                                  'password': password}
     cfg['global'] = global_cfg
 
 
@@ -75,6 +75,9 @@ def parse_my_values(my_values_path: str, env_cfg: Dict[str, Any]) -> None:
 
         if env_cfg.get('persistence'):
             f.write('{0}: &{0} true\n'.format('onedata_persistence'))
+
+        if env_cfg.get('elasticSearch'):
+            f.write('{0}: &{0} true\n'.format('elasticsearch_enabled'))
 
         storages = env_cfg.get('storages', [])
         for storage in storages:
