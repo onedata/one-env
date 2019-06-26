@@ -96,6 +96,7 @@ storages:
   - nfs
   - gluster
   - swift
+  - webdav
 
 
 # Cluster configuration for given service.

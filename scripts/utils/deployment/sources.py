@@ -279,6 +279,21 @@ def rsync_sources_for_oz_op(pod_name: str, node_cfg: Node,
             terminal.info('Rsyncing sources for pod {} done'.format(pod_name))
 
 
+def mby_rsync_sources_for_oz_op(pod_substring: str, nodes_cfg: Dict[str, Dict],
+                                deployment_data_dict: Dict[str, Dict],
+                                log_file_path: str, timeout: int,
+                                rsync_persistence_dirs: bool = False) -> None:
+    pods.wait_for_pod(pod_substring)
+    pod = pods.match_pods(pod_substring)[0]
+    service_name = pods.get_chart_name(pod)
+    node_name = pods.get_node_name(pod_substring)
+    node_cfg = nodes_cfg.get(service_name, {}).get(node_name)
+
+    if node_cfg:
+        rsync_sources_for_oz_op(pod_substring, node_cfg, deployment_data_dict,
+                                log_file_path, timeout, rsync_persistence_dirs)
+
+
 def rsync_sources(deployment_dir: str, log_directory_path: str,
                   nodes_cfg: Dict[str, Dict], timeout: int,
                   rsync_persistence_dirs: bool = False) -> None:
@@ -298,17 +313,12 @@ def rsync_sources(deployment_dir: str, log_directory_path: str,
                 thread.start()
                 threads.append(thread)
             else:
-                pod = pods.match_pods(pod_substring)[0]
-                service_name = pods.get_chart_name(pod)
-                node_name = pods.get_node_name(pod_substring)
-                node_cfg = nodes_cfg.get(service_name, {}).get(node_name)
-                if node_cfg:
-                    thread = Thread(target=rsync_sources_for_oz_op,
-                                    args=(pod_substring, node_cfg,
-                                          deployment_data_dict, log_file_path,
-                                          timeout, rsync_persistence_dirs))
-                    thread.start()
-                    threads.append(thread)
+                thread = Thread(target=mby_rsync_sources_for_oz_op,
+                                args=(pod_substring, nodes_cfg,
+                                      deployment_data_dict, log_file_path,
+                                      timeout, rsync_persistence_dirs))
+                thread.start()
+                threads.append(thread)
 
         for thread in threads:
             thread.join()

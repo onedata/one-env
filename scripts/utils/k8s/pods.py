@@ -186,7 +186,7 @@ def get_container_id(pod: V1Pod) -> Optional[str]:
     try:
         container_id = pod.status.container_statuses[0].container_id
         container_id = container_id.split('/')[-1]
-    except KeyError:
+    except (KeyError, AttributeError):
         container_id = None
     return container_id
 
@@ -291,6 +291,19 @@ def all_jobs_succeeded() -> bool:
 
 def all_pods_running() -> bool:
     return all(is_pod_running(pod) for pod in list_pods())
+
+
+def wait_for_pod(pod_name: str, timeout: int = 300) -> None:
+    start_time = time.time()
+
+    while int(time.time() - start_time) <= timeout:
+        pods_name_list = [get_name(pod) for pod in list_pods()]
+        if pod_name in pods_name_list:
+            return
+        time.sleep(1)
+
+    terminal.error('Timeout while waiting for pod {} to be present'
+                   .format(pod_name))
 
 
 def wait_for_container(container_name: str, pod_name: str,
