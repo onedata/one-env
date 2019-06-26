@@ -124,7 +124,7 @@ def main() -> None:
 
     patch_args_parser.add_argument(
         '--emergency-credentials',
-        default=['admin', 'password'],
+        default=['onepanel', 'password'],
         nargs=2,
         help='emergency credentials in form: -u username password',
         metavar=('username', 'password'),
