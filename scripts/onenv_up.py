@@ -76,6 +76,12 @@ def main() -> None:
         default=600
     )
 
+    up_args_parser.add_argument(
+        '--gui-pkg-verification',
+        action='store_true',
+        help='enables verification of GUI packages'
+    )
+
     deployment_type_group = up_args_parser.add_mutually_exclusive_group()
 
     deployment_type_group.add_argument(
@@ -210,7 +216,8 @@ def main() -> None:
                         oneclient_image=up_args.oneclient_image,
                         rest_cli_image=up_args.rest_cli_image,
                         luma_image=up_args.luma_image,
-                        no_pull=up_args.no_pull)
+                        no_pull=up_args.no_pull,
+                        gui_pkg_verification=up_args.gui_pkg_verification)
 
     scenario_runner.run_scenario(curr_deployment_dir, up_args.local_chart_path,
                                  up_args.debug, up_args.dry_run,

@@ -11,12 +11,20 @@ import os
 from typing import Optional, Dict, Any
 
 from ..yaml_utils import load_yaml, dump_yaml
+from ..names_and_paths import SERVICE_ONEZONE
 
 
 def get_default_env_config() -> Dict[str, Any]:
     script_dir = os.path.dirname(os.path.realpath(__file__))
     template_path = os.path.join(script_dir, 'env_config_template.yaml')
     return load_yaml(template_path)
+
+
+def set_option_for_service(config: Dict[str, Any], service_name: str,
+                           option: str, value: Any) -> None:
+    service_config = config.get(service_name, {})
+    service_config[option] = value
+    config[service_name] = service_config
 
 
 def coalesce(*, curr_deployment_dir: str,
@@ -29,7 +37,8 @@ def coalesce(*, curr_deployment_dir: str,
              oneclient_image: Optional[str] = None,
              rest_cli_image: Optional[str] = None,
              luma_image: Optional[str] = None,
-             no_pull: bool = False) -> None:
+             no_pull: bool = False,
+             gui_pkg_verification: bool = False) -> None:
 
     default_config = get_default_env_config()
     custom_config = load_yaml(env_config_path) if env_config_path else {}
@@ -65,6 +74,12 @@ def coalesce(*, curr_deployment_dir: str,
 
     if no_pull:
         merged_config['forceImagePull'] = False
+
+    if gui_pkg_verification:
+        # verification of GUI packages is option specific for Onezone service
+        # so it has to be merged to config for that service
+        set_option_for_service(merged_config, SERVICE_ONEZONE,
+                               'guiPackageVerification', gui_pkg_verification)
 
     deployment_env_config_path = os.path.join(curr_deployment_dir,
                                               'env_config.yaml')
