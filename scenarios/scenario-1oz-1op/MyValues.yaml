@@ -186,6 +186,9 @@ onedata-3p:
     onepanel_debug_mode: true
     memory: 0.5Gi
     cpu: 0.3
+    guiPackageVerification: false
+    harversterGuiPackageVerification: false
+    guiDebugMode: true
 
     image: *oz_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
@@ -207,11 +210,7 @@ onedata-3p:
     panelOverlayConfig: |-
       [].
     workerOverlayConfig: |-
-      [
-        {oz_worker, [
-          {disable_gui_package_verification, true}
-        ]}
-      ].
+      [].
 
     onezone_main_admin: &onezone_main_admin
       name: admin
