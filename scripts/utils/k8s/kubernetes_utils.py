@@ -13,12 +13,13 @@ from typing import List, Union, Callable, Any, Optional
 import urllib3
 from kubernetes import config
 from kubernetes.client import (CoreV1Api, V1Pod, V1ConfigMap, AppsV1Api,
-                               V1StatefulSet)
+                               V1StatefulSet, V1Service, V1Deployment)
 
 from .. import terminal
 
 
-K8sComponent = Union[V1Pod, V1ConfigMap, V1StatefulSet]
+K8sComponent = Union[V1Pod, V1ConfigMap, V1StatefulSet, V1Service,
+                     V1Deployment]
 
 
 def get_core_v1_api_client() -> CoreV1Api:

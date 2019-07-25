@@ -10,7 +10,7 @@ __license__ = "This software is released under the MIT license cited in " \
 import time
 import argparse
 
-from .utils.k8s import helm, pods
+from .utils.k8s import helm, pods, services, deployments
 from .utils import shell, terminal
 from .utils import arg_help_formatter
 from .utils.one_env_dir import user_config
@@ -20,25 +20,28 @@ from .utils.one_env_dir import deployment_data
 DEFAULT_RETRIES_NUM = 30
 
 
-def clean_deployment(all_deployments: bool = False,
-                     persistent_volumes: bool = False) -> None:
-    if all_deployments:
+def clean_helm_deployments(all_helm_deployments: bool = False,
+                           k8s_persistent_volumes: bool = False,
+                           k8s_services: bool = False,
+                           k8s_deployments: bool = False) -> None:
+    if all_helm_deployments:
         try:
             releases = deployment_data.get(default={}).get('releases', {})
         except FileNotFoundError as err:
             terminal.warning('Could not find: {}. Will delete only default '
                              'deployment.'.format(err.filename))
-            helm.clean_release()
         else:
             for release in releases:
                 helm.clean_release(release)
-            # ensure default deployment is deleted
-            # useful in case of k8s errors on bamboo
-            helm.clean_release()
-    else:
-        helm.clean_release()
+    helm.clean_release()
 
-    if persistent_volumes:
+    if k8s_deployments:
+        deployments.delete_k8s_deployments()
+
+    if k8s_services:
+        services.delete_k8s_services()
+
+    if k8s_persistent_volumes:
         pvs = pods.list_pvs()
         retries = DEFAULT_RETRIES_NUM
 
@@ -75,12 +78,29 @@ def main() -> None:
         dest='persistent_volumes'
     )
 
+    clean_args_parser.add_argument(
+        '-s', '--services',
+        action='store_true',
+        help='removes k8s services for current namespace'
+    )
+
+    clean_args_parser.add_argument(
+        '-d', '--deployments',
+        action='store_true',
+        help='removes k8s deployments for current namespace'
+    )
+
     clean_args = clean_args_parser.parse_args()
 
     user_config.ensure_exists()
     helm.ensure_deployment(exists=True, fail_with_error=False)
 
-    clean_deployment(clean_args.all, clean_args.persistent_volumes)
+    clean_helm_deployments(
+        all_helm_deployments=clean_args.all,
+        k8s_persistent_volumes=clean_args.persistent_volumes,
+        k8s_deployments=clean_args.deployments,
+        k8s_services=clean_args.services
+    )
 
 
 if __name__ == '__main__':
