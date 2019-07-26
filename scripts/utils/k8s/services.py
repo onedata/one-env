@@ -7,7 +7,7 @@ __copyright__ = "Copyright (C) 2019 ACK CYFRONET AGH"
 __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
-from typing import List
+from typing import List, Optional
 
 from kubernetes.client import V1Service
 
@@ -21,7 +21,9 @@ def list_k8s_services() -> List[V1Service]:
     return client.list_namespaced_service(namespace).items
 
 
-def delete_k8s_services(namespace: str = get_current_namespace()) -> None:
+def delete_k8s_services(namespace: Optional[str] = None) -> None:
+    if not namespace:
+        namespace = get_current_namespace()
     client = get_core_v1_api_client()
     services_list = list_k8s_services()
 
