@@ -19,7 +19,7 @@ from .utils.one_env_dir import user_config, deployments_dir, env_config
 def delete_old_deployment() -> None:
     if helm.deployment_exists():
         terminal.warning('Removing the existing deployment (forced)')
-        onenv_clean.clean_deployment()
+        onenv_clean.clean_helm_deployments()
 
 
 def change_release_name(release_name: str) -> None:

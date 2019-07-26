@@ -15,7 +15,7 @@ import yaml
 
 def load_yaml(path: str) -> Dict[Any, Any]:
     with open(path) as f:
-        return yaml.load(f)
+        return yaml.load(f, Loader=yaml.Loader)
 
 
 def dump_yaml(data: Dict[Any, Any],
