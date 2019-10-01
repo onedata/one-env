@@ -9,6 +9,7 @@ __license__ = "This software is released under the MIT license cited in " \
 
 import re
 import os
+import sys
 import shutil
 import subprocess
 from typing import Dict
@@ -56,7 +57,7 @@ def configure_os(os_configs: Dict[str, Dict], timeout: int) -> None:
 
     if not ready:
         print('Os configuration failed - deployment is not ready')
-        exit(1)
+        sys.exit(1)
 
     for pod_name, pod_cfg in pods_cfg.items():
         service_type = pod_cfg['service-type']

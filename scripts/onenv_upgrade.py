@@ -10,6 +10,7 @@ __copyright__ = "Copyright (C) 2019 ACK CYFRONET AGH"
 __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
+import sys
 import argparse
 from typing import List, Tuple, Optional
 
@@ -221,7 +222,7 @@ def main() -> None:
                                           upgrade_args.sources,
                                           stateful_set)
             if stateful_set is None:
-                exit(1)
+                sys.exit(1)
 
             if upgrade_args.yaml_values:
                 upgrade_deployment(upgrade_args.yaml_values, set_values,
@@ -234,7 +235,7 @@ def main() -> None:
         else:
             error('--sources or --image option has to be specified when '
                   'stateful set is given.')
-            exit(1)
+            sys.exit(1)
 
     elif upgrade_args.yaml_values:
         upgrade_deployment(upgrade_args.yaml_values,
