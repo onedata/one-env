@@ -8,18 +8,20 @@ __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
 import os
+import sys
 import subprocess as sp
 import argparse
 import datetime
 from typing import Any, Dict, Tuple, Optional
 
+import boto3
 from paramiko import SSHClient, AutoAddPolicy
 
 from . import ONE_ENV_ROOT_DIR
 from .utils.shell import check_output
 from .utils import arg_help_formatter
 from .utils.yaml_utils import dump_yaml
-from .utils.terminal import info, warning, error
+from .utils.terminal import info, warning, error, horizontal_line
 from .utils.deployment.sources_paths import (get_sources_location,
                                              get_onepanel_sources_locations)
 from .utils.common import (unpack_tar, get_git_branch_cmd,
@@ -31,7 +33,9 @@ from .utils.artifacts import (CURRENT_BRANCH, DEFAULT_BRANCH,
                               ARTIFACT_REPO_PORT_ENV)
 from .utils.artifacts.download_artifact import (download_artifact_safe,
                                                 download_specific_or_default,
-                                                artifact_tar_name)
+                                                artifact_tar_name,
+                                                s3_download_artifact_safe,
+                                                s3_download_specific_or_default)
 
 
 def ssh_to_artifact_repo(hostname: str, port: int, username: str) -> SSHClient:
@@ -40,6 +44,14 @@ def ssh_to_artifact_repo(hostname: str, port: int, username: str) -> SSHClient:
     ssh.load_system_host_keys()
     ssh.connect(hostname, port=port, username=username)
     return ssh
+
+
+def get_s3_resource(s3_url: str) -> boto3.resource:
+    s3_session = boto3.session.Session()
+    return s3_session.resource(
+        service_name='s3',
+        endpoint_url=s3_url
+    )
 
 
 def get_current_branch() -> Optional[str]:
@@ -51,6 +63,40 @@ def get_current_branch() -> Optional[str]:
         warning('Could not get branch from parent repository. Will use '
                 'default branch.')
     return branch_name
+
+
+def s3_download_missing_artifact(*, s3_res: boto3.resource, bucket: str,
+                                 branch: str, plan: str, target_dir: str,
+                                 current_branch: str, default_branch: str):
+    if branch != CURRENT_BRANCH:
+        # user set branch for particular repo - print info, try download
+        # artifact
+        info('Getting artifact for plan {}\'s from branch {}'
+             .format(plan, branch))
+        exc_log = ('Branch {} in plan {} not found. Exiting...'
+                   .format(branch, plan))
+        res = s3_download_artifact_safe(s3_res=s3_res,
+                                        bucket=bucket,
+                                        branch=branch,
+                                        plan=plan,
+                                        local_path=target_dir,
+                                        exc_log=exc_log,
+                                        exc_handler=sys.exit,
+                                        exc_handler_pos_args=(1, ))
+    else:
+        # user didn't set particular branch - print info about branches,
+        # try download artifact
+        info('Trying to download artifact for plan {}\'s from branch {}. '
+             'On failure artifact from {} branch will be downloaded.'
+             .format(plan, current_branch, default_branch))
+
+        res = s3_download_specific_or_default(s3_res=s3_res,
+                                              bucket=bucket,
+                                              plan=plan,
+                                              branch=current_branch,
+                                              default_branch=default_branch,
+                                              local_path=target_dir)
+    return res
 
 
 def download_missing_artifact(*, plan: str, branch: str, ssh: SSHClient,
@@ -72,7 +118,7 @@ def download_missing_artifact(*, plan: str, branch: str, ssh: SSHClient,
                                      username=username,
                                      local_path=target_dir,
                                      exc_log=exc_log,
-                                     exc_handler=exit,
+                                     exc_handler=sys.exit,
                                      exc_handler_pos_args=(1, ))
     else:
         # user didn't set particular branch - print info about branches,
@@ -183,6 +229,55 @@ def ensure_sources(branch_config: Dict[str, Any], ssh: SSHClient,
                     artifacts_to_unpack[plan] = artifact_path
                     sources_info[plan] = get_artifact_info(artifact_path,
                                                            downloaded_branch)
+        horizontal_line()
+    return sources_info, artifacts_to_unpack
+
+
+def s3_ensure_sources(branch_config: Dict[str, Any], s3_res: boto3.resource,
+                      bucket: str) -> Tuple[Dict[str, Any], Dict[str, str]]:
+    sources_info = {}
+    artifacts_to_unpack = {}
+
+    if not os.path.exists(LOCAL_ARTIFACTS_DIR):
+        os.makedirs(LOCAL_ARTIFACTS_DIR)
+
+    for plan, branch in branch_config.get('branches').items():
+        # check if sources for plan are present
+        info('Trying to find sources for {}.'.format(plan))
+        src_is_present, src_info = check_if_source_is_present(plan)
+        if src_is_present:
+            sources_info[plan] = src_info
+        else:
+            info('Sources for {} not found. Trying to find artifact.'
+                 .format(plan))
+            # check if artifact is present
+            artifact_tar = artifact_tar_name(plan)
+            artifact_path = get_artifact_path(artifact_tar)
+            if artifact_path:
+                info('Artifact for {} was found in {}.'
+                     .format(plan, artifact_path))
+                artifacts_to_unpack[plan] = artifact_path
+                sources_info[plan] = get_artifact_info(artifact_path)
+            else:
+                # download missing artifact
+                default_branch = branch_config.get(DEFAULT_BRANCH)
+                current_branch = branch_config.get(CURRENT_BRANCH)
+                downloaded_branch = s3_download_missing_artifact(
+                    s3_res=s3_res,
+                    bucket=bucket,
+                    plan=plan,
+                    branch=branch,
+                    default_branch=default_branch,
+                    current_branch=current_branch,
+                    target_dir=LOCAL_ARTIFACTS_DIR
+                )
+                if downloaded_branch:
+                    artifact_path = os.path.join(LOCAL_ARTIFACTS_DIR,
+                                                 artifact_tar)
+                    artifacts_to_unpack[plan] = artifact_path
+                    sources_info[plan] = get_artifact_info(artifact_path,
+                                                           downloaded_branch)
+        horizontal_line()
     return sources_info, artifacts_to_unpack
 
 
@@ -259,6 +354,18 @@ def main() -> None:
         dest='extract'
     )
 
+    # TODO: refactor after only s3_res repo will be used
+    pull_artifacts_args_parser.add_argument(
+        '--s3-url',
+        help='The S3 endpoint URL',
+        default='https://storage.cloud.cyfronet.pl'
+    )
+
+    pull_artifacts_args_parser.add_argument(
+        '--s3-bucket',
+        help='The S3 bucket name',
+        default='bamboo-artifacts-2')
+
     pull_artifacts_args_parser.add_argument(
         nargs='?',
         help='Path to YAML file containing configuration of branches, from '
@@ -275,30 +382,37 @@ def main() -> None:
     port = pull_artifacts_args.port
     username = pull_artifacts_args.username
 
-    if not hostname:
-        error('Artifact repo hostname not provided. You can either set '
-              'env variable "{}" or set appropriate script argument.'
-              .format(ARTIFACT_REPO_HOST_ENV))
-        exit(1)
-
-    if not port:
-        error('Artifact repo port not provided. You can either set '
-              'env variable "{}" or set appropriate script argument.'
-              .format(ARTIFACT_REPO_PORT_ENV))
-        exit(1)
-
     branch_config_path = pull_artifacts_args.branch_config_path
     branch = pull_artifacts_args.branch
     default_branch = pull_artifacts_args.default_branch
 
     branch_config = coalesce_branch_config(branch_config_path, branch,
                                            default_branch)
-    ssh = ssh_to_artifact_repo(hostname, port, username)
 
-    sources_info, artifacts_to_unpack = ensure_sources(branch_config, ssh,
-                                                       hostname, port,
-                                                       username)
-    ssh.close()
+    if hostname != 'S3':
+        if not hostname:
+            error('Artifact repo hostname not provided. You can either set '
+                  'env variable "{}" or set appropriate script argument.'
+                  .format(ARTIFACT_REPO_HOST_ENV))
+            sys.exit(1)
+
+        if not port:
+            error('Artifact repo port not provided. You can either set '
+                  'env variable "{}" or set appropriate script argument.'
+                  .format(ARTIFACT_REPO_PORT_ENV))
+            sys.exit(1)
+
+        ssh = ssh_to_artifact_repo(hostname, port, username)
+
+        sources_info, artifacts_to_unpack = ensure_sources(branch_config, ssh,
+                                                           hostname, port,
+                                                           username)
+        ssh.close()
+    else:
+        bucket = pull_artifacts_args.s3_bucket
+        s3_res = get_s3_resource(pull_artifacts_args.s3_url)
+        sources_info, artifacts_to_unpack = s3_ensure_sources(branch_config,
+                                                              s3_res, bucket)
 
     if pull_artifacts_args.extract:
         sources_info = extract_artifacts(artifacts_to_unpack, sources_info)

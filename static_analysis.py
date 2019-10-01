@@ -10,6 +10,7 @@ __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
 import os
+import sys
 import argparse
 import subprocess
 
@@ -27,7 +28,7 @@ def main():
 
     static_analysis_parser.add_argument(
         '-i', '--image',
-        default='onedata/python_static_analyser:v2',
+        default='onedata/python_static_analyser:v3',
         help='Docker image'
     )
 
@@ -44,7 +45,7 @@ def main():
     except subprocess.CalledProcessError as ex:
         print(ex)
         print('Captured stdout and stderr: {}'.format(ex.output))
-        exit(ex.returncode)
+        sys.exit(ex.returncode)
     else:
         print('OK')
 
