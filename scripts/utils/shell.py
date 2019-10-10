@@ -16,8 +16,9 @@ from .terminal import error
 File = Union[None, int, IO[Any]]
 
 
-def call(tokens: List[str], cwd: Optional[str] = None) -> int:
-    return sp.call(tokens, cwd=cwd)
+def call(tokens: List[str], cwd: Optional[str] = None,
+         timeout: Optional[int] = None) -> int:
+    return sp.call(tokens, cwd=cwd, timeout=timeout)
 
 
 def get_return_code(tokens: List[str], stdout: File = sp.DEVNULL,

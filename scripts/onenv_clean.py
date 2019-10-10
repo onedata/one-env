@@ -18,6 +18,7 @@ from .utils.one_env_dir import deployment_data
 
 
 DEFAULT_RETRIES_NUM = 30
+DEFAULT_CMD_TIMEOUT = 5
 
 
 def clean_helm_deployments(all_helm_deployments: bool = False,
@@ -46,7 +47,10 @@ def clean_helm_deployments(all_helm_deployments: bool = False,
         retries = DEFAULT_RETRIES_NUM
 
         while pvs and retries >= 0:
-            shell.call(pods.delete_kube_object_cmd('pv'))
+            shell.call(pods.delete_kube_object_cmd('pvc'),
+                       timeout=DEFAULT_CMD_TIMEOUT)
+            shell.call(pods.delete_kube_object_cmd('pv'),
+                       timeout=DEFAULT_CMD_TIMEOUT)
             pvs = pods.list_pvs()
             time.sleep(1)
             retries -= 1
