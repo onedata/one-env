@@ -88,6 +88,7 @@ CERT_ATTR_TO_PATH_MAPPING = {
     'cacerts_dir': 'cacerts'
 }
 
+SOURCES_READY_FILE_PATH = '/tmp/sources_ready.txt'
 ONECLIENT_BIN_PATH = '/opt/oneclient/bin'
 
 
