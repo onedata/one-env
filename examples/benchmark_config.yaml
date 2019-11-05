@@ -1,0 +1,15 @@
+providersConfig:
+  krakow: oneprovider-1
+  paris: oneprovider-2
+  lisbon: oneprovider-3
+
+oneclientImage: docker.onedata.org/oneclient-dev:ID-dfced92452
+oneclientsNumber: 1
+oneclientArgs: --force-direct-io
+
+# either access token or username:password
+accessToken:
+  username: "admin"
+  password: "password"
+
+spaceName: "space-1"

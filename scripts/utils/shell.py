@@ -10,8 +10,8 @@ __license__ = "This software is released under the MIT license cited in " \
 import subprocess as sp
 from typing import List, Union, IO, Any, Optional
 
-
 from .terminal import error
+
 
 File = Union[None, int, IO[Any]]
 

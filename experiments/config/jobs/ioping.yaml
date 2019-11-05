@@ -1,0 +1,20 @@
+name: ioping
+job_replicas: 10
+dashboards:
+  - name: "Ioping Dasbaord"
+    dashboard: !include experiments/config/dashboards/oneclient-small.json
+    panels:
+      - name: "My sequecne writes"
+        id: 2
+      - name: "My random writes"
+        id: 3
+compute:
+  image: karteek/alpine-ioping:latest
+  env:
+    prepare_args: -s 10G ioping.$((jobId%jobReplicas))
+    compute_args: -c 5 -i 0 -S 10G ioping.$((jobId%jobReplicas))
+    clean_args: ""
+  spaceName: "krk-iu"
+  dataMountPoint: /mnt/oneclient
+  shell: sh
+  command: !include experiments/config/jobs/ioping.sh

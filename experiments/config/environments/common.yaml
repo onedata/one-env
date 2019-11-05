@@ -1,0 +1,31 @@
+# All variables defined in the root of this file will 
+# will be injected into every chart
+
+envs:
+  # $envs.foo
+  foo: bar
+  bar: foo
+  provider:
+    krakow: "httt:///"
+    paris: "htt"
+    lisbone: "httt"
+
+
+jobEnvironment: !include experiments/config/environments/job.yaml
+suiteEnvironment: !include experiments/config/environments/suite.yaml
+experimentEnvironment: !include experiments/config/environments/experiment.yaml
+
+results:
+  image: alpine/git
+  resultsDirectoryRoot: "orzech-dev/$POD_NAME"
+  git:
+    enabled: true
+    userName: "Bamboo role account"
+    userEmail: "bamboo@plg-web12.grid.cyf-kr.edu.pl"
+    repository: git@github.com:groundnuty/reports.git
+    commitAuthor: "groundnuty <michal.orzechowski@cyfronet.pl>"
+    sshPrivateKey: !include experiments/config/private/ssh_private_key
+
+persistence:
+  enabled: true
+  claimName: obench-nfs-stress-nfs-pvc

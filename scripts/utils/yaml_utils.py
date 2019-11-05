@@ -13,7 +13,11 @@ from typing import Dict, Any, Optional
 import yaml
 
 
-def load_yaml(path: str) -> Dict[Any, Any]:
+def load_yaml(string: str) -> Dict[Any, Any]:
+    return yaml.load(string, yaml.Loader)
+
+
+def load_yaml_from_file(path: str) -> Dict[Any, Any]:
     with open(path) as f:
         return yaml.load(f, Loader=yaml.Loader)
 

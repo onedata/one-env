@@ -1,0 +1,22 @@
+name: sysbench
+job_replicas: 1
+dashboards:
+  - name: "Sysbench Dasbaord"
+    dashboard: !include experiments/config/dashboards/oneclient-small.json
+    panels:
+      - name: "My sequecne writes"
+        id: 2
+      - name: "My random writes"
+        id: 3
+compute:
+  image: severalnines/sysbench:latest
+  env:
+    prepare_args: --test=fileio --file-num=1 --file-block-size=1M --file-total-size=100M --file-test-mode=seqrd --file-io-mode=sync prepare
+    compute_args: --test=fileio --file-num=1 --file-block-size=1M --file-total-size=100M --file-test-mode=seqrd --file-io-mode=sync run
+    clean_args: ""
+  spaceName: "krk-iu"
+  dataMountPoint: /mnt/oneclient
+  shell: sh
+  command: !include experiments/config/jobs/sysbench.sh
+oneclient:
+  enabled: false

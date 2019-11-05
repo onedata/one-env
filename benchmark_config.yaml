@@ -1,0 +1,11 @@
+oneproviderHost: oneprovider-1
+
+oneclientImage: docker.onedata.org/oneclient-dev:ID-dfced92452
+oneclientsNumber: 1
+oneclientArgs: --force-direct-io
+
+accessToken:
+  username: "admin"
+  password: "password"
+
+spaceName: "space-1"

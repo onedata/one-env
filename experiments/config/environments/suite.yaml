@@ -1,0 +1,24 @@
+# This gets injected into suite chart on it's root level
+# overriding variables from 'environment' section above
+
+grafanaSnapshots:
+  delayTime: 10 # in seconds
+  grafanaAPIKey: !include experiments/config/private/grafana_api_key
+
+jobController:
+  jobChartVersion: "0.1.4"
+
+results:
+  git:
+    commitMessage: "results of ${MY_POD_NAME}"
+
+grafanaSnapshots:
+  enabled: false
+  grafanaGUIUrl: grafana.mon.svc.dev.onedata.uk.to
+  username: admin
+  password: !include experiments/config/private/grafana_password
+  grafanaAPIKey: !include experiments/config/private/grafana_api_key
+  grafanaDashboardFolder: ObenchDashboards
+
+deployNFS:
+  enabled: false

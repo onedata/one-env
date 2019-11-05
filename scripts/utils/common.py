@@ -57,13 +57,14 @@ def unpack_tar(path: str, to_path: str) -> None:
     call(['tar', 'xzf', path], cwd=to_path)
 
 
-def find_files_in_relative_paths(dirs: List[str],
-                                 rel_paths: List[str]) -> Tuple[Optional[str],
-                                                                List[str]]:
-    cwd = os.getcwd()
-    paths_to_check = [os.path.join(cwd, p) for p in dirs]
-    for rel_path in rel_paths:
-        paths_to_check.extend([os.path.join(cwd, rel_path, d) for d in dirs])
+def find_files_in_paths(dirs: List[str],
+                        paths: List[str]) -> Tuple[Optional[str], List[str]]:
+    paths_to_check = []
+
+    for path in paths:
+        paths_to_check.extend([os.path.abspath(os.path.join(path, d))
+                               for d in dirs])
+
     location = next((path for path in paths_to_check if os.path.exists(path)),
                     None)
 

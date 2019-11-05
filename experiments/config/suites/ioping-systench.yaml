@@ -1,0 +1,125 @@
+name: "Suite 1"
+description: "Desc suite 1"
+
+envs:
+  # $envs.foo
+  foo: bar
+  bar: foo
+  
+prepare_jobs:
+  - k
+# Sync
+  
+test_jobs:
+  - name: sysbench
+    description: |-
+      bla bla
+    job_replicas: 1
+    oneclient:
+      enabled: false
+    # Inject all envs to compute container
+    envs:
+      # $envs.foo
+      foo: bar
+      bar: foo
+    compute:
+      image: karteek/alpine-ioping:latest
+
+      # The computation can have 3 parts: preparation, computation (execution) and cleaning.
+      # Arguments for each part can be set here.
+      prepare_args: -s 10G ioping.$((JOB_ID%JOB_REPLICAS))
+      compute_args: -c 5 -i 0 -S 10G ioping.$((JOB_ID%JOB_REPLICAS))
+      clean_args: ""
+
+      # Space name
+      spaceName: "par-su"
+
+      command:
+        - "/usr/bin/env"
+        - "sh"
+        - "-c"
+        - >
+          set -e ;
+          trap "{ echo 1 > /monitor/ordinal_number ; echo 1 > /monitor/wait-for-compute-prep-barrier ; echo 1 > /results/prep-starting ; echo 1 > /results/prep-ended ; echo 1 > /monitor/wait-for-compute-run-barrier ; echo 1 > /results/compute-starting ; echo 1 > /results/compute-ended ; echo 1 > /monitor/wait-for-compute-clean-barrier ; echo 1 > /results/clean-starting ; echo 1 > /monitor/wait-for-compute-clean-barrier ; echo 1 > /results/clean-ended ; echo 1 > /monitor/oneclient-can-exit ; }" EXIT ;
+          apk update; apk add bash;
+          work_dir="$dataMountPoint/$spaceName" ;
+          echo "Waiting for job ordinal number..." ;
+          while [ ! -f /monitor/ordinal_number ] ; do sleep 1 ; done ;
+          export JOB_ID=$(cat /monitor/ordinal_number) ; echo "Ordinal number acquired: JOB_ID=$JOB_ID" ;
+          prepare() {
+            echo "Changing working directo to: $work_dir" ;
+            cd "$work_dir" ;
+            pwd ;
+            printf "$(date) " ; echo "Starting ioping prep with truncate." ;
+              eval truncate $prepare_args ;
+            printf "$(date) " ; echo "ioping prep end" ;
+          } ;
+          compute() {
+            printf "$(date)" ; echo "Starting computation sysbench run." ;
+            bash -c 'eval ioping $compute_args | tee >(sed -ne "/ioping statistics/,$ p" > /results/compute_results)' ;
+            printf "$(date) " ; echo "sysbench compute end" ;
+          } ;
+          clean() {
+            printf "$(date)" ; echo "Starting cleaning." ;
+            echo "No cleaning needed." ;
+            printf "$(date) " ; echo "clean end" ;
+          } ;
+          echo "Waiting for oneclient..." ;
+          while [ ! -f /monitor/oneclient-started ] ; do sleep 1 ; done ;
+          echo "Oneclient ready." ;
+          echo "Reached compute point." ;
+          echo "Waiting for all other jobs to reach this point before running sysbench prepare." ;
+          echo 1 > /monitor/wait-for-compute-prep-barrier ;
+          while [ ! -f /monitor/wait-for-all-jobs-prep-barrier ] ; do sleep 1 ; done ;
+          echo 1 > /results/prep-starting ;
+          if [ "$prepare_args" != "" ]; then prepare ; fi ;
+          echo 1 > /results/prep-ended ;
+          echo "Waiting for all other jobs to reach this point before running sysbench run." ;
+          echo 1 > /monitor/wait-for-compute-run-barrier ;
+          while [ ! -f /monitor/wait-for-all-jobs-run-barrier ] ; do sleep 1 ; done ;
+          echo 1 > /results/compute-starting ;
+          if [ "$compute_args" != "" ]; then compute ; fi ;
+          echo 1 > /results/compute-ended ;
+          echo "Waiting for all other jobs to reach this point before running cleaning procedure." ;
+          echo 1 > /monitor/wait-for-compute-clean-barrier ;
+          while [ ! -f /monitor/wait-for-all-jobs-clean-barrier ] ; do sleep 1 ; done ;
+          echo 1 > /results/clean-starting ;
+          if [ "$clean_args" != "" ]; then clean ; fi ;
+          echo 1 > /results/clean-ended ;
+          printf "$(date)" ; echo "The compute container finished." ;
+          printf "$(date)" ; echo "Signaling oneclient to finish." ;
+          echo 1 > /monitor/oneclient-can-exit ;
+      
+    config_path: !include experiments/config/jobs/sysbench.yaml
+    dashboards: 
+      - name: "My dashboard 1"
+        dashboard: !include experiments/config/dashboards/naive-oneclient.json
+        grafanaIFrames:
+          - name: "My sequecne writes"
+            id: 12
+          - name: "My sequecne writes"
+            id: 13
+  - name: ioping
+    job_replicas: 5
+    description: "Example ioping"
+    compute:
+      image: karteek/alpine-ioping:latest
+      prepare_args: -s 10G ioping.$((JOB_ID%JOB_REPLICAS))
+      compute_args: -c 5 -i 0 -S 10G ioping.$((JOB_ID%JOB_REPLICAS))
+      clean_args: ""
+      spaceName: "par-su"
+    oneclient:
+      args: -v 1 --force-fullblock-read --rndrd-prefetch-cluster-window=2007040 --rndrd-prefetch-cluster-block-threshold=1000000  --cluster-prefetch-threshold-random --provider-timeout=400 --monitoring-type graphite --monitoring-level-full --monitoring-period 10 --graphite-url "$GRAFANA_URL" --graphite-namespace-prefix "$graphite_prefix" --force-direct-io ${MOUNT_POINT}
+    config_path: !include experiments/config/jobs/ioping.yaml
+    dashboards: 
+      - name: "My dashboard 1"
+        dashboard: !include experiments/config/dashboards/naive-oneclient.json
+        grafanaIFrames:
+          - name: "My sequecne writes"
+            id: 12
+          - name: "My sequecne writes"
+            id: 13
+
+# Sync
+cleanup_jobs:
+  - j

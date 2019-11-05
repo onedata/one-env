@@ -1,0 +1,21 @@
+# Experiment name as displayed in the reports
+name: "Nicely Named Experiment"
+
+# Experiment description as displayed in the reports
+description: "Exp Desc"
+
+# List of stress-suites that will be submitted using helm
+# with customizations specified bellow
+# Suites must have unique names.
+suites:
+    # Suite name (must be unique!)
+  - name: f-s-i
+    # Suite customization config,that overrides the default suite parameters
+    config: !include experiments/config/suites/custom-suite.yaml
+
+# Everything defined in the environment gets injected
+# into all the charts: experiment,suite, job on the root level
+environment: !include experiments/config/environments/common.yaml
+
+# DEBUGGING
+first-sysbench-ioping: ""

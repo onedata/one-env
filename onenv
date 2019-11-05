@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 """
-Runs appropriate onenv_* script.
+Runs appropriate onenv_* script in docker.
 """
 
 __author__ = "Michal Cwiertnia"
-__copyright__ = "Copyright (C) 2018 ACK CYFRONET AGH"
+__copyright__ = "Copyright (C) 2019 ACK CYFRONET AGH"
 __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
@@ -14,80 +14,16 @@ import argparse
 import importlib
 
 
-SCRIPT_DESCRIPTION = 'Runs onenv commands'
-ONENV_COMMANDS = ('attach', 'clean', 'exec', 'export', 'gui', 'hosts', 'init',
-                  'logs', 'oneclient', 'patch', 'pull_artifacts', 'status',
-                  'up', 'update', 'upgrade', 'wait', 'watch')
-EPILOG = '''
-Onenv commands:
-       attach         - attaches directly to erlang VM in chosen pod 
-       clean          - removes current onedata deployment and cleans up 
-       exec           - execs to chosen pod with an interactive shell 
-       export         - gathers all logs and data from current deployment and 
-                        places them in desired location 
-       gui            - opens the GUI hosted on given pod in default browser 
-       hosts          - adds entries in /etc/hosts for all nodes in current 
-                        deployment 
-       init           - creates ~/.one-env directory and config files
-       logs           - displays logs of chosen pod 
-       oneclient      - allows to start new oneclients (k8s deployment), 
-                        that can be configured using configuration file or 
-                        command line options.
-       patch          - configures onedata deployment with given patch (patch 
-                        is yaml file with description of spaces, users, groups 
-                        and luma config) 
-       pull_artifacts - downloads missing sources from artifact repository.
-                        Branches can be configured using yaml file or command
-                        line arguments.
-       status         - displays the status of current onedata deployment 
-       up             - sets up a onedata deployment on kubernetes cluster 
-       update         - updates sources for current deployment or given pod 
-       upgrade        - allows to upgrade given service (started either from 
-                        sources or packages). It is also possible to upgrade 
-                        helm deployment itself. 
-       wait           - waits for current deployment to be ready 
-       watch          - starts watcher for current deployment or given pod
-'''
-
-
 def main():
-    parser = argparse.ArgumentParser(
+    argparse.ArgumentParser(
         prog='onenv',
-        formatter_class=argparse.RawTextHelpFormatter,
-        description=SCRIPT_DESCRIPTION,
-        epilog=EPILOG,
-        add_help=False
+        description='Run one_env commands in docker'
     )
 
-    parser.add_argument(
-        'command',
-        nargs='?',
-        help='onenv command to execute',
-        choices=ONENV_COMMANDS
-    )
-
-    parser.add_argument(
-        'command_args',
-        nargs='*',
-        help='arguments to onenv command'
-    )
-
-    parser.add_argument(
-        '-h', '--help',
-        action='store_true',
-        help='display help'
-    )
-
-    args, _ = parser.parse_known_args()
-
-    if args.command:
-        module_path = 'scripts/onenv_{}'.format(args.command)
-        sys.argv = [module_path] + sys.argv[2:]
-
-        command_module = importlib.import_module(module_path.replace('/', '.'))
-        command_module.main()
-    else:
-        parser.print_help()
+    runner_path = 'scripts/runner'
+    sys.argv = [runner_path] + sys.argv[1:]
+    runner_module = importlib.import_module(runner_path.replace('/', '.'))
+    runner_module.main()
 
 
 if __name__ == '__main__':

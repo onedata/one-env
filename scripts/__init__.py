@@ -1,5 +1,5 @@
 """
-Package with onenv scripts.
+This package contains modules with utility functions for one_env scripts.
 """
 
 __author__ = "Michal Cwiertnia"
@@ -8,6 +8,13 @@ __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
 import os
+ONE_ENV_CONTAINER_NAME = 'one-env'
+OPENING_URL_INFO = 'Opening URL: '
 
-SCRIPTS_DIR = os.path.dirname(os.path.realpath(__file__))
-ONE_ENV_ROOT_DIR = os.path.abspath(os.path.join(SCRIPTS_DIR, '..'))
+
+def get_host_home() -> str:
+    return os.path.expanduser('~')
+
+
+def get_one_env_directory() -> str:
+    return os.path.join(get_host_home(), '.one-env')

@@ -1,0 +1,20 @@
+name: custom_job
+job_replicas: 10
+dashboards:
+  - name: "Custom Job Dasbaord"
+    dashboard: !include experiments/config/dashboards/oneclient-small.json
+    panels:
+      - name: "My sequecne writes"
+        id: 2
+      - name: "My random writes"
+        id: 3
+compute:
+  image: karteek/alpine-ioping:latest
+  env:
+    prepare_args: custom_job.$((jobId%jobReplicas))
+    compute_args: ""
+    clean_args: ""
+  spaceName: ""
+  dataMountPoint: /mnt/oneclient
+  shell: sh
+  command: !include experiments/config/jobs/custom.sh
