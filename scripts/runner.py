@@ -90,7 +90,7 @@ def exec_cmd_in_one_env_docker(container: str, args: List[str]) -> None:
     try:
         res = check_output(exec_cmd)
         print(res)
-        if 'Opening URL' in res:
+        if OPENING_URL_INFO in res:
             url = re.search('{}(.*)'.format(OPENING_URL_INFO), res).group(1)
             webbrowser.open(url)
     except sp.CalledProcessError as ex:
