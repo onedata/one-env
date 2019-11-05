@@ -30,7 +30,6 @@ Filter = namedtuple('Filter', ['key', 'value'])
 
 
 def parse_env_vars(envs: Optional[List[EnvVar]] = None) -> List[str]:
-    print(envs)
     tokens = []
 
     if envs:
