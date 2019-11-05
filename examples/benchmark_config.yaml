@@ -1,5 +1,6 @@
 # providers configuration
-# each provider will be accessible in experiment configuration
+# each provider will be accessible in experiment configuration in following way
+# !var ${provider.krakow}
 providers:
   krakow: oneprovider-1
   paris: oneprovider-2
