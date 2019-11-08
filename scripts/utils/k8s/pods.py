@@ -239,9 +239,11 @@ def get_container_status(container_name: str,
 
 def get_container_image(container_name: str,
                         pod: V1Pod) -> Optional[str]:
-    for container_status in pod.status.container_statuses:
-        if container_status.name == container_name:
-            return container_status.image
+    container_statuses = pod.status.container_statuses
+    if container_statuses:
+        for container_status in container_statuses:
+            if container_status.name == container_name:
+                return container_status.image
     return None
 
 
