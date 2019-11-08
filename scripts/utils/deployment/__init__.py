@@ -9,4 +9,4 @@ __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
 
-CHARTS_VERSION = '0.2.15-rc36'
+CHARTS_VERSION = '0.2.15-rc39'

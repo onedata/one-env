@@ -26,7 +26,8 @@ from .. import shell, terminal
 from ..k8s.kubernetes_utils import (get_name, get_core_v1_api_client,
                                     match_components_verbose)
 from ..names_and_paths import (APP_TYPE_WORKER, service_and_app_type_to_app,
-                               service_name_to_alias_mapping)
+                               service_name_to_alias_mapping,
+                               SOURCES_READY_FILE_PATH)
 
 
 SIGINT = 128 + int(signal.SIGINT)
@@ -291,6 +292,21 @@ def all_jobs_succeeded() -> bool:
 
 def all_pods_running() -> bool:
     return all(is_pod_running(pod) for pod in list_pods())
+
+
+def ensure_new_pod(pod_name: str) -> V1Pod:
+    wait_for_pod(pod_name)
+    pod = match_pods(pod_name)[0]
+
+    # it is possible (e.g. during upgrade) that old pod is matched above.
+    # To ensure that rsync is executed to new pod, check if ready file exists.
+    # If yes then matched pod is the old one and it is necessary to wait for
+    # its recreation.
+    while file_exists_in_pod(pod_name, SOURCES_READY_FILE_PATH):
+        time.sleep(1)
+        wait_for_pod(pod_name)
+        pod = match_pods(pod_name)[0]
+    return pod
 
 
 def wait_for_pod(pod_name: str, timeout: int = 300) -> None:
