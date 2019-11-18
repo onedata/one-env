@@ -141,7 +141,7 @@ def s3_download_artifact_safe(*, s3_res: boto3.resource, bucket: str, plan: str,
     try:
         s3_download_artifact(s3_res, bucket, plan, branch, local_path)
         return branch
-    except botocore.exceptions.BotoCoreError as ex:
+    except botocore.exceptions.ClientError as ex:
         info('{}.\nFailure reason: {}'.format(exc_log, ex))
         if exc_handler:
             return (exc_handler(*exc_handler_pos_args)
