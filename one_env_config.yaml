@@ -1,0 +1,10 @@
+# one-env image that should be used
+onenvImage: onedata/one_env:1
+
+# Absolute path to user's home dir on this host
+hostHomeDir: $hostHomeDir
+
+# Absolute path to the path where user's home dir is mounted on kubernetes host.
+# If kubernetes is running natively on the host, just leave the same value as
+# above (hostHomeDir).
+kubeHostHomeDir: $kubeHostHomeDir

@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# This is standalone script that deletes existing minikube installation
+# and starts new one. Command line argument allows to specify which
+# k8s version should be started.
+
 VERSION=${1}
 sudo minikube delete
 if [ -z "${VERSION}" ]

@@ -1,3 +1,0 @@
-[submodule "scenarios"]
-	path = scenarios
-	url = ssh://git@git.onedata.org:7999/vfs/one-env-scenarios.git
