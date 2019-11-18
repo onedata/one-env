@@ -8,32 +8,25 @@ __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
 import subprocess as sp
-from typing import Optional, List, Union, NamedTuple, Any
+from collections import namedtuple
+from typing import Optional, List, Union
 
 
 RUNNING_STATUS = 'running'
 EntryPointCmdType = Union[str, List[str]]
 
 
-class EnvVar(NamedTuple):
-    name: str
-    value: Any
+EnvVar = namedtuple('EnvVar', ['name', 'value'])
 
+Volume = namedtuple('Volume', ['host_path', 'mount_path', 'options'])
+# make options parameter optional
+Volume.__new__.__defaults__ = ('', )
 
-class Volume(NamedTuple):
-    host_path: str
-    mount_path: str
-    options: str = ''
+User = namedtuple('User', ['user', 'group'])
+# make group parameter optional
+User.__new__.__defaults__ = ('', )
 
-
-class User(NamedTuple):
-    user: str
-    group: str = ''
-
-
-class Filter(NamedTuple):
-    key: str
-    value: Any
+Filter = namedtuple('Filter', ['key', 'value'])
 
 
 def assemble_env_vars(envs: Optional[List[EnvVar]] = None) -> List[str]:
