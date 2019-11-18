@@ -91,8 +91,8 @@ def ps(*, all_containers: bool = False, quiet: bool = False,
 
     if output:
         return check_output_with_decode(cmd)
-    else:
-        return sp.call(cmd)
+
+    return sp.call(cmd)
 
 
 def rm(container: str, force: bool = False) -> int:
@@ -145,8 +145,8 @@ def run(image: str, *, name: Optional[str] = None,
 
     if output:
         return check_output_with_decode(cmd)
-    else:
-        return sp.call(cmd)
+
+    return sp.call(cmd)
 
 
 def execute(container: str, *, work_dir: Optional[str] = None,
@@ -174,8 +174,8 @@ def execute(container: str, *, work_dir: Optional[str] = None,
 
     if output:
         return check_output_with_decode(cmd)
-    else:
-        return sp.call(cmd)
+
+    return sp.call(cmd)
 
 
 def inspect(container: str, fmt: Optional[str] = None) -> str:
