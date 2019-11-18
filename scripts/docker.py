@@ -178,7 +178,7 @@ def execute(container: str, *, work_dir: Optional[str] = None,
         return sp.call(cmd)
 
 
-def inspect_cmd(container: str, fmt: Optional[str] = None) -> List[str]:
+def inspect(container: str, fmt: Optional[str] = None) -> str:
     cmd = ['docker', 'inspect']
 
     if fmt:
@@ -186,7 +186,7 @@ def inspect_cmd(container: str, fmt: Optional[str] = None) -> List[str]:
 
     cmd.append(container)
 
-    return cmd
+    return check_output_with_decode(cmd)
 
 
 def format_command(entry_point: Union[str, List]) -> List[str]:
@@ -199,8 +199,7 @@ def format_command(entry_point: Union[str, List]) -> List[str]:
 
 
 def get_container_status(container: str) -> str:
-    return check_output_with_decode(inspect_cmd(container,
-                                                '{{ .State.Status }}'))
+    return inspect(container, '{{ .State.Status }}')
 
 
 def check_output_with_decode(cmd: List[str]) -> str:
