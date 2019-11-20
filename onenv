@@ -26,6 +26,7 @@ from scripts import docker
 
 ONE_ENV_CONTAINER_NAME = 'one-env'
 OPENING_URL_INFO = 'Opening URL: '
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
 def get_environment_vars() -> List[docker.EnvVar]:
@@ -34,9 +35,9 @@ def get_environment_vars() -> List[docker.EnvVar]:
                            'ARTIFACT_REPO_PORT']
 
     for variable_name in env_variables_names:
-        if os.environ.get(variable_name):
-            env_variables.append(docker.EnvVar(variable_name,
-                                               os.environ.get(variable_name)))
+        value = os.environ.get(variable_name)
+        if value:
+            env_variables.append(docker.EnvVar(variable_name, value))
     return env_variables
 
 
@@ -45,14 +46,22 @@ def get_volumes() -> List[docker.Volume]:
                docker.Volume('/etc/hosts', '/etc/hosts'),
                docker.Volume('/var/run/docker.sock', '/var/run/docker.sock')]
 
-    if os.environ.get('SSH_AUTH_SOCK'):
-        volumes.append(docker.Volume(os.environ.get('SSH_AUTH_SOCK'),
-                                     os.environ.get('SSH_AUTH_SOCK')))
+    ssh_auth_sock = os.environ.get('SSH_AUTH_SOCK')
+    if ssh_auth_sock:
+        volumes.append(docker.Volume(ssh_auth_sock, ssh_auth_sock))
+
+    # this is necessary for builds on bamboo. All builds run in the /mnt
+    # directory not in the /home directory so to make any configs and the
+    # like present in one-env docker, volume with cwd is created
+    cwd = os.getcwd()
+    if not cwd.startswith(os.path.expanduser('~')):
+        volumes.append(docker.Volume(cwd, cwd))
+
     return volumes
 
 
 def run_one_env_docker() -> str:
-    with open('one_env_config.yaml') as f:
+    with open(os.path.join(SCRIPT_DIR, 'one_env_config.yaml')) as f:
         one_env_cfg = yaml.load(f, yaml.Loader)
 
     try:
@@ -81,11 +90,7 @@ def run_one_env_docker() -> str:
 def exec_cmd_in_one_env_docker(container: str, args: List[str],
                                one_env_command: str) -> None:
     try:
-        if one_env_command == 'gui':
-            output = True
-        else:
-            output = False
-
+        output = one_env_command == 'gui'
         res = docker.execute(
             container,
             tty=True,
@@ -132,7 +137,7 @@ def main() -> None:
                     'command in one-env docker container.'
     )
 
-    _args, _pass_args = parser.parse_known_args()
+    parser.parse_known_args()
     run_one_env_cmd_in_docker(sys.argv[1:])
 
 

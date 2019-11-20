@@ -53,5 +53,3 @@ forceImagePull: false
 # space configuration please refer to one of MyValues.yaml file in
 # scenario directory.
 spaces: true
-
-users: true

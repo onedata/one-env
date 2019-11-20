@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2019 ACK CYFRONET AGH"
 __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
+import sys
 import subprocess as sp
 from collections import namedtuple
 from typing import Optional, List, Union
@@ -59,7 +60,7 @@ def assemble_filters(filters: Optional[Filter] = None) -> List[str]:
     return tokens
 
 
-def parse_groups(groups: Optional[List[str]]) -> List[str]:
+def assemble_groups(groups: Optional[List[str]]) -> List[str]:
     tokens = []
 
     if groups:
@@ -118,18 +119,19 @@ def run(image: str, *, name: Optional[str] = None,
         cmd.extend(['-u', '{}:{}'.format(user.user, user.group)])
     if network:
         cmd.extend(['--network', network])
-    if tty:
-        cmd.append('--tty')
+    if detach or sys.__stdin__.isatty():
+        if tty:
+            cmd.append('--tty')
+        if interactive:
+            cmd.append('-i')
     if detach:
         cmd.append('-d')
-    if interactive:
-        cmd.append('-i')
     if remove:
         cmd.append('--rm')
 
     cmd.extend(assemble_env_vars(envs))
     cmd.extend(assemble_volumes(volumes))
-    cmd.extend(parse_groups(groups))
+    cmd.extend(assemble_groups(groups))
 
     cmd.append(image)
 
@@ -144,15 +146,16 @@ def run(image: str, *, name: Optional[str] = None,
 
 def execute(container: str, *, work_dir: Optional[str] = None,
             interactive: bool = False, tty: bool = False, output: bool = False,
-            user: Optional[User] = None,
+            detach: bool = False, user: Optional[User] = None,
             envs: Optional[List[EnvVar]] = None,
             command: Optional[EntryPointCmdType] = None) -> Union[str, int]:
     cmd = ['docker', 'exec']
 
-    if interactive:
-        cmd.append('-i')
-    if tty:
-        cmd.append('-t')
+    if detach or sys.__stdin__.isatty():
+        if interactive:
+            cmd.append('-i')
+        if tty:
+            cmd.append('-t')
     if work_dir:
         cmd.extend(['-w', work_dir])
     if user:

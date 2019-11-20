@@ -6,7 +6,7 @@ oneclient:
 
   graphite_prefix: exper.${experiment}.date.${date}.args.${args}.release.${release}.dc.${dc}.cluster.${cluster}.host.${MY_NODE_NAME}.pod.${MY_POD_NAMESPACE}-${MY_POD_NAME}.container.oneclient.uid.0
   accessToken: !include experiments/config/private/oneclient_access_token
-  args: ${MOUNT_POINT}
+  args: --force-fullblock-read --monitoring-type graphite -v 2 --monitoring-level-full --monitoring-period 10 --graphite-url "$GRAFANA_URL" --graphite-namespace-prefix "$graphite_prefix" --force-direct-io ${MOUNT_POINT}
   grafanaUrl: go-carbon.mon.svc.dev.onedata.uk.to
   mountPoint: /mnt/oneclient
   insecure: "true"

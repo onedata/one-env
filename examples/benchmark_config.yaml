@@ -6,8 +6,14 @@ providers:
   paris: oneprovider-2
   lisbon: oneprovider-3
 
-# oneclient image to use in benchmark
+# Oneclient image to use in benchmark
 oneclientImage: docker.onedata.org/oneclient-dev:ID-dfced92452
+
+# Oneclient should connect only to nodes with op-worker. These two variables
+# allows to specify how many nodes with op-worker are present in environment
+# and what is the first ordinal number of pod with op-worker deployed.
+numberOfOpWorkers: 1
+opWorkerOrdinalNumberShift: 0
 
 # number of oneclient pods to create in benchmark
 oneclientsNumber: 1
