@@ -182,7 +182,9 @@ def parse_service_cfg(parsed_env_cfg: Dict[str, Any],
 
         batch_cfg = service_cfg.get('batchConfig')
         if isinstance(batch_cfg, bool) and not batch_cfg:
-            parsed_env_cfg[scenario_key][service]['onepanel_batch_mode_enabled'] = False
+            turn_off_batch_config(service_type,
+                                  parsed_env_cfg[scenario_key][service])
+
         if isinstance(batch_cfg, dict):
             users_cfg = batch_cfg.get('createUsers')
             parse_users_config(users_cfg,
@@ -206,6 +208,15 @@ def parse_service_cfg(parsed_env_cfg: Dict[str, Any],
                                         service_src_cfg, my_values_path)
 
     set_nodes_num(parsed_env_cfg, service_type, scenario_key, service, nodes)
+
+
+def turn_off_batch_config(service_type: str, service_cfg: Dict[str, Any]):
+    service_cfg['onepanel_batch_mode_enabled'] = False
+    if service_type == SERVICE_ONEPROVIDER:
+        service_cfg['oneprovider_ready_check'] = {'enabled': False}
+        service_cfg['wait-for-onezone'] = {'enabled': False}
+    else:
+        service_cfg['onezone_ready_check'] = {'enabled': False}
 
 
 def parse_custom_sources_for_oc(provider_name: str,
