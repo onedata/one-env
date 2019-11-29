@@ -1,7 +1,7 @@
 #!/bin/sh
 
 prepare() {
-  echo "Changing working directo to: $work_dir" ;
+  echo "Changing working directory to: $work_dir" ;
   cd "$work_dir" ;
   pwd ;
   printf "$(date) " ;

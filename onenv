@@ -65,6 +65,13 @@ def run_one_env_docker() -> str:
         one_env_cfg = yaml.load(f, yaml.Loader)
 
     try:
+        groups = [str(grp.getgrnam('docker').gr_gid)]
+    except KeyError:
+        # on OSX there is no docker group so pass empty list if cannot get
+        # gid of docker group
+        groups = []
+
+    try:
         container = docker.run(
             one_env_cfg.get('onenvImage'),
             user=docker.User(str(os.geteuid()), str(os.getegid())),
@@ -76,7 +83,7 @@ def run_one_env_docker() -> str:
             tty=True,
             detach=True,
             network='host',
-            groups=[str(grp.getgrnam('docker').gr_gid)],
+            groups=groups,
             output=True
         )
     except sp.CalledProcessError as ex:
@@ -102,10 +109,12 @@ def exec_cmd_in_one_env_docker(container: str, args: List[str],
             output=output
         )
 
-        if output and OPENING_URL_INFO in res:
+        if output:
             print(res)
-            url = re.search(r'{}(.*)'.format(OPENING_URL_INFO), res).group(1)
-            webbrowser.open(url)
+            if OPENING_URL_INFO in res:
+                url = re.search(r'{}(.*)'.format(OPENING_URL_INFO),
+                                res).group(1)
+                webbrowser.open(url)
     except sp.CalledProcessError as ex:
         print(ex.stdout.decode('utf-8').strip())
         sys.exit(1)

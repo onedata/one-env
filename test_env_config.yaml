@@ -1,8 +1,8 @@
 # Name of the scenario to run
 scenario: "scenario-1oz-1op"
 
-# Path or list of paths in which look for sources (can be either relative or
-# absolute path)
+# Path or list of paths in which look for sources (can be either relative to
+# cwd or absolute path)
 sourcesRoot: ".."
 
 # Determines if onedata components should be started from pre-compiled sources
@@ -52,4 +52,4 @@ forceImagePull: false
 # By default spaces supported by all providers are created. For custom
 # space configuration please refer to one of MyValues.yaml file in
 # scenario directory.
-spaces: true
+spaces: false

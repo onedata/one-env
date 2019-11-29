@@ -78,6 +78,24 @@ onedataCli: false
 # This is used during upgrades (see onenv upgrade)
 persistence: true
 
+# Configuration of system users and groups
+os-config:
+  cfg1: &cfg1
+    users:
+      - user1
+    groups:
+      ceph:
+        - user1
+      posix:
+        - user1
+      s3:
+        - user1
+      fuse:
+        - user1
+  services:
+    oneprovider-1: *cfg1
+    oneclient-1: *cfg1
+
 # Determines which storages should be created (POSIX storage is always created)
 storages:
   - posix

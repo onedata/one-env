@@ -6,9 +6,9 @@ envs:
   foo: bar
   bar: foo
   provider:
-    krakow: "httt:///"
-    paris: "htt"
-    lisbone: "httt"
+    krakow: "https://dev-oneprovider-krakow.default.svc.cluster.local"
+    paris: "https://dev-oneprovider-paris.default.svc.cluster.local"
+    lisbone: "https://dev-oneprovider-lisbon.default.svc.cluster.local"
 
 
 jobEnvironment: !include experiments/config/environments/job.yaml
