@@ -1,0 +1,16 @@
+name: "example experiment"
+description: "example experiment description"
+suites:
+ - !include experiments/config/suites/ioping-systench.yaml
+
+environemnt:
+  - !include [/Users/orzech/Dropbox/home/repos/onedata/onedata-benchmarks/bar.yraml, {recursive: False, allowEmpty: True}]
+#  - !include config/environemnts/rtest.yaml
+#  - !include ~/.local/onedata-benchmarks/private-env.yaml
+
+
+
+envs:
+  # $envs.foo
+  foo: bar
+  bar: foo

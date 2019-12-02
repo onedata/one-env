@@ -1,0 +1,5 @@
+jobs:
+  - name: sysbench
+    config: !include experiments/config/jobs/sysbench.yaml
+  - name: ioping
+    config: !include experiments/config/jobs/ioping.yaml

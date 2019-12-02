@@ -1,0 +1,12 @@
+*.iml
+*.pyc
+*.beam
+.idea
+
+.gitmodules
+
+# OSX
+.DS_Store
+
+# VSCode
+.vscode

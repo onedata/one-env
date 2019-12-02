@@ -1,0 +1,28 @@
+# providers configuration
+# each provider will be accessible in experiment configuration
+providers:
+  krakow: oneprovider-1
+
+# oneclient image to use in benchmark
+oneclientImage: docker.onedata.org/oneclient-dev:ID-b08da46791
+
+# Oneclient should connect only to nodes with op-worker. These two variables
+# allows to specify how many nodes with op-worker are present in environment
+# and what is the first ordinal number of pod with op-worker deployed.
+numberOfOpWorkers: 1
+opWorkerOrdinalNumberShift: 0
+
+# number of oneclient pods to create in benchmark
+oneclientsNumber: 3
+
+# arguments for oneclient
+oneclientArgs: ""
+
+# either access token or mapping comprised of username and password of user for
+# which fetch access token form Onezone service
+accessToken:
+  username: "admin"
+  password: "password"
+
+# name of space in which benchmark scripts will operate
+spaceName: "space3"

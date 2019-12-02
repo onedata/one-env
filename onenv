@@ -1,93 +1,153 @@
 #!/usr/bin/env python3
 
 """
-Runs appropriate onenv_* script.
+Runs appropriate onenv_* script in docker.
 """
 
 __author__ = "Michal Cwiertnia"
-__copyright__ = "Copyright (C) 2018 ACK CYFRONET AGH"
+__copyright__ = "Copyright (C) 2019 ACK CYFRONET AGH"
 __license__ = "This software is released under the MIT license cited in " \
               "LICENSE.txt"
 
+
+import os
+import re
+import grp
 import sys
 import argparse
-import importlib
+import webbrowser
+from typing import List
+import subprocess as sp
+
+import yaml
+
+from scripts import docker
 
 
-SCRIPT_DESCRIPTION = 'Runs onenv commands'
-ONENV_COMMANDS = ('attach', 'clean', 'exec', 'export', 'gui', 'hosts', 'init',
-                  'logs', 'oneclient', 'patch', 'pull_artifacts', 'status',
-                  'up', 'update', 'upgrade', 'wait', 'watch')
-EPILOG = '''
-Onenv commands:
-       attach         - attaches directly to erlang VM in chosen pod 
-       clean          - removes current onedata deployment and cleans up 
-       exec           - execs to chosen pod with an interactive shell 
-       export         - gathers all logs and data from current deployment and 
-                        places them in desired location 
-       gui            - opens the GUI hosted on given pod in default browser 
-       hosts          - adds entries in /etc/hosts for all nodes in current 
-                        deployment 
-       init           - creates ~/.one-env directory and config files
-       logs           - displays logs of chosen pod 
-       oneclient      - allows to start new oneclients (k8s deployment), 
-                        that can be configured using configuration file or 
-                        command line options.
-       patch          - configures onedata deployment with given patch (patch 
-                        is yaml file with description of spaces, users, groups 
-                        and luma config) 
-       pull_artifacts - downloads missing sources from artifact repository.
-                        Branches can be configured using yaml file or command
-                        line arguments.
-       status         - displays the status of current onedata deployment 
-       up             - sets up a onedata deployment on kubernetes cluster 
-       update         - updates sources for current deployment or given pod 
-       upgrade        - allows to upgrade given service (started either from 
-                        sources or packages). It is also possible to upgrade 
-                        helm deployment itself. 
-       wait           - waits for current deployment to be ready 
-       watch          - starts watcher for current deployment or given pod
-'''
+ONE_ENV_CONTAINER_NAME = 'one-env'
+OPENING_URL_INFO = 'Opening URL: '
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
-def main():
+def get_environment_vars() -> List[docker.EnvVar]:
+    env_variables = []
+    env_variables_names = ['HOME', 'SSH_AUTH_SOCK', 'ARTIFACT_REPO_HOST',
+                           'ARTIFACT_REPO_PORT']
+
+    for variable_name in env_variables_names:
+        value = os.environ.get(variable_name)
+        if value:
+            env_variables.append(docker.EnvVar(variable_name, value))
+    return env_variables
+
+
+def get_volumes() -> List[docker.Volume]:
+    volumes = [docker.Volume(os.environ.get('HOME'), os.environ.get('HOME')),
+               docker.Volume('/etc/hosts', '/etc/hosts'),
+               docker.Volume('/var/run/docker.sock', '/var/run/docker.sock')]
+
+    ssh_auth_sock = os.environ.get('SSH_AUTH_SOCK')
+    if ssh_auth_sock:
+        volumes.append(docker.Volume(ssh_auth_sock, ssh_auth_sock))
+
+    # this is necessary for builds on bamboo. All builds run in the /mnt
+    # directory not in the /home directory so to make any configs and the
+    # like present in one-env docker, volume with cwd is created
+    cwd = os.getcwd()
+    if not cwd.startswith(os.path.expanduser('~')):
+        volumes.append(docker.Volume(cwd, cwd))
+
+    return volumes
+
+
+def run_one_env_docker() -> str:
+    with open(os.path.join(SCRIPT_DIR, 'one_env_config.yaml')) as f:
+        one_env_cfg = yaml.load(f, yaml.Loader)
+
+    try:
+        groups = [str(grp.getgrnam('docker').gr_gid)]
+    except KeyError:
+        # on OSX there is no docker group so pass empty list if cannot get
+        # gid of docker group
+        groups = []
+
+    try:
+        container = docker.run(
+            one_env_cfg.get('onenvImage'),
+            user=docker.User(str(os.geteuid()), str(os.getegid())),
+            work_dir=os.getcwd(),
+            name=ONE_ENV_CONTAINER_NAME,
+            envs=get_environment_vars(),
+            volumes=get_volumes(),
+            interactive=True,
+            tty=True,
+            detach=True,
+            network='host',
+            groups=groups,
+            output=True
+        )
+    except sp.CalledProcessError as ex:
+        print(ex.stdout.decode('utf-8')).strip()
+        sys.exit(1)
+    else:
+        exec_cmd_in_one_env_docker(container, ['init'], 'init')
+        return container
+
+
+def exec_cmd_in_one_env_docker(container: str, args: List[str],
+                               one_env_command: str) -> None:
+    try:
+        output = one_env_command == 'gui'
+        res = docker.execute(
+            container,
+            tty=True,
+            interactive=True,
+            work_dir=os.getcwd(),
+            user=docker.User(str(os.geteuid()), str(os.getegid())),
+            envs=get_environment_vars(),
+            command=['bash', '-c', 'onenv ' + ' '.join(args)],
+            output=output
+        )
+
+        if output:
+            print(res)
+            if OPENING_URL_INFO in res:
+                url = re.search(r'{}(.*)'.format(OPENING_URL_INFO),
+                                res).group(1)
+                webbrowser.open(url)
+    except sp.CalledProcessError as ex:
+        print(ex.stdout.decode('utf-8').strip())
+        sys.exit(1)
+
+
+def get_one_env_container() -> str:
+    name_filter = docker.Filter('name', ONE_ENV_CONTAINER_NAME)
+    container = docker.ps(all_containers=True, quiet=True, output=True,
+                          filters=[name_filter])
+    if container:
+        status = docker.get_container_status(container)
+        if status.lower() == docker.RUNNING_STATUS:
+            return container
+        docker.rm(container, force=True)
+    return run_one_env_docker()
+
+
+def run_one_env_cmd_in_docker(args: List[str]) -> None:
+    one_env_command = args[0]
+    container = get_one_env_container()
+    exec_cmd_in_one_env_docker(container, args, one_env_command)
+
+
+def main() -> None:
     parser = argparse.ArgumentParser(
         prog='onenv',
-        formatter_class=argparse.RawTextHelpFormatter,
-        description=SCRIPT_DESCRIPTION,
-        epilog=EPILOG,
-        add_help=False
+        add_help=False,
+        description='Wrapper responsible for starting appropriate onenv_* '
+                    'command in one-env docker container.'
     )
 
-    parser.add_argument(
-        'command',
-        nargs='?',
-        help='onenv command to execute',
-        choices=ONENV_COMMANDS
-    )
-
-    parser.add_argument(
-        'command_args',
-        nargs='*',
-        help='arguments to onenv command'
-    )
-
-    parser.add_argument(
-        '-h', '--help',
-        action='store_true',
-        help='display help'
-    )
-
-    args, _ = parser.parse_known_args()
-
-    if args.command:
-        module_path = 'scripts/onenv_{}'.format(args.command)
-        sys.argv = [module_path] + sys.argv[2:]
-
-        command_module = importlib.import_module(module_path.replace('/', '.'))
-        command_module.main()
-    else:
-        parser.print_help()
+    parser.parse_known_args()
+    run_one_env_cmd_in_docker(sys.argv[1:])
 
 
 if __name__ == '__main__':

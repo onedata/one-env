@@ -1,0 +1,26 @@
+# This gets injected into experiment chart on it's root level
+# overriding variables from 'environment' section above
+
+# For each suite in the list above a container is created - a suiteController
+# Each suiteController submits a site to helm and collects results
+suiteController:
+  image: onedata/landscaper:v2.8.0-2
+  resultsDirectoryRoot: "$POD_NAME"
+  chart: "onedata/stress-suite"
+  chartVersion: "0.1.4"
+
+pandoc:
+  image: docker.onedata.org/docker-pandoc:ID-63afa6b1de
+  imagePullPolicy: IfNotPresent
+
+results:
+  resultsDirectoryRoot: "orzech-dev/$POD_NAME"
+  git:
+    commitMessage: "results of ${MY_POD_NAME}"
+
+deployNFS:
+  enabled: true
+  releaseNameOverride: obench-nfs
+  image: onedata/landscaper:v2.8.0-2
+  chart: onedata/stress-nfs
+  chartVersion: "0.1.4"

@@ -1,0 +1,171 @@
+# Name of the scenario to run
+scenario: "scenario-1oz-1op"
+
+# Path or list of paths in which look for sources (can be either relative or
+# absolute path)
+sourcesRoot:
+  - /home/user/onedata-develop
+  - /home/user/onedata-release
+
+# If set to true each oneprovider service and onezone service will be deployed
+# on different k8s node
+antiAffinity: true
+
+# Determines if onedata components should be started from pre-compiled sources
+# or pre-installed packages inside dockers. When enabled, sources are expected
+# to be found in CWD (from where the 'up' script was run) or one dir above.
+#
+# Oneclient can be build in two modes: debug or release. Thus you can specify
+# which binary should be used. To do so just write a name of the mode you want
+# to use (or a shortcut deb / rel) in sources specification for the oneclient.
+# For example, if you want to start oneclient-1 from sources and use debug mode
+# your sources specification should look like this:
+#
+# sources:
+#   oneclient-1: debug
+#
+# To use sources for all possible components just set value for this key to true.
+#
+# Example configuration:
+# sources:
+#   oneclient-1: release
+#   onezone:
+#     node-1:
+#       - oz-panel
+#     node-2:
+#       - cluster-manager
+#   oneprovider-1:
+#     node-1:
+#       - op-panel
+#
+sources: false
+
+# Onezone image to use. Note that if 'sources' option is enabled, it must
+# be based off onedata/worker image (it contains all the machinery to run the
+# application from sources - images based off onedata-worker are images with
+# -dev suffix).
+onezoneImage: "docker.onedata.org/onezone-dev:develop"
+
+# Oneprovider image to use. Note that if 'sources' option is enabled, it must
+# be based off onedata/worker image (images based off onedata-worker are
+# images with -dev suffix).
+oneproviderImage: "docker.onedata.org/oneprovider-dev:develop"
+
+# Oneclient image to use.
+oneclientImage: "docker.onedata.org/oneclient:ID-19e3903bd1"
+
+# Onedata rest client image to use.
+onedataCliImage: "docker.onedata.org/rest-cli:ID-e5fb6602e4"
+
+# Luma image to use.
+lumaImage: "docker.onedata.org/luma:ID-8e2da56615"
+
+# When enabled, all images will be pulled before every deployment.
+# If disabled, they will only be pulled if not existent.
+forceImagePull: false
+
+# Determines if luma should start.
+luma: false
+
+# Determines if oneclients should start. By default for each provider exactly
+# one oneclient is started.
+oneclients: false
+
+# Determines if onedata rest cli should start.
+onedataCli: false
+
+# When set to true, persists data stored in /volumes/persistence.
+# This is used during upgrades (see onenv upgrade)
+persistence: true
+
+# Configuration of system users and groups
+os-config:
+  cfg1: &cfg1
+    users:
+      - user1
+    groups:
+      ceph:
+        - user1
+      posix:
+        - user1
+      s3:
+        - user1
+      fuse:
+        - user1
+  services:
+    oneprovider-1: *cfg1
+    oneclient-1: *cfg1
+
+# Determines which storages should be created (POSIX storage is always created)
+storages:
+  - posix
+  - s3
+  - ceph
+  - nfs
+  - gluster
+  - swift
+  - webdav
+
+# Services configuration
+onezone:
+  # Cluster configuration for onezone service.
+  clusterConfig:
+    managers: [node-1]
+    workers: [node-2]
+    databases: [node-1]
+
+  # Determines if onezone service should be automatically deployed.
+  # By default this is set to true.
+  batchConfig: false
+
+  # overlay.config that will be generated for worker
+  workerOverlayConfig: |-
+    [{cluster_worker, [
+      {attr1, "some_val"},
+      {attr2, "some_val2"}
+    ]}].
+
+oneprovider-1:
+  # Cluster configuration for oneprovider service
+  clusterConfig:
+    managers: [node-1]
+    workers: [node-2]
+    databases: [node-1]
+
+  # Determines if oneprovider service should be automatically deployed.
+  # By default this is set to true.
+  batchConfig: false
+
+  # overlay.config that will be generated for worker
+  workerOverlayConfig: |-
+      [{cluster_worker, [
+        {attr1, "some_val"},
+        {attr2, "some_val2"}
+      ]}].
+
+# Groups configuration.
+groups:
+  - &group1
+    name: group1
+
+# User configuration
+users:
+  - &user1
+    name: user1
+    password: password
+    groups: *group1 # optional
+
+# Spaces configuration.
+# Determines if spaces should be created. It can be either boolean value or
+# list of spaces that should be created.
+#
+# By default spaces supported by all providers are created. For custom
+# space configuration please refer to one of ScenarioValues.yaml file in
+# scenario directory.
+spaces:
+  - name: space-1
+    owner: *user1 # optional - by default space will be created for admin user
+    supports:
+      - provider: oneprovider-1
+        storage_name: 'posix'
+        size: '100000000' # in bytes

@@ -1,0 +1,18 @@
+# Experiment name as displayed in the reports
+name: "Custom experiment"
+
+# Experiment description as displayed in the reports
+description: "Exp Desc"
+
+# List of stress-suites that will be submitted using helm
+# with customizations specified bellow
+# Suites must have unique names.
+suites:
+    # Suite name (must be unique!)
+  - name: custom-suite
+    # Suite customization config,that overrides the default suite parameters
+    config: !include experiments/config/suites/custom-suite.yaml
+
+# Everything defined in the environment gets injected
+# into all the charts: experiment,suite, job on the root level
+environment: !include experiments/config/environments/common.yaml
