@@ -1,2 +1,2 @@
 # one-env image that should be used
-onenvImage: onedata/one_env:3
+onenvImage: onedata/one_env:4
