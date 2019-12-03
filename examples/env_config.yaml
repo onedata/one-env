@@ -1,4 +1,4 @@
-# Name of the scenario to run
+# Name of the scenario to run (must match name present in scenarios directory)
 scenario: "scenario-1oz-1op"
 
 # Path or list of paths in which look for sources (can be either relative or
@@ -75,7 +75,7 @@ oneclients: false
 onedataCli: false
 
 # When set to true, persists data stored in /volumes/persistence.
-# This is used during upgrades (see onenv upgrade)
+# This is mainly used during upgrades (see onenv_upgrade)
 persistence: true
 
 # Configuration of system users and groups
@@ -106,7 +106,9 @@ storages:
   - swift
   - webdav
 
-# Services configuration
+# Onezone service configuration. Allows to overwrite arbitrary option for
+# onezone service present in
+# scenarios/{name_of_the_scenario}/ScenarioValues.yaml file.
 onezone:
   # Cluster configuration for onezone service.
   clusterConfig:
@@ -125,6 +127,9 @@ onezone:
       {attr2, "some_val2"}
     ]}].
 
+# Oneprovider service configuration. Allows to overwrite arbitrary option for
+# oneprovider service present in
+# scenarios/{name_of_the_scenario}/ScenarioValues.yaml.
 oneprovider-1:
   # Cluster configuration for oneprovider service
   clusterConfig:
@@ -164,7 +169,7 @@ users:
 # scenario directory.
 spaces:
   - name: space-1
-    owner: *user1 # optional - by default space will be created for admin user
+    user: *user1 # optional - by default space will be created for admin user
     supports:
       - provider: oneprovider-1
         storage_name: 'posix'

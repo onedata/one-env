@@ -7,11 +7,10 @@ global:
 
 
 groups:
-  # The most basic config
+  # minimal group configuration
   - &group1
     name: group1
 
-  # Little bit more advanced configs
   - &group_delta
     name: delta
     idps:
@@ -30,8 +29,13 @@ groups:
       gid: 60003
 
 users:
+  # minimal user configuration
   - &user1
     name: user1
+    password: password
+
+  - &user2
+    name: user2
     password: password
     groups:
       - group: *group1
@@ -42,19 +46,20 @@ users:
             uid: 45148
             gid: 45148
 
+
 spaces:
   - name: space1
-    user: *user1
+    user: *user1 # space creator
+
+    # list of space members
+    users:
+      - user: *user2
+
+    # list of space groups
     groups:
       - group: *group1
-    supports:
-        - provider: "oneprovider-1"
-          storage_name: "posix"
-          size: '1000000000'
-  - name: space2
-    user: *user1
-    groups:
-      - group: *group1
+
+    # list of supports
     supports:
         - provider: "oneprovider-1"
           storage_name: "posix"

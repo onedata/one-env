@@ -1,8 +1,7 @@
 image: docker.onedata.org/oneclient-dev:ID-3c60ebb24b
 imagePullPolicy: IfNotPresent
 
-# Number of oneclients to launch
-# each oneclient pod will be identical 
+# Number of oneclients to launch. Each oneclient pod will be identical.
 replicas: 3
 
 # Atm. this only controls NFS
