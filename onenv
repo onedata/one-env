@@ -42,7 +42,7 @@ def get_environment_vars() -> List[docker.EnvVar]:
 
 
 def get_volumes() -> List[docker.Volume]:
-    volumes = [docker.Volume(os.environ.get('HOME'), os.environ.get('HOME')),
+    volumes = [docker.Volume(os.environ.get('HOME'), os.environ.get('HOME'), 'delegated'),
                docker.Volume('/etc/hosts', '/etc/hosts'),
                docker.Volume('/var/run/docker.sock', '/var/run/docker.sock')]
 
@@ -55,7 +55,7 @@ def get_volumes() -> List[docker.Volume]:
     # like present in one-env docker, volume with cwd is created
     cwd = os.getcwd()
     if not cwd.startswith(os.path.expanduser('~')):
-        volumes.append(docker.Volume(cwd, cwd))
+        volumes.append(docker.Volume(cwd, cwd, 'delegated'))
 
     return volumes
 
