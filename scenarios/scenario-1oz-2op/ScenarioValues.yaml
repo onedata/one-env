@@ -4,7 +4,7 @@ global:
    region: cluster
    tld: local
    imagePullPolicy: IfNotPresent
-   alpha: true
+   v20: true
 
 oneprovider-krakow:
   enabled: true
@@ -336,20 +336,6 @@ onedata-3p:
             user: 40001 #user
             group: 42001 #gamma
 
-    external-volume-mounts: &external-volume-mounts-krakow
-      - name: local-volume-1
-        mountPath: /volumes/local-volume-1
-
-    external-persistent-volume-claims-templates:
-      - metadata:
-          name: local-volume-1
-        spec:
-          accessModes: [ "ReadWriteOnce" ]
-          resources:
-            requests:
-              storage: 100Gi
-          storageClassName: standard
-
     oneclient:
       image: *oc_image
       debug_mode: *oneclients_debug_mode_enabled
@@ -408,6 +394,20 @@ onedata-3p:
         type: posix
         mountPoint: /volumes/local-volume-1
       << : *external-storages
+
+    external-volume-mounts: &external-volume-mounts-krakow
+      - name: local-volume-1
+        mountPath: /volumes/local-volume-1
+
+    external-persistent-volume-claims-templates:
+      - metadata:
+          name: local-volume-1
+        spec:
+          accessModes: [ "ReadWriteOnce" ]
+          resources:
+            requests:
+              storage: 100Gi
+          storageClassName: standard
 
   oneprovider-paris:
     memory: 0.5Gi
