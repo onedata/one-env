@@ -171,6 +171,15 @@ onedata-3p:
       latencyMax: 10
       timeoutProbability: !!float 0.3
       skipStorageDetection: true
+    ImportedNullStorage:
+      type: nulldevice
+      latencyMin: 0
+      latencyMax: 0
+      importedStorage: true
+      simulatedFilesystemParameters: "10-10:10-10:10-10"
+      simulatedFilesystemGrowSpeed: 100
+      skipStorageDetection: true
+
 
   luma: &luma_global
     enabled: *luma_enabled
