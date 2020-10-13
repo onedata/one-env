@@ -176,8 +176,8 @@ onedata-3p:
       latencyMin: 0
       latencyMax: 0
       importedStorage: true
-      simulatedFilesystemParameters: "10-10:10-10:10-10"
-      simulatedFilesystemGrowSpeed: 100
+      simulatedFilesystemParameters: "10-10"
+      simulatedFilesystemGrowSpeed: 1
       skipStorageDetection: true
 
 
