@@ -49,6 +49,15 @@ spaces:
       - provider: "paris"
         storage_name: "posix"
         size: '1073741824'
+  - name: "krk-l"
+    user: *user_joe
+    supports:
+      - provider: "krakow"
+        storage_name: "local-volume-1"
+        size: '1073741824'
+      - provider: "paris"
+        storage_name: "local-volume-1"
+        size: '1073741824'
   # Null device spaces
   - name: "krk-iu-par-iu"
     user: *user_joe
@@ -348,6 +357,11 @@ onedata-3p:
       directIO:
         nfs:
           enabled: *oneclientDirectIOEnabled
+      external-volume-mounts: *external-volume-mounts-krakow
+      external-volumes:
+        - name: local-volume-1
+          persistentVolumeClaim:
+            claimName: local-volume-1-dev-oneprovider-krakow-0
     onedata-cli:
       image: *cli_image
       enabled: *onedata_cli_enabled
@@ -385,7 +399,24 @@ onedata-3p:
       luma-enabled: *luma_enabled_webdav
 
     external-storages:
+      local-volume-1:
+        type: posix
+        mountPoint: /volumes/local-volume-1
       << : *external-storages
+
+    external-volume-mounts: &external-volume-mounts-krakow
+      - name: local-volume-1
+        mountPath: /volumes/local-volume-1
+
+    external-persistent-volume-claims-templates:
+      - metadata:
+          name: local-volume-1
+        spec:
+          accessModes: [ "ReadWriteOnce" ]
+          resources:
+            requests:
+              storage: 100Gi
+          storageClassName: standard
 
   oneprovider-paris:
     memory: 0.5Gi
@@ -466,6 +497,20 @@ onedata-3p:
             user: 40001 #user
             group: 42001 #gamma
 
+    external-volume-mounts: &external-volume-mounts-paris
+      - name: local-volume-1
+        mountPath: /volumes/local-volume-1
+
+    external-persistent-volume-claims-templates:
+      - metadata:
+          name: local-volume-1
+        spec:
+          accessModes: [ "ReadWriteOnce" ]
+          resources:
+            requests:
+              storage: 100Gi
+          storageClassName: standard
+
     oneclient:
       image: *oc_image
       debug_mode: *oneclients_debug_mode_enabled
@@ -478,6 +523,11 @@ onedata-3p:
       directIO:
         nfs:
           enabled: *oneclientDirectIOEnabled
+      external-volume-mounts: *external-volume-mounts-paris
+      external-volumes:
+        - name: local-volume-1
+          persistentVolumeClaim:
+            claimName: local-volume-1-dev-oneprovider-paris-0
     onedata-cli:
       image: *cli_image
       enabled: *onedata_cli_enabled
@@ -515,4 +565,7 @@ onedata-3p:
       luma-enabled: *luma_enabled_webdav
 
     external-storages:
+      local-volume-1:
+        type: posix
+        mountPoint: /volumes/local-volume-1
       << : *external-storages
