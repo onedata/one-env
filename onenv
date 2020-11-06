@@ -95,7 +95,7 @@ def run_one_env_docker(path_to_sources: str) -> str:
 
 
 def exec_cmd_in_one_env_docker(container: str, args: List[str],
-                               one_env_command: str) -> None:
+                               one_env_command: str) -> int:
     try:
         output = one_env_command == 'gui'
         res = docker.execute(
@@ -115,6 +115,9 @@ def exec_cmd_in_one_env_docker(container: str, args: List[str],
                 url = re.search(r'{}(.*)'.format(OPENING_URL_INFO),
                                 res).group(1)
                 webbrowser.open(url)
+            return 0
+        else:
+            return res
     except sp.CalledProcessError as ex:
         print(ex.stdout.decode('utf-8').strip())
         sys.exit(1)
@@ -132,10 +135,10 @@ def get_one_env_container(path_to_sources: str) -> str:
     return run_one_env_docker(path_to_sources)
 
 
-def run_one_env_cmd_in_docker(path_to_sources: str, args: List[str]) -> None:
+def run_one_env_cmd_in_docker(path_to_sources: str, args: List[str]) -> int:
     one_env_command = args[0] if args else '-h'
     container = get_one_env_container(path_to_sources)
-    exec_cmd_in_one_env_docker(container, args, one_env_command)
+    return exec_cmd_in_one_env_docker(container, args, one_env_command)
 
 
 def main() -> None:
@@ -155,7 +158,8 @@ def main() -> None:
 
     (args, rest) = parser.parse_known_args()
     path_to_sources = os.path.normpath(os.path.join(os.getcwd(), args.path))
-    run_one_env_cmd_in_docker(path_to_sources, rest)
+    ret = run_one_env_cmd_in_docker(path_to_sources, rest)
+    sys.exit(ret)
 
 
 if __name__ == '__main__':
