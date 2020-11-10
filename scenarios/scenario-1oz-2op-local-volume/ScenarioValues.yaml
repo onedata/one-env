@@ -402,6 +402,7 @@ onedata-3p:
       local-volume-1:
         type: posix
         mountPoint: /volumes/local-volume-1
+        lumaFeed: local
       << : *external-storages
 
     external-volume-mounts: &external-volume-mounts-krakow
@@ -568,4 +569,5 @@ onedata-3p:
       local-volume-1:
         type: posix
         mountPoint: /volumes/local-volume-1
+        lumaFeed: local
       << : *external-storages
