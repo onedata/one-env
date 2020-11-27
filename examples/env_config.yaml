@@ -94,7 +94,7 @@ os-config:
         - user1
   services:
     oneprovider-1: *cfg1
-    oneclient-1: *cfg1
+    oneclient: *cfg1
 
 # Determines which storages should be created (POSIX storage is always created)
 storages:
