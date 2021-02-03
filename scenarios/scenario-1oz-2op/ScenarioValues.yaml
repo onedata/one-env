@@ -170,6 +170,14 @@ onedata-3p:
       simulatedFilesystemParameters: "10-10"
       simulatedFilesystemGrowSpeed: 1
       skipStorageDetection: true
+    ImportedNullStorage2:
+      type: nulldevice
+      latencyMin: 0
+      latencyMax: 0
+      importedStorage: true
+      simulatedFilesystemParameters: "1-0:10-10"
+      simulatedFilesystemGrowSpeed: 1
+      skipStorageDetection: true
 
 
   luma: &luma_global
