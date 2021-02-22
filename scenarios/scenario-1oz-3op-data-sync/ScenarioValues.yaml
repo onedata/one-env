@@ -1,5 +1,5 @@
 global:
-  # TODO: Find a way to eliminate necessity for region and tld values
+  # TODO: VFS-4942 Find a way to eliminate necessity for region and tld values
   # to make deployment cluster independent
   #releaseNameOverride: ""
   #  region: dev
