@@ -4,20 +4,19 @@ global:
    region: cluster
    tld: local
    imagePullPolicy: IfNotPresent
-   alpha: true
-
+   v20: true
 
 oneprovider-krakow:
-  enabled: true
+  enabled: &oneprovider_krakow_enabled true 
 oneprovider-paris:
-  enabled: true
+  enabled: &oneprovider_paris_enabled true
 oneprovider-lisbon:
-  enabled: true
+  enabled: &oneprovider_lisbon_enabled true
 
 allOneproviders: &allOneproviders
-  - krakow
-  - paris
-  - lisbon
+  - *op1s
+  - *op2s
+  - *op3s
 
 deployment_enabled: &deployment_enabled true
 
@@ -74,7 +73,7 @@ token-dispenser:
   enabled: *token_dispenser_enabled
 saml-idp:
   enabled: *idp_enabled
-keycloak:
+keycloak-onedata:
   enabled: *keycloak_enabled
 elasticsearch:
   enabled: *elasticsearch_enabled
@@ -82,6 +81,8 @@ luma:
   enabled: *luma_enabled
 oneclient:
   enabled: *oneclients_enabled
+jupyter-notebook:
+  enabled: *jupyter_notebook_enabled
 onedata-cli:
   enabled: *onedata_cli_enabled
 volume-s3:
@@ -98,20 +99,20 @@ volume-webdav:
   enabled: *webdav_enabled
 volume-dcache:
   enabled: *dcache_enabled
-volume-data-sync:
-  enabled: *volume_data_sync_enabled
 
-onedata-3p:
+onedata-3p: 
   enabled: *deployment_enabled
-  oz_image: &oz_image onedata/onezone:18.02.0-rc13
-  op_image: &op_image onedata/oneprovider:18.02.0-rc13
-  oc_image: &oc_image onedata/oneclient:18.02.0-rc13
-  cli_image: &cli_image onedata/rest-cli:18.02.0-rc13
-  luma_image: &luma_image onedata/luma:18.02.0-rc10
+  oz_image: &oz_image onedata/onezone:19.02.1
+  op_image: &op_image onedata/oneprovider:19.02.1
+  oc_image: &oc_image onedata/oneclient:19.02.1
+  odfsj_image: &odfsj_image onedata/onedatafs-jupyter:19.02.1
+  cli_image: &cli_image docker.onedata.org/rest-cli:ID-f310819457
+  luma_image: &luma_image onedata/luma:19.02.1
 
   log_level: &log_level "info"
   onepanel_batch_mode_enabled: &onepanel_batch_mode_enabled true
   oneclients_debug_mode_enabled: &oneclients_debug_mode_enabled true
+  onepanel_debug_mode_enabled: &onepanel_debug_mode_enabled true
   onedata_anti_affinity_enabled: &onedata_anti_affinity_enabled false
 
   oneproviders_generate_certificates: &oneproviders_generate_certificates false
@@ -136,6 +137,7 @@ onedata-3p:
 
   luma_enabled: &luma_enabled false
 
+  jupyter_notebook_enabled: &jupyter_notebook_enabled false
   posix_enabled: &posix_enabled true
   s3_enabled: &s3_enabled false
   ceph_enabled: &ceph_enabled false
@@ -147,8 +149,8 @@ onedata-3p:
 
   volume_data_sync_enabled: &volume_data_sync_enabled false
 
-  # Explicately wait for onezone pod to enter ready state before starting oneproviders
-  wait-for-onezone-enabled: &wait-for-onezone-enabled true
+  # Explicitly wait for onezone pod to enter ready state before starting oneproviders
+  wait-for-onezone-enabled: &wait-for-onezone-enabled false
 
   # External for all providers
   external-storages: &external-storages
@@ -197,14 +199,14 @@ onedata-3p:
     cpu: 0.3
     onepanel_generate_test_web_cert: true
     onepanel_trust_test_ca: true
-    onepanel_debug_mode: true
-    guiPackageVerification: false
-    harversterGuiPackageVerification: false
     guiDebugMode: true
 
     image: *oz_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
     log_level: *log_level
+    guiPackageVerification: false
+    harversterGuiPackageVerification: false
+    onepanel_debug_mode: *onepanel_debug_mode_enabled
     generate-certificates:
       enabled: false
     persistence:
@@ -262,14 +264,15 @@ onedata-3p:
     cpu: 0.3
     onepanel_generate_test_web_cert: true
     onepanel_trust_test_ca: true
-    onepanel_debug_mode: true
 
     suffix: &op1s krakow
     geoLatitude: 50.0647
     geoLongitude: 19.9450
+    enabled: *oneprovider_krakow_enabled
 
     image: *op_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
+    onepanel_debug_mode: *onepanel_debug_mode_enabled
     log_level: *log_level
     nameOverride: oneprovider
     wait-for-onezone:
@@ -305,6 +308,7 @@ onedata-3p:
         imagePullPolicy: IfNotPresent
         dataPath: /data
         readOnly: false
+        mountPermissions: 777
         permissions:
           - path: Landsat-5
             # chmod -R command parameters
@@ -316,6 +320,7 @@ onedata-3p:
         imagePullPolicy: IfNotPresent
         dataPath: /data
         readOnly: true
+        skipStorageDetection: true
       - name: volume-data-sync-rw-luma
         luma-enabled: *luma_enabled_posix
         image: onedata/eo-data-mock:Landsat-5-sample-latest
@@ -347,6 +352,10 @@ onedata-3p:
       directIO:
         nfs:
           enabled: *oneclientDirectIOEnabled
+    jupyter-notebook:
+      image: *odfsj_image
+      enabled: *jupyter_notebook_enabled
+      suffix: *op1s
     onedata-cli:
       image: *cli_image
       enabled: *onedata_cli_enabled
@@ -358,6 +367,7 @@ onedata-3p:
       enabled: *s3_enabled
       suffix: *op1s
       luma-enabled: *luma_enabled_s3
+      aws_client_image: groundnuty/docker-aws:aws-relative-path-fix-2 #TODO VFS-7854
     volume-ceph:
       enabled: *ceph_enabled
       suffix: *op1s
@@ -391,11 +401,11 @@ onedata-3p:
     cpu: 0.3
     onepanel_generate_test_web_cert: true
     onepanel_trust_test_ca: true
-    onepanel_debug_mode: true
 
     suffix: &op2s paris
     geoLatitude: 48.8566
     geoLongitude: 2.3522
+    enabled: *oneprovider_paris_enabled
 
     image: *op_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
@@ -477,6 +487,10 @@ onedata-3p:
       directIO:
         nfs:
           enabled: *oneclientDirectIOEnabled
+    jupyter-notebook:
+      image: *odfsj_image
+      enabled: *jupyter_notebook_enabled
+      suffix: *op2s
     onedata-cli:
       image: *cli_image
       enabled: *onedata_cli_enabled
@@ -488,6 +502,7 @@ onedata-3p:
       enabled: *s3_enabled
       suffix: *op2s
       luma-enabled: *luma_enabled_s3
+      aws_client_image: groundnuty/docker-aws:aws-relative-path-fix-2 #TODO VFS-7854
     volume-ceph:
       enabled: *ceph_enabled
       suffix: *op2s
@@ -496,6 +511,11 @@ onedata-3p:
       enabled: *nfs_enabled
       suffix: *op2s
       luma-enabled: *luma_enabled_nfs
+      exports: &op2s-nfs-exports
+      - name: empty
+        luma-enabled: *luma_enabled_posix
+        readOnly: false
+        storageClaim: 1T
     volume-gluster:
       enabled: *gluster_enabled
       suffix: *op2s
@@ -506,11 +526,14 @@ onedata-3p:
       luma-enabled: *luma_enabled_swift
     volume-webdav:
       enabled: *webdav_enabled
-      suffix: *op1s
+      suffix: *op2s
       luma-enabled: *luma_enabled_webdav
+      volume-data-sync:
+        enabled: true
+      importedStorage: true
     volume-dcache:
       enabled: *dcache_enabled
-      suffix: *op1s
+      suffix: *op2s
       luma-enabled: *luma_enabled_webdav
 
     external-storages:
@@ -521,17 +544,17 @@ onedata-3p:
     cpu: 0.3
     onepanel_generate_test_web_cert: true
     onepanel_trust_test_ca: true
-    onepanel_debug_mode: true
-
     suffix: &op3s lisbon
     geoLatitude: 38.7223
     geoLongitude: -9.1393
-
+    enabled: *oneprovider_lisbon_enabled
+    
     image: *op_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
+    onepanel_debug_mode: *onepanel_debug_mode_enabled
     log_level: *log_level
     nameOverride: oneprovider
-    wait-for-onezone:
+    wait-for-onezone: 
       enabled: *wait-for-onezone-enabled
 
     oneprovider_nodes_count: *oneproviders_nodes_count
@@ -555,45 +578,6 @@ onedata-3p:
       suffix: *op3s
       << : *luma_global
 
-    volume-data-sync:
-      enabled: false
-      volumes:
-      - name: volume-data-sync-rw
-        luma-enabled: false
-        image: onedata/eo-data-mock:Landsat-5-sample-latest
-        imagePullPolicy: IfNotPresent
-        dataPath: /data
-        readOnly: false
-        permissions:
-          - path: Landsat-5
-            # chmod -R command parameters
-            # the root of the path is dataPath
-            mask: 777
-      - name: volume-data-sync-ro
-        luma-enabled: false
-        image: onedata/eo-data-mock:Landsat-5-sample-latest
-        imagePullPolicy: IfNotPresent
-        dataPath: /data
-        readOnly: true
-      - name: volume-data-sync-rw-luma
-        luma-enabled: *luma_enabled_posix
-        image: onedata/eo-data-mock:Landsat-5-sample-latest
-        imagePullPolicy: IfNotPresent
-        dataPath: /data
-        readOnly: false
-        permissions:
-          - path: Landsat-5
-            # chown -R command parameters
-            # the root of the path is dataPath
-            user: 40001 #admin
-            group: 42001 #alpha
-          - path: Landsat-5/TM/L1T/2010/06/13
-            user: 40001 #user
-            group: 42001 #beta
-          - path: Landsat-5/TM/L1T/2010/06/21
-            user: 40001 #user
-            group: 42001 #gamma
-
     oneclient:
       image: *oc_image
       debug_mode: *oneclients_debug_mode_enabled
@@ -606,6 +590,14 @@ onedata-3p:
       directIO:
         nfs:
           enabled: *oneclientDirectIOEnabled
+          mounts: *op3s-nfs-exports
+      jupyter:
+        image: *odfsj_image
+        enabled: true
+    jupyter-notebook:
+      image: *odfsj_image
+      enabled: *jupyter_notebook_enabled
+      suffix: *op3s
     onedata-cli:
       image: *cli_image
       enabled: *onedata_cli_enabled
@@ -617,6 +609,7 @@ onedata-3p:
       enabled: *s3_enabled
       suffix: *op3s
       luma-enabled: *luma_enabled_s3
+      aws_client_image: groundnuty/docker-aws:aws-relative-path-fix-2 #TODO VFS-7854
     volume-ceph:
       enabled: *ceph_enabled
       suffix: *op3s
@@ -625,6 +618,11 @@ onedata-3p:
       enabled: *nfs_enabled
       suffix: *op3s
       luma-enabled: *luma_enabled_nfs
+      exports: &op3s-nfs-exports
+      - name: empty
+        luma-enabled: *luma_enabled_posix
+        readOnly: false
+        storageClaim: 1T
     volume-gluster:
       enabled: *gluster_enabled
       suffix: *op3s
@@ -635,11 +633,11 @@ onedata-3p:
       luma-enabled: *luma_enabled_swift
     volume-webdav:
       enabled: *webdav_enabled
-      suffix: *op1s
+      suffix: *op3s
       luma-enabled: *luma_enabled_webdav
     volume-dcache:
       enabled: *dcache_enabled
-      suffix: *op1s
+      suffix: *op3s
       luma-enabled: *luma_enabled_webdav
 
     external-storages:
