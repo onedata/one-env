@@ -178,7 +178,24 @@ onedata-3p:
       simulatedFilesystemParameters: "1-0:10-10"
       simulatedFilesystemGrowSpeed: 1
       skipStorageDetection: true
-
+    s3-archive-krakow:
+      type: s3
+      hostname: dev-volume-s3-krakow.default:9000
+      bucketName: test
+      accessKey: accessKey
+      secretKey: verySecretKey
+      skipStorageDetection: true
+      insecure: true
+      archiveStorage: true
+    s3-archive-paris:
+      type: s3
+      hostname: dev-volume-s3-paris.default:9000
+      bucketName: test
+      accessKey: accessKey
+      secretKey: verySecretKey
+      skipStorageDetection: true
+      insecure: true
+      archiveStorage: true
 
   luma: &luma_global
     enabled: *luma_enabled
