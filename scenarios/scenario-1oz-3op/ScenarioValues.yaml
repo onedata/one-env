@@ -358,6 +358,7 @@ onedata-3p:
       enabled: *s3_enabled
       suffix: *op1s
       luma-enabled: *luma_enabled_s3
+      aws_client_image: groundnuty/docker-aws:aws-relative-path-fix-2 #TODO VFS-7854
     volume-ceph:
       enabled: *ceph_enabled
       suffix: *op1s
@@ -488,6 +489,7 @@ onedata-3p:
       enabled: *s3_enabled
       suffix: *op2s
       luma-enabled: *luma_enabled_s3
+      aws_client_image: groundnuty/docker-aws:aws-relative-path-fix-2 #TODO VFS-7854
     volume-ceph:
       enabled: *ceph_enabled
       suffix: *op2s
@@ -617,6 +619,7 @@ onedata-3p:
       enabled: *s3_enabled
       suffix: *op3s
       luma-enabled: *luma_enabled_s3
+      aws_client_image: groundnuty/docker-aws:aws-relative-path-fix-2 #TODO VFS-7854
     volume-ceph:
       enabled: *ceph_enabled
       suffix: *op3s
