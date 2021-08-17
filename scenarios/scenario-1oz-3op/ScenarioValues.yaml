@@ -3,7 +3,7 @@ global:
   # to make deployment cluster independent
    region: cluster
    tld: local
-   imagePullPolicy: IfNotPresent
+   imagePullPolicy: Always
    v20: true
 
 oneprovider-krakow:
