@@ -32,7 +32,7 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 def get_environment_vars() -> List[docker.EnvVar]:
     env_variables = []
     env_variables_names = ['HOME', 'SSH_AUTH_SOCK', 'ARTIFACT_REPO_HOST',
-                           'ARTIFACT_REPO_PORT']
+                           'ARTIFACT_REPO_PORT','bamboo_crossSupportHelmChartVersion']
 
     for variable_name in env_variables_names:
         value = os.environ.get(variable_name)
