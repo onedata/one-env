@@ -39,12 +39,6 @@ users:
     password: password
     groups:
       - group: *group1
-    luma:
-      - provider: oneprovider-1
-        storages:
-          - name: posix
-            uid: 45148
-            gid: 45148
 
 
 spaces:

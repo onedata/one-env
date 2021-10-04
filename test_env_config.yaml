@@ -24,9 +24,6 @@ oneproviderImage: "docker.onedata.org/oneprovider-dev:develop"
 # Determines if elastic search should start.
 elasticSearch: false
 
-# Determines if luma should start.
-luma: false
-
 # Determines if onedata rest client should start.
 onedataCli: false
 
@@ -38,9 +35,6 @@ oneclientImage: "docker.onedata.org/oneclient:ID-25457c9678"
 
 # Onedata rest client image to use.
 onedataCliImage: "onedata/rest-cli:18.02.0-rc13-fast-1"
-
-# Luma image to use.
-lumaImage: "docker.onedata.org/luma:ID-8e2da56615"
 
 # When enabled, onezoneImage and oneproviderImage will be pulled before every
 # deployment. If disabled, they will only be pulled if not existent.
