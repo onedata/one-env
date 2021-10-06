@@ -20,8 +20,6 @@ allOneproviders: &allOneproviders
 
 deployment_enabled: &deployment_enabled true
 
-lumaJobEnabled: false
-
 groups: &all_groups []
 
 users: &all_users
@@ -37,7 +35,6 @@ users: &all_users
     password: password
     email: joe@example.com
     oneclient: *allOneproviders
-    luma: []
     groups: []
 
 spaces:
@@ -66,8 +63,6 @@ keycloak-onedata:
   enabled: *keycloak_enabled
 elasticsearch:
   enabled: *elasticsearch_enabled
-luma:
-  enabled: *luma_enabled
 oneclient:
   enabled: *oneclients_enabled
 jupyter-notebook:
@@ -96,7 +91,6 @@ onedata-3p:
   oc_image: &oc_image onedata/oneclient:19.02.1
   odfsj_image: &odfsj_image onedata/onedatafs-jupyter:19.02.1
   cli_image: &cli_image docker.onedata.org/rest-cli:ID-f310819457
-  luma_image: &luma_image onedata/luma:19.02.1
 
   log_level: &log_level "info"
   onepanel_batch_mode_enabled: &onepanel_batch_mode_enabled true
@@ -123,8 +117,6 @@ onedata-3p:
   oneclientDirectIOEnabled: &oneclientDirectIOEnabled false
 
   onedata_cli_enabled: &onedata_cli_enabled false
-
-  luma_enabled: &luma_enabled false
 
   jupyter_notebook_enabled: &jupyter_notebook_enabled false
   posix_enabled: &posix_enabled true
@@ -161,26 +153,6 @@ onedata-3p:
       latencyMax: 10
       timeoutProbability: !!float 0.3
       skipStorageDetection: true
-
-  luma: &luma_global
-    enabled: *luma_enabled
-    image: *luma_image
-    lumaCacheTimeout: 5
-    lumaApiKey: example_api_key
-    posix:
-      enabled: &luma_enabled_posix false
-    s3:
-      enabled: &luma_enabled_s3 false
-    ceph:
-      enabled: &luma_enabled_ceph false
-    swift:
-      enabled: &luma_enabled_swift false
-    gluster:
-      enabled: &luma_enabled_gluster false
-    nfs:
-      enabled: &luma_enabled_nfs false
-    wevdav:
-      enabled: &luma_enabled_webdav false
 
   # Onezone configuration
   onezone:
@@ -284,15 +256,10 @@ onedata-3p:
     persistence:
       enabled: *onedata_persistence
 
-    luma:
-      suffix: *op1s
-      << : *luma_global
-
     volume-data-sync:
       enabled: false
       volumes:
         - name: volume-data-sync-rw
-          luma-enabled: false
           image: onedata/eo-data-mock:Landsat-5-sample-latest
           imagePullPolicy: IfNotPresent
           dataPath: /data
@@ -304,14 +271,12 @@ onedata-3p:
               # the root of the path is dataPath
               mask: 777
         - name: volume-data-sync-ro
-          luma-enabled: false
           image: onedata/eo-data-mock:Landsat-5-sample-latest
           imagePullPolicy: IfNotPresent
           dataPath: /data
           readOnly: true
           skipStorageDetection: true
         - name: volume-data-sync-rw-luma
-          luma-enabled: *luma_enabled_posix
           image: onedata/eo-data-mock:Landsat-5-sample-latest
           imagePullPolicy: IfNotPresent
           dataPath: /data
@@ -351,36 +316,28 @@ onedata-3p:
       suffix: *op1s
     posix:
       enabled: *posix_enabled
-      luma-enabled: *luma_enabled_posix
     volume-s3:
       enabled: *s3_enabled
       suffix: *op1s
-      luma-enabled: *luma_enabled_s3
       aws_client_image: groundnuty/docker-aws:aws-relative-path-fix-2 #TODO VFS-7854
     volume-ceph:
       enabled: *ceph_enabled
       suffix: *op1s
-      luma-enabled: *luma_enabled_ceph
     volume-nfs:
       enabled: *nfs_enabled
       suffix: *op1s
-      luma-enabled: *luma_enabled_nfs
     volume-gluster:
       enabled: *gluster_enabled
       suffix: *op1s
-      luma-enabled: *luma_enabled_gluster
     volume-swift:
       enabled: *swift_enabled
       suffix: *op1s
-      luma-enabled: *luma_enabled_swift
     volume-webdav:
       enabled: *webdav_enabled
       suffix: *op1s
-      luma-enabled: *luma_enabled_webdav
     volume-dcache:
       enabled: *dcache_enabled
       suffix: *op1s
-      luma-enabled: *luma_enabled_webdav
 
     external-storages:
       << : *external-storages
