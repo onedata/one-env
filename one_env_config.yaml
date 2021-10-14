@@ -1,2 +1,2 @@
 # one-env image that should be used
-onenvImage: docker.onedata.org/one_env:2.0
+onenvImage: docker.onedata.org/one_env:ebd6a57
