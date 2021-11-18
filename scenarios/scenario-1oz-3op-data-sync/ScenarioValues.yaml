@@ -187,6 +187,9 @@ onedata-3p:
     elasticsearch:
       enabled: &elasticsearch_enabled false
 
+    external-volume-mounts: &onezone-volume-mounts []
+    external-volumes: []
+
     keycloak: &keycloak
       enabled: &keycloak_enabled true 
       users: *all_users
@@ -241,6 +244,9 @@ onedata-3p:
       enabled: *oneproviders_generate_certificates
     persistence:
       enabled: *onedata_persistence
+
+    external-volume-mounts: &oneprovider-krakow-volume-mounts []
+    external-volumes: []
 
     volume-data-sync:
       enabled: true
@@ -297,6 +303,8 @@ onedata-3p:
       directIO:
         nfs:
           enabled: *oneclientDirectIOEnabled
+      external-volume-mounts: &oneclient-krakow-volume-mounts []
+      external-volumes: []
     jupyter-notebook:
       image: *odfsj_image
       enabled: *jupyter_notebook_enabled
@@ -371,6 +379,9 @@ onedata-3p:
     volume-data-sync:
       enabled: *volume_data_sync_enabled
 
+    external-volume-mounts: &oneprovider-paris-volume-mounts []
+    external-volumes: []
+
     oneclient:
       image: *oc_image
       debug_mode: *oneclients_debug_mode_enabled
@@ -383,6 +394,8 @@ onedata-3p:
       directIO:
         nfs:
           enabled: *oneclientDirectIOEnabled
+      external-volume-mounts: &oneclient-paris-volume-mounts []
+      external-volumes: []
     jupyter-notebook:
       image: *odfsj_image
       enabled: *jupyter_notebook_enabled
@@ -463,6 +476,9 @@ onedata-3p:
       
     volume-data-sync:
       enabled: *volume_data_sync_enabled
+
+    external-volume-mounts: &oneprovider-lisbon-volume-mounts []
+    external-volumes: []
       
     oneclient:
       image: *oc_image
@@ -477,6 +493,8 @@ onedata-3p:
         nfs:
           enabled: *oneclientDirectIOEnabled
           mounts: *op3s-nfs-exports
+      external-volume-mounts: &oneclient-lisbon-volume-mounts []
+      external-volumes: []
       jupyter:
         image: *odfsj_image
         enabled: true

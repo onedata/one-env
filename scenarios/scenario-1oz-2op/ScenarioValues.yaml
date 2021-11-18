@@ -240,6 +240,9 @@ onedata-3p:
     elasticsearch:
       enabled: &elasticsearch_enabled false
 
+    external-volume-mounts: &onezone-volume-mounts []
+    external-volumes: []
+
     keycloak: &keycloak
       enabled: &keycloak_enabled false
       users: *all_users
@@ -295,43 +298,8 @@ onedata-3p:
     persistence:
       enabled: *onedata_persistence
 
-    volume-data-sync:
-      enabled: false
-      volumes:
-      - name: volume-data-sync-rw
-        image: onedata/eo-data-mock:Landsat-5-sample-latest
-        imagePullPolicy: IfNotPresent
-        dataPath: /data
-        readOnly: false
-        mountPermissions: 777
-        permissions:
-          - path: Landsat-5
-            # chmod -R command parameters
-            # the root of the path is dataPath
-            mask: 777
-      - name: volume-data-sync-ro
-        image: onedata/eo-data-mock:Landsat-5-sample-latest
-        imagePullPolicy: IfNotPresent
-        dataPath: /data
-        readOnly: true
-        skipStorageDetection: true
-      - name: volume-data-sync-rw-luma
-        image: onedata/eo-data-mock:Landsat-5-sample-latest
-        imagePullPolicy: IfNotPresent
-        dataPath: /data
-        readOnly: false
-        permissions:
-          - path: Landsat-5
-            # chown -R command parameters
-            # the root of the path is dataPath
-            user: 40001 #admin
-            group: 42001 #alpha
-          - path: Landsat-5/TM/L1T/2010/06/13
-            user: 40001 #user
-            group: 42001 #beta
-          - path: Landsat-5/TM/L1T/2010/06/21
-            user: 40001 #user
-            group: 42001 #gamma
+    external-volume-mounts: &oneprovider-krakow-volume-mounts []
+    external-volumes: []
 
     oneclient:
       image: *oc_image
@@ -345,6 +313,8 @@ onedata-3p:
       directIO:
         nfs:
           enabled: *oneclientDirectIOEnabled
+      external-volume-mounts: &oneclient-krakow-volume-mounts []
+      external-volumes: []
     jupyter-notebook:
       image: *odfsj_image
       enabled: *jupyter_notebook_enabled
@@ -416,6 +386,9 @@ onedata-3p:
     persistence:
       enabled: *onedata_persistence
 
+    external-volume-mounts: &oneprovider-paris-volume-mounts []
+    external-volumes: []
+
     oneclient:
       image: *oc_image
       debug_mode: *oneclients_debug_mode_enabled
@@ -428,6 +401,8 @@ onedata-3p:
       directIO:
         nfs:
           enabled: *oneclientDirectIOEnabled
+      external-volume-mounts: &oneclient-paris-volume-mounts []
+      external-volumes: []
     jupyter-notebook:
       image: *odfsj_image
       enabled: *jupyter_notebook_enabled
