@@ -207,6 +207,7 @@ onedata-3p:
     elasticsearch:
       enabled: &elasticsearch_enabled false
 
+    # below 2 lines regarding external volumes are modified using sed by onenv and MUST be kept in one line format
     external-volume-mounts: &onezone-volume-mounts []
     external-volumes: []
 
@@ -265,6 +266,7 @@ onedata-3p:
     persistence:
       enabled: *onedata_persistence
 
+    # below 2 lines regarding external volumes are modified using sed by onenv and MUST be kept in one line format
     external-volumes: []
     external-volume-mounts: &oneprovider-krakow-volume-mounts [{name: local-volume-1, mountPath: /volumes/local-volume-1}]
 
@@ -290,6 +292,7 @@ onedata-3p:
       directIO:
         nfs:
           enabled: *oneclientDirectIOEnabled
+      # below 2 lines regarding external volumes are modified using sed by onenv and MUST be kept in one line format
       external-volume-mounts: &oneclient-krakow-volume-mounts [{name: local-volume-1, mountPath: /volumes/local-volume-1}]
       external-volumes: [{name: local-volume-1, persistentVolumeClaim: {claimName: local-volume-1-dev-oneprovider-krakow-0}}]
     jupyter-notebook:
