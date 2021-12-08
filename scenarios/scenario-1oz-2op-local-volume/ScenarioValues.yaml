@@ -414,8 +414,8 @@ onedata-3p:
         nfs:
           enabled: *oneclientDirectIOEnabled
       # below 2 lines regarding external volumes are modified using sed by onenv and MUST be kept in one line format
-      external-volume-mounts: &oneclient-krakow-volume-mounts [{name: local-volume-1, mountPath: /volumes/local-volume-1}]
-      external-volumes: [{name: local-volume-1, persistentVolumeClaim: {claimName: local-volume-1-dev-oneprovider-krakow-0}}]
+      external-volume-mounts: &oneclient-paris-volume-mounts [{name: local-volume-1, mountPath: /volumes/local-volume-1}]
+      external-volumes: [{name: local-volume-1, persistentVolumeClaim: {claimName: local-volume-1-dev-oneprovider-paris-0}}]
     jupyter-notebook:
       image: *odfsj_image
       enabled: *jupyter_notebook_enabled
