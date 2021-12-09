@@ -223,6 +223,10 @@ onedata-3p:
     elasticsearch:
       enabled: &elasticsearch_enabled false
 
+    # below 2 lines regarding external volumes are modified using sed by onenv and MUST be kept in one line format
+    external-volume-mounts: &onezone-volume-mounts []
+    external-volumes: []
+
     keycloak: &keycloak
       enabled: &keycloak_enabled false
       users: *all_users
@@ -278,43 +282,9 @@ onedata-3p:
     persistence:
       enabled: *onedata_persistence
 
-    volume-data-sync:
-      enabled: false
-      volumes:
-      - name: volume-data-sync-rw
-        image: onedata/eo-data-mock:Landsat-5-sample-latest
-        imagePullPolicy: IfNotPresent
-        dataPath: /data
-        readOnly: false
-        mountPermissions: 777
-        permissions:
-          - path: Landsat-5
-            # chmod -R command parameters
-            # the root of the path is dataPath
-            mask: 777
-      - name: volume-data-sync-ro
-        image: onedata/eo-data-mock:Landsat-5-sample-latest
-        imagePullPolicy: IfNotPresent
-        dataPath: /data
-        readOnly: true
-        skipStorageDetection: true
-      - name: volume-data-sync-rw-luma
-        image: onedata/eo-data-mock:Landsat-5-sample-latest
-        imagePullPolicy: IfNotPresent
-        dataPath: /data
-        readOnly: false
-        permissions:
-          - path: Landsat-5
-            # chown -R command parameters
-            # the root of the path is dataPath
-            user: 40001 #admin
-            group: 42001 #alpha
-          - path: Landsat-5/TM/L1T/2010/06/13
-            user: 40001 #user
-            group: 42001 #beta
-          - path: Landsat-5/TM/L1T/2010/06/21
-            user: 40001 #user
-            group: 42001 #gamma
+    # below 2 lines regarding external volumes are modified using sed by onenv and MUST be kept in one line format
+    external-volumes: []
+    external-volume-mounts: &oneprovider-krakow-volume-mounts [{name: local-volume-1, mountPath: /volumes/local-volume-1}]
 
     oneclient:
       image: *oc_image
@@ -328,11 +298,9 @@ onedata-3p:
       directIO:
         nfs:
           enabled: *oneclientDirectIOEnabled
-      external-volume-mounts: *external-volume-mounts-krakow
-      external-volumes:
-        - name: local-volume-1
-          persistentVolumeClaim:
-            claimName: local-volume-1-dev-oneprovider-krakow-0
+      # below 2 lines regarding external volumes are modified using sed by onenv and MUST be kept in one line format
+      external-volume-mounts: &oneclient-krakow-volume-mounts [{name: local-volume-1, mountPath: /volumes/local-volume-1}]
+      external-volumes: [{name: local-volume-1, persistentVolumeClaim: {claimName: local-volume-1-dev-oneprovider-krakow-0}}]
     jupyter-notebook:
       image: *odfsj_image
       enabled: *jupyter_notebook_enabled
@@ -372,10 +340,6 @@ onedata-3p:
         mountPoint: /volumes/local-volume-1
         lumaFeed: local
       << : *external-storages
-
-    external-volume-mounts: &external-volume-mounts-krakow
-      - name: local-volume-1
-        mountPath: /volumes/local-volume-1
 
     external-persistent-volume-claims-templates:
       - metadata:
@@ -423,45 +387,9 @@ onedata-3p:
       enabled: *onedata_persistence
 
 
-    volume-data-sync:
-      enabled: false
-      volumes:
-      - name: volume-data-sync-rw
-        image: onedata/eo-data-mock:Landsat-5-sample-latest
-        imagePullPolicy: IfNotPresent
-        dataPath: /data
-        readOnly: false
-        permissions:
-          - path: Landsat-5
-            # chmod -R command parameters
-            # the root of the path is dataPath
-            mask: 777
-      - name: volume-data-sync-ro
-        image: onedata/eo-data-mock:Landsat-5-sample-latest
-        imagePullPolicy: IfNotPresent
-        dataPath: /data
-        readOnly: true
-      - name: volume-data-sync-rw-luma
-        image: onedata/eo-data-mock:Landsat-5-sample-latest
-        imagePullPolicy: IfNotPresent
-        dataPath: /data
-        readOnly: false
-        permissions:
-          - path: Landsat-5
-            # chown -R command parameters
-            # the root of the path is dataPath
-            user: 40001 #admin
-            group: 42001 #alpha
-          - path: Landsat-5/TM/L1T/2010/06/13
-            user: 40001 #user
-            group: 42001 #beta
-          - path: Landsat-5/TM/L1T/2010/06/21
-            user: 40001 #user
-            group: 42001 #gamma
-
-    external-volume-mounts: &external-volume-mounts-paris
-      - name: local-volume-1
-        mountPath: /volumes/local-volume-1
+    # below 2 lines regarding external volumes are modified using sed by onenv and MUST be kept in one line format
+    external-volumes: []
+    external-volume-mounts: &oneprovider-paris-volume-mounts [{name: local-volume-1, mountPath: /volumes/local-volume-1}]
 
     external-persistent-volume-claims-templates:
       - metadata:
@@ -485,11 +413,9 @@ onedata-3p:
       directIO:
         nfs:
           enabled: *oneclientDirectIOEnabled
-      external-volume-mounts: *external-volume-mounts-paris
-      external-volumes:
-        - name: local-volume-1
-          persistentVolumeClaim:
-            claimName: local-volume-1-dev-oneprovider-paris-0
+      # below 2 lines regarding external volumes are modified using sed by onenv and MUST be kept in one line format
+      external-volume-mounts: &oneclient-paris-volume-mounts [{name: local-volume-1, mountPath: /volumes/local-volume-1}]
+      external-volumes: [{name: local-volume-1, persistentVolumeClaim: {claimName: local-volume-1-dev-oneprovider-paris-0}}]
     jupyter-notebook:
       image: *odfsj_image
       enabled: *jupyter_notebook_enabled
