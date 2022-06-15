@@ -296,6 +296,9 @@ onedata-3p:
       suffix: *op1s
     posix:
       enabled: *posix_enabled
+      # Currently, only the POSIX volume supports persistence.
+      # It must be enabled in order to be able to restart the Oneprovider pod or
+      # start another pod that uses the same volume without losing storage data.
       persistence:
         enabled: *onedata_persistence
         size: 1Gi
