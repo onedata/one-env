@@ -300,6 +300,9 @@ onedata-3p:
       suffix: *op1s
     posix:
       enabled: *posix_enabled
+      persistence:
+        enabled: *onedata_persistence
+        size: 1Gi
     volume-s3:
       enabled: *s3_enabled
       suffix: *op1s
@@ -390,6 +393,9 @@ onedata-3p:
       suffix: *op2s
     posix:
       enabled: *posix_enabled
+      persistence:
+        enabled: *onedata_persistence
+        size: 1Gi
     volume-s3:
       enabled: *s3_enabled
       suffix: *op2s
@@ -491,6 +497,9 @@ onedata-3p:
       suffix: *op3s
     posix:
       enabled: *posix_enabled
+      persistence:
+        enabled: *onedata_persistence
+        size: 1Gi
     volume-s3:
       enabled: *s3_enabled
       suffix: *op3s
