@@ -1,15 +1,20 @@
+# This is basically a copy of the scenario-1oz-1op, but the Oneprovider pods
+# are started with "privileged: true" flag to enable creation of devices,
+# required by embedded ceph to work.
+# This will no longer be needed when support for embedded ceph is discontinued.
+
 global:
-  # TODO: VFS-4942 Find a way to eliminate necessity for region and tld values
+  # TODO VFS-4942 Find a way to eliminate necessity for region and tld values
   # to make deployment cluster independent
-   region: cluster
-   tld: local
-   imagePullPolicy: Always
-   v20: true
+  region: cluster
+  tld: local
+  imagePullPolicy: Always
+  v20: true
 
 oneprovider-krakow:
   enabled: &oneprovider_krakow_enabled true 
 oneprovider-paris:
-  enabled: &oneprovider_paris_enabled true
+  enabled: &oneprovider_paris_enabled false
 oneprovider-lisbon:
   enabled: &oneprovider_lisbon_enabled false
 
@@ -38,32 +43,18 @@ users: &all_users
     groups: []
 
 spaces:
-  - name: "krk-p-par-p"
+  - &krk_p
+    name: "krk-p"
     user: *user_joe
     supports:
       - provider: "krakow"
         storage_name: "posix"
-        size: '1073741824'
-      - provider: "paris"
-        storage_name: "posix"
-        size: '1073741824'
-  - name: "krk-l"
-    user: *user_joe
-    supports:
-      - provider: "krakow"
-        storage_name: "local-volume-1"
-        size: '1073741824'
-      - provider: "paris"
-        storage_name: "local-volume-1"
         size: '1073741824'
   # Null device spaces
-  - name: "krk-iu-par-iu"
+  - name: "krk-iu"
     user: *user_joe
     supports:
       - provider: "krakow"
-        storage_name: "IdealNullStorage"
-        size: '1125899906842624'
-      - provider: "paris"
         storage_name: "IdealNullStorage"
         size: '1125899906842624'
 
@@ -167,14 +158,6 @@ onedata-3p:
       latencyMax: 10
       timeoutProbability: !!float 0.3
       skipStorageDetection: true
-    ImportedNullStorage:
-      type: nulldevice
-      latencyMin: 0
-      latencyMax: 0
-      importedStorage: true
-      simulatedFilesystemParameters: "10-10"
-      simulatedFilesystemGrowSpeed: 1
-      skipStorageDetection: true
 
   # Onezone configuration
   onezone:
@@ -222,7 +205,7 @@ onedata-3p:
 
     elasticsearch:
       enabled: &elasticsearch_enabled false
-
+      
     # below 2 lines regarding external volumes are modified using sed by onenv and MUST be kept in one line format
     external-volume-mounts: &onezone-volume-mounts []
     external-volumes: []
@@ -247,6 +230,8 @@ onedata-3p:
   # What follows are the providers configurations for providers designated as:
   # krakow, paris, and lisbon
   oneprovider-krakow:
+    privileged: true  # required for embedded ceph to work (for creating loop/block devices)
+
     memory: 0.5Gi
     cpu: 0.3
     onepanel_generate_test_web_cert: true
@@ -283,8 +268,8 @@ onedata-3p:
       enabled: *onedata_persistence
 
     # below 2 lines regarding external volumes are modified using sed by onenv and MUST be kept in one line format
+    external-volume-mounts: &oneprovider-krakow-volume-mounts []  
     external-volumes: []
-    external-volume-mounts: &oneprovider-krakow-volume-mounts [{name: local-volume-1, mountPath: /volumes/local-volume-1}]
 
     oneclient:
       image: *oc_image
@@ -299,8 +284,8 @@ onedata-3p:
         nfs:
           enabled: *oneclientDirectIOEnabled
       # below 2 lines regarding external volumes are modified using sed by onenv and MUST be kept in one line format
-      external-volume-mounts: &oneclient-krakow-volume-mounts [{name: local-volume-1, mountPath: /volumes/local-volume-1}]
-      external-volumes: [{name: local-volume-1, persistentVolumeClaim: {claimName: local-volume-1-dev-oneprovider-krakow-0}}]
+      external-volume-mounts: &oneclient-krakow-volume-mounts []
+      external-volumes: []
     jupyter-notebook:
       image: *odfsj_image
       enabled: *jupyter_notebook_enabled
@@ -341,141 +326,19 @@ onedata-3p:
       suffix: *op1s
 
     external-storages:
-      local-volume-1:
-        type: posix
-        mountPoint: /volumes/local-volume-1
-        lumaFeed: local
       << : *external-storages
 
-    external-persistent-volume-claims-templates:
-      - metadata:
-          name: local-volume-1
-        spec:
-          accessModes: [ "ReadWriteOnce" ]
-          resources:
-            requests:
-              storage: 100Gi
-          storageClassName: standard
-
   oneprovider-paris:
-    memory: 0.5Gi
-    cpu: 0.3
-    onepanel_generate_test_web_cert: true
-    onepanel_trust_test_ca: true
+    privileged: true  # required for embedded ceph to work (for creating loop/block devices)
 
     suffix: &op2s paris
     geoLatitude: 48.8566
     geoLongitude: 2.3522
     enabled: *oneprovider_paris_enabled
 
-    image: *op_image
-    onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
-    log_level: *log_level
-    nameOverride: oneprovider
-    wait-for-onezone:
-      enabled: *wait-for-onezone-enabled
-
-    onedata_anti_affinity_enabled: *onedata_anti_affinity_enabled
-
-    oneprovider_nodes_count: *oneproviders_nodes_count
-    cluster_config: *oneprovider_cluster_configs
-
-    panelOverlayConfig: *oneprovidersPanelOverlayConfig
-    workerOverlayConfig: *oneprovidersWorkerOverlayConfig
-
-    onezone_service_url:
-      type: auto-generate
-      disableSuffix: true
-
-    generate-certificates:
-      enabled: *oneproviders_generate_certificates
-    persistence:
-      enabled: *onedata_persistence
-
-
-    # below 2 lines regarding external volumes are modified using sed by onenv and MUST be kept in one line format
-    external-volumes: []
-    external-volume-mounts: &oneprovider-paris-volume-mounts [{name: local-volume-1, mountPath: /volumes/local-volume-1}]
-
-    external-persistent-volume-claims-templates:
-      - metadata:
-          name: local-volume-1
-        spec:
-          accessModes: [ "ReadWriteOnce" ]
-          resources:
-            requests:
-              storage: 100Gi
-          storageClassName: standard
-
-    oneclient:
-      image: *oc_image
-      debug_mode: *oneclients_debug_mode_enabled
-      enabled: *oneclients_enabled
-      suffix: *op2s
-      users: *all_users
-      onedata_cli:
-        image: *cli_image
-      oneclientFlags: *oneclientFlags
-      directIO:
-        nfs:
-          enabled: *oneclientDirectIOEnabled
-      # below 2 lines regarding external volumes are modified using sed by onenv and MUST be kept in one line format
-      external-volume-mounts: &oneclient-paris-volume-mounts [{name: local-volume-1, mountPath: /volumes/local-volume-1}]
-      external-volumes: [{name: local-volume-1, persistentVolumeClaim: {claimName: local-volume-1-dev-oneprovider-paris-0}}]
-    jupyter-notebook:
-      image: *odfsj_image
-      enabled: *jupyter_notebook_enabled
-      suffix: *op2s
-    onedata-cli:
-      image: *cli_image
-      enabled: *onedata_cli_enabled
-      suffix: *op2s
-    posix:
-      enabled: *posix_enabled
-      # Currently, only the POSIX volume supports persistence.
-      # It must be enabled in order to be able to restart the Oneprovider pod or
-      # start another pod that uses the same volume without losing storage data.
-      persistence:
-        enabled: *onedata_persistence
-        size: 1Gi
-    volume-s3:
-      enabled: *s3_enabled
-      suffix: *op2s
-      aws_client_image: groundnuty/docker-aws:aws-relative-path-fix-2 #TODO VFS-7854
-    volume-ceph:
-      enabled: *ceph_enabled
-      suffix: *op2s
-    volume-nfs:
-      enabled: *nfs_enabled
-      suffix: *op2s
-      exports: &op2s-nfs-exports
-      - name: empty
-        readOnly: false
-        storageClaim: 1T
-    volume-gluster:
-      enabled: *gluster_enabled
-      suffix: *op2s
-    volume-swift:
-      enabled: *swift_enabled
-      suffix: *op2s
-    volume-webdav:
-      enabled: *webdav_enabled
-      suffix: *op2s
-      volume-data-sync:
-        enabled: true
-      importedStorage: true
-    volume-dcache:
-      enabled: *dcache_enabled
-      suffix: *op2s
-
-    external-storages:
-      local-volume-1:
-        type: posix
-        mountPoint: /volumes/local-volume-1
-        lumaFeed: local
-      << : *external-storages
-
   oneprovider-lisbon:
+    privileged: true  # required for embedded ceph to work (for creating loop/block devices)
+
     suffix: &op3s lisbon
     geoLatitude: 38.7223
     geoLongitude: -9.1393
