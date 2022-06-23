@@ -24,9 +24,10 @@ import yaml
 from scripts import docker
 
 
-ONE_ENV_CONTAINER_NAME = 'one-env'
-OPENING_URL_INFO = 'Opening URL: '
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+ONE_ENV_CONTAINER_NAME = 'one-env'
+ONE_ENV_CONFIG_FILE = 'one_env_config.yaml'
+OPENING_URL_INFO = 'Opening URL: '
 
 
 def get_environment_vars() -> List[docker.EnvVar]:
@@ -39,7 +40,10 @@ def get_environment_vars() -> List[docker.EnvVar]:
         value = os.environ.get(variable_name)
         if value:
             env_variables.append(docker.EnvVar(variable_name, value))
+
     env_variables.append(docker.EnvVar('ONENV_DIR', SCRIPT_DIR))
+    env_variables.append(docker.EnvVar('DEFAULT_CHARTS_VERSION', read_one_env_config('defaultChartsVersion')))
+
     return env_variables
 
 
@@ -62,9 +66,6 @@ def get_volumes(path_to_sources: str) -> List[docker.Volume]:
 
 
 def run_one_env_docker(path_to_sources: str) -> str:
-    with open(os.path.join(SCRIPT_DIR, 'one_env_config.yaml')) as f:
-        one_env_cfg = yaml.load(f, yaml.Loader)
-
     try:
         groups = [str(grp.getgrnam('docker').gr_gid)]
     except KeyError:
@@ -75,7 +76,7 @@ def run_one_env_docker(path_to_sources: str) -> str:
 
     try:
         container = docker.run(
-            one_env_cfg.get('onenvImage'),
+            read_one_env_config('onenvImage'),
             work_dir=SCRIPT_DIR,
             name=ONE_ENV_CONTAINER_NAME,
             envs=get_environment_vars(),
@@ -140,6 +141,12 @@ def run_one_env_cmd_in_docker(path_to_sources: str, args: List[str]) -> int:
     one_env_command = args[0] if args else '-h'
     container = get_one_env_container(path_to_sources)
     return exec_cmd_in_one_env_docker(container, args, one_env_command)
+
+
+def read_one_env_config(key: str) -> str:
+    with open(os.path.join(SCRIPT_DIR, ONE_ENV_CONFIG_FILE)) as f:
+        one_env_cfg = yaml.load(f, yaml.Loader)
+        return one_env_cfg.get(key)
 
 
 def main() -> None:

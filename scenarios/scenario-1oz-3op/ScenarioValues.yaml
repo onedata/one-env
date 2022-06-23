@@ -1,13 +1,14 @@
 global:
   # TODO: VFS-4942 Find a way to eliminate necessity for region and tld values
   # to make deployment cluster independent
-   region: cluster
-   tld: local
-   imagePullPolicy: Always
-   v20: true
+  region: cluster
+  tld: local
+  kubernetesDNSDomain: &kubernetesDNSDomain cluster.local
+  imagePullPolicy: Always
+  v21: true
 
 oneprovider-krakow:
-  enabled: &oneprovider_krakow_enabled true 
+  enabled: &oneprovider_krakow_enabled true
 oneprovider-paris:
   enabled: &oneprovider_paris_enabled true
 oneprovider-lisbon:
@@ -94,8 +95,14 @@ volume-webdav:
   enabled: *webdav_enabled
 volume-dcache:
   enabled: *dcache_enabled
+openfaas:
+  enabled: *openfaas_enabled
+openfaas-pod-status-monitor:
+  enabled: *openfaas_pod_status_monitor_enabled
+handle-proxy-mock:
+  enabled: *handle_proxy_mock_enabled
 
-onedata-3p: 
+onedata-3p:
   enabled: *deployment_enabled
   oz_image: &oz_image onedata/onezone:19.02.1
   op_image: &op_image onedata/oneprovider:19.02.1
@@ -123,6 +130,10 @@ onedata-3p:
   oneprovidersWorkerOverlayConfig: &oneprovidersWorkerOverlayConfig |-
     [].
 
+  erlang_related_envs: &erlang_related_envs
+    - name: WAIT_FOR_ERLANG
+      value: "180"
+
   oneclients_enabled: &oneclients_enabled false
   oneclientFlags: &oneclientFlags ""
   oneclientDirectIOEnabled: &oneclientDirectIOEnabled false
@@ -130,6 +141,10 @@ onedata-3p:
   onedata_cli_enabled: &onedata_cli_enabled false
 
   jupyter_notebook_enabled: &jupyter_notebook_enabled false
+  openfaas_enabled: &openfaas_enabled false
+  openfaas_pod_status_monitor_enabled: &openfaas_pod_status_monitor_enabled false
+  handle_proxy_mock_enabled: &handle_proxy_mock_enabled false
+
   posix_enabled: &posix_enabled true
   s3_enabled: &s3_enabled false
   ceph_enabled: &ceph_enabled false
@@ -198,6 +213,8 @@ onedata-3p:
     workerOverlayConfig: |-
       [].
 
+    envs: *erlang_related_envs
+
     onezone_main_admin: &onezone_main_admin
       name: admin
       password: password
@@ -211,6 +228,9 @@ onedata-3p:
 
     elasticsearch:
       enabled: &elasticsearch_enabled false
+
+    handle-proxy-mock:
+      enabled: *handle_proxy_mock_enabled
 
     # below 2 lines regarding external volumes are modified using sed by onenv and MUST be kept in one line format
     external-volume-mounts: &onezone-volume-mounts []
@@ -262,6 +282,8 @@ onedata-3p:
     panelOverlayConfig: *oneprovidersPanelOverlayConfig
     workerOverlayConfig: *oneprovidersWorkerOverlayConfig
 
+    envs: *erlang_related_envs
+
     onezone_service_url:
       type: auto-generate
       disableSuffix: true
@@ -270,6 +292,15 @@ onedata-3p:
       enabled: *oneproviders_generate_certificates
     persistence:
       enabled: *onedata_persistence
+
+    openfaas:
+      enabled: *openfaas_enabled
+      suffix: *op1s
+      kubernetesDNSDomain: *kubernetesDNSDomain
+
+    openfaas-pod-status-monitor:
+      enabled: *openfaas_pod_status_monitor_enabled
+      suffix: *op1s
 
     # below 2 lines regarding external volumes are modified using sed by onenv and MUST be kept in one line format
     external-volume-mounts: &oneprovider-krakow-volume-mounts []
@@ -327,7 +358,7 @@ onedata-3p:
       suffix: *op1s
 
     external-storages:
-      << : *external-storages
+      <<: *external-storages
 
   oneprovider-paris:
     memory: 0.5Gi
@@ -355,6 +386,8 @@ onedata-3p:
     panelOverlayConfig: *oneprovidersPanelOverlayConfig
     workerOverlayConfig: *oneprovidersWorkerOverlayConfig
 
+    envs: *erlang_related_envs
+
     onezone_service_url:
       type: auto-generate
       disableSuffix: true
@@ -363,6 +396,15 @@ onedata-3p:
       enabled: *oneproviders_generate_certificates
     persistence:
       enabled: *onedata_persistence
+
+    openfaas:
+      enabled: *openfaas_enabled
+      suffix: *op1s
+      kubernetesDNSDomain: *kubernetesDNSDomain
+
+    openfaas-pod-status-monitor:
+      enabled: *openfaas_pod_status_monitor_enabled
+      suffix: *op1s
 
     # below 2 lines regarding external volumes are modified using sed by onenv and MUST be kept in one line format
     external-volume-mounts: &oneprovider-paris-volume-mounts []
@@ -407,9 +449,9 @@ onedata-3p:
       enabled: *nfs_enabled
       suffix: *op2s
       exports: &op2s-nfs-exports
-      - name: empty
-        readOnly: false
-        storageClaim: 1T
+        - name: empty
+          readOnly: false
+          storageClaim: 1T
     volume-gluster:
       enabled: *gluster_enabled
       suffix: *op2s
@@ -427,7 +469,7 @@ onedata-3p:
       suffix: *op2s
 
     external-storages:
-      << : *external-storages
+      <<: *external-storages
 
   oneprovider-lisbon:
     memory: 0.5Gi
@@ -438,13 +480,13 @@ onedata-3p:
     geoLatitude: 38.7223
     geoLongitude: -9.1393
     enabled: *oneprovider_lisbon_enabled
-    
+
     image: *op_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
     onepanel_debug_mode: *onepanel_debug_mode_enabled
     log_level: *log_level
     nameOverride: oneprovider
-    wait-for-onezone: 
+    wait-for-onezone:
       enabled: *wait-for-onezone-enabled
 
     oneprovider_nodes_count: *oneproviders_nodes_count
@@ -463,6 +505,15 @@ onedata-3p:
       enabled: *oneproviders_generate_certificates
     persistence:
       enabled: *onedata_persistence
+
+    openfaas:
+      enabled: *openfaas_enabled
+      suffix: *op1s
+      kubernetesDNSDomain: *kubernetesDNSDomain
+
+    openfaas-pod-status-monitor:
+      enabled: *openfaas_pod_status_monitor_enabled
+      suffix: *op1s
 
     # below 2 lines regarding external volumes are modified using sed by onenv and MUST be kept in one line format
     external-volume-mounts: &oneprovider-lisbon-volume-mounts []
@@ -511,9 +562,9 @@ onedata-3p:
       enabled: *nfs_enabled
       suffix: *op3s
       exports: &op3s-nfs-exports
-      - name: empty
-        readOnly: false
-        storageClaim: 1T
+        - name: empty
+          readOnly: false
+          storageClaim: 1T
     volume-gluster:
       enabled: *gluster_enabled
       suffix: *op3s
@@ -528,4 +579,4 @@ onedata-3p:
       suffix: *op3s
 
     external-storages:
-      << : *external-storages
+      <<: *external-storages

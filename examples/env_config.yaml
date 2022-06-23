@@ -168,3 +168,11 @@ spaces:
       - provider: oneprovider-1
         storage_name: 'posix'
         size: '100000000' # in bytes
+
+# A boolean flag determining if an OpenFaaS cluster should be deployed
+# for each provider.
+openfaas: true
+
+# A boolean flag determining if a handle proxy mock service should be deployed
+# alongside Onezone and made available to all users for registering OpenData.
+handleProxyMock: true

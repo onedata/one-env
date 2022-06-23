@@ -1,0 +1,20 @@
+# Name of the scenario to run (must match name present in scenarios directory)
+scenario: "scenario-1oz-1op"
+
+# Onezone image to use. Note that if 'sources' option is enabled, it must
+# be based off onedata/worker image (it contains all the machinery to run the
+# application from sources - images based off onedata-worker are images with
+# -dev suffix).
+onezoneImage: "docker.onedata.org/onezone-dev:develop"
+
+# Oneprovider image to use. Note that if 'sources' option is enabled, it must
+# be based off onedata/worker image (images based off onedata-worker are
+# images with -dev suffix).
+oneproviderImage: "docker.onedata.org/oneprovider-dev:develop"
+
+# Forces one-env to use the legacy Oneprovider registration procedures
+# (registration token is provided inline in the batch config, rather than
+# dynamically via a file). In typical use-cases, this flag never needs
+# to be provided explicitly, as one-env auto-detects the Oneprovider version
+# and chooses a suitable mode.
+v20_mode: true

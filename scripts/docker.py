@@ -16,7 +16,6 @@ from typing import Optional, List, Union
 RUNNING_STATUS = 'running'
 EntryPointCmdType = Union[str, List[str]]
 
-
 EnvVar = namedtuple('EnvVar', ['name', 'value'])
 
 Volume = namedtuple('Volume', ['host_path', 'mount_path', 'options'])
