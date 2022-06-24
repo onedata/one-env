@@ -170,7 +170,7 @@ spaces:
         size: '100000000' # in bytes
 
 # A boolean flag determining if an OpenFaaS cluster should be deployed
-# for each provider.
+# for each Oneprovider.
 openfaas: true
 
 # A boolean flag determining if a handle proxy mock service should be deployed
