@@ -3,20 +3,21 @@ global:
   # to make deployment cluster independent
   region: cluster
   tld: local
+  kubernetesDNSDomain: &kubernetesDNSDomain cluster.local
   imagePullPolicy: Always
-  v20: true
+  v21: true
 
 oneprovider-krakow:
-  enabled: &oneprovider_krakow_enabled true 
+  enabled: &oneprovider_krakow_enabled true
 oneprovider-paris:
   enabled: &oneprovider_paris_enabled false
 oneprovider-lisbon:
   enabled: &oneprovider_lisbon_enabled false
 
 allOneproviders: &allOneproviders
-   - *op1s
-   - *op2s
-   - *op3s
+  - *op1s
+  - *op2s
+  - *op3s
 
 deployment_enabled: &deployment_enabled true
 
@@ -89,8 +90,14 @@ volume-webdav:
   enabled: *webdav_enabled
 volume-dcache:
   enabled: *dcache_enabled
+openfaas:
+  enabled: *openfaas_enabled
+openfaas-pod-status-monitor:
+  enabled: *openfaas_pod_status_monitor_enabled
+handle-proxy-mock:
+  enabled: *handle_proxy_mock_enabled
 
-onedata-3p: 
+onedata-3p:
   enabled: *deployment_enabled
   oz_image: &oz_image onedata/onezone:19.02.1
   op_image: &op_image onedata/oneprovider:19.02.1
@@ -118,6 +125,10 @@ onedata-3p:
   oneprovidersWorkerOverlayConfig: &oneprovidersWorkerOverlayConfig |-
     [].
 
+  erlang_related_envs: &erlang_related_envs
+    - name: WAIT_FOR_ERLANG
+      value: "180"
+
   oneclients_enabled: &oneclients_enabled false
   oneclientFlags: &oneclientFlags ""
   oneclientDirectIOEnabled: &oneclientDirectIOEnabled false
@@ -125,6 +136,10 @@ onedata-3p:
   onedata_cli_enabled: &onedata_cli_enabled false
 
   jupyter_notebook_enabled: &jupyter_notebook_enabled false
+  openfaas_enabled: &openfaas_enabled false
+  openfaas_pod_status_monitor_enabled: &openfaas_pod_status_monitor_enabled false
+  handle_proxy_mock_enabled: &handle_proxy_mock_enabled false
+
   posix_enabled: &posix_enabled true
   s3_enabled: &s3_enabled false
   ceph_enabled: &ceph_enabled false
@@ -194,6 +209,8 @@ onedata-3p:
     workerOverlayConfig: |-
       [].
 
+    envs: *erlang_related_envs
+
     onezone_main_admin: &onezone_main_admin
       name: admin
       password: password
@@ -207,7 +224,10 @@ onedata-3p:
 
     elasticsearch:
       enabled: &elasticsearch_enabled false
-      
+
+    handle-proxy-mock:
+      enabled: *handle_proxy_mock_enabled
+
     # below 2 lines regarding external volumes are modified using sed by onenv and MUST be kept in one line format
     external-volume-mounts: &onezone-volume-mounts []
     external-volumes: []
@@ -258,6 +278,8 @@ onedata-3p:
     panelOverlayConfig: *oneprovidersPanelOverlayConfig
     workerOverlayConfig: *oneprovidersWorkerOverlayConfig
 
+    envs: *erlang_related_envs
+
     onezone_service_url:
       type: auto-generate
       disableSuffix: true
@@ -266,6 +288,15 @@ onedata-3p:
       enabled: *oneproviders_generate_certificates
     persistence:
       enabled: *onedata_persistence
+
+    openfaas:
+      enabled: *openfaas_enabled
+      suffix: *op1s
+      kubernetesDNSDomain: *kubernetesDNSDomain
+
+    openfaas-pod-status-monitor:
+      enabled: *openfaas_pod_status_monitor_enabled
+      suffix: *op1s
 
     # below 2 lines regarding external volumes are modified using sed by onenv and MUST be kept in one line format
     external-volumes: []
@@ -340,7 +371,7 @@ onedata-3p:
         type: posix
         mountPoint: /volumes/local-volume-1
         lumaFeed: local
-      << : *external-storages
+      <<: *external-storages
 
   oneprovider-paris:
     suffix: &op2s paris

@@ -44,7 +44,12 @@ def main():
         subprocess.check_output(docker_run_cmd, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as ex:
         print(ex)
-        print('Captured stdout and stderr: {}'.format(ex.output))
+        print('Captured stdout and stderr:')
+        print('---------------------------')
+        print('')
+        print(ex.output.decode())
+        print('')
+        print('---------------------------')
         sys.exit(ex.returncode)
     else:
         print('OK')
