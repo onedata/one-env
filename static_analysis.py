@@ -36,7 +36,7 @@ def main():
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
     pylint_cmd = ['pylint', DOCKER_ONE_ENV_PATH, '--rcfile', RC_FILE_PATH]
-    docker_run_cmd = ['docker', 'run', '-i', '-v',
+    docker_run_cmd = ['docker', 'run', '--rm', '-i', '-v',
                       '{}:{}'.format(script_dir, DOCKER_ONE_ENV_PATH),
                       static_analysis_args.image] + pylint_cmd
 

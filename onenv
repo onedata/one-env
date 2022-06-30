@@ -66,13 +66,16 @@ def get_volumes(path_to_sources: str) -> List[docker.Volume]:
 
 
 def run_one_env_docker(path_to_sources: str) -> str:
+    # make sure the current user is a member of the docker group so that
+    # he can run docker commands inside the container - checking the
+    # gid of the docker.sock always returns the same value, regardless
+    # if on the host or any container where it was mounted
     try:
-        groups = [str(grp.getgrnam('docker').gr_gid)]
+        groups = [str(os.stat('/var/run/docker.sock').st_gid)]
     except KeyError:
         # on OSX there is no docker group so pass empty list if cannot get
         # gid of docker group
         groups = []
-
 
     try:
         container = docker.run(
@@ -105,6 +108,11 @@ def exec_cmd_in_one_env_docker(container: str, args: List[str],
             tty=True,
             interactive=True,
             work_dir=os.getcwd(),
+            # run commands as the current user so that the artifacts that are
+            # created by the process (e.g. one-env config in user home, deployment
+            # data or downloaded build artifacts) belong to the current user and
+            # then can easily be cleaned by him (otherwise, they would belong to root)
+            user=docker.User(str(os.geteuid()), str(os.getegid())),
             envs=get_environment_vars(),
             command=['bash', '-c', 'onenv ' + ' '.join(args)],
             output=output
