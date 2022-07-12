@@ -102,23 +102,31 @@ def run_one_env_docker(path_to_sources: str) -> str:
 def exec_cmd_in_one_env_docker(container: str, args: List[str],
                                one_env_command: str) -> int:
     try:
-        output = one_env_command == 'gui'
+        print_output = one_env_command == 'gui'
+
+        if one_env_command == 'hosts':
+            # the 'hosts' command should be run as root as it modifies the /etc/hosts file
+            # (root will be used by default if no user is provided)
+            user = None
+        else:
+            # run other commands as the current user so that the artifacts that are
+            # created by the process (e.g. one-env config in user home, deployment
+            # data or downloaded build artifacts) belong to the current user and
+            # then can easily be cleaned by him (otherwise, they would belong to root)
+            user = docker.User(str(os.geteuid()), str(os.getegid()))
+
         res = docker.execute(
             container,
             tty=True,
             interactive=True,
             work_dir=os.getcwd(),
-            # run commands as the current user so that the artifacts that are
-            # created by the process (e.g. one-env config in user home, deployment
-            # data or downloaded build artifacts) belong to the current user and
-            # then can easily be cleaned by him (otherwise, they would belong to root)
-            user=docker.User(str(os.geteuid()), str(os.getegid())),
+            user=user,
             envs=get_environment_vars(),
             command=['bash', '-c', 'onenv ' + ' '.join(args)],
-            output=output
+            output=print_output
         )
 
-        if output:
+        if print_output:
             print(res)
             if OPENING_URL_INFO in res:
                 url = re.search(r'{}(.*)'.format(OPENING_URL_INFO),
