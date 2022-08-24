@@ -430,12 +430,12 @@ onedata-3p:
 
     openfaas:
       enabled: *openfaas_enabled
-      suffix: *op1s
+      suffix: *op2s
       kubernetesDNSDomain: *kubernetesDNSDomain
 
     openfaas-pod-status-monitor:
       enabled: *openfaas_pod_status_monitor_enabled
-      suffix: *op1s
+      suffix: *op2s
 
     # below 2 lines regarding external volumes are modified using sed by onenv and MUST be kept in one line format
     external-volume-mounts: &oneprovider-paris-volume-mounts []
