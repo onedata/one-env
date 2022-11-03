@@ -4,7 +4,7 @@ providers:
   krakow: oneprovider-1
 
 # oneclient image to use in benchmark
-oneclientImage: docker.onedata.org/oneclient-dev:ID-b08da46791
+oneclientImage: docker.onedata.org/oneclient-dev:develop
 
 # Oneclient should connect only to nodes with op-worker. These two variables
 # allows to specify how many nodes with op-worker are present in environment

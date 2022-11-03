@@ -31,10 +31,10 @@ onedataCli: false
 oneclients: false
 
 # Oneclient image to use.
-oneclientImage: "docker.onedata.org/oneclient:ID-25457c9678"
+oneclientImage: "docker.onedata.org/oneclient-dev:develop"
 
 # Onedata rest client image to use.
-onedataCliImage: "onedata/rest-cli:18.02.0-rc13-fast-1"
+onedataCliImage: "onedata/rest-cli:21.02.0-alpha27"
 
 # When enabled, onezoneImage and oneproviderImage will be pulled before every
 # deployment. If disabled, they will only be pulled if not existent.
