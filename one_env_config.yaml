@@ -1,5 +1,5 @@
 # one-env image that should be used
-onenvImage: docker.onedata.org/one_env:32318e0
+onenvImage: docker.onedata.org/one_env:c02e36a
 
 # used when no specific version is requested (in config or any override)
 defaultChartsVersion: 0.2.18-rc34
