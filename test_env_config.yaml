@@ -31,7 +31,7 @@ onedataCli: false
 oneclients: false
 
 # Oneclient image to use.
-oneclientImage: "docker.onedata.org/oneclient:develop"
+oneclientImage: "docker.onedata.org/oneclient-dev:develop"
 
 # Onedata rest client image to use.
 onedataCliImage: "onedata/rest-cli:21.02.0-alpha27"
