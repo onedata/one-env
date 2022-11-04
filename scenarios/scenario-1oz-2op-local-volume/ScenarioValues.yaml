@@ -107,11 +107,11 @@ handle-proxy-mock:
 
 onedata-3p:
   enabled: *deployment_enabled
-  oz_image: &oz_image onedata/onezone:19.02.1
-  op_image: &op_image onedata/oneprovider:19.02.1
-  oc_image: &oc_image onedata/oneclient:19.02.1
-  odfsj_image: &odfsj_image onedata/onedatafs-jupyter:19.02.1
-  cli_image: &cli_image docker.onedata.org/rest-cli:ID-f310819457
+  oz_image: &oz_image docker.onedata.org/onezone-dev:develop
+  op_image: &op_image docker.onedata.org/oneprovider-dev:develop
+  oc_image: &oc_image docker.onedata.org/oneclient-dev:develop
+  odfsj_image: &odfsj_image docker.onedata.org/onedatafs-jupyter:develop
+  cli_image: &cli_image docker.onedata.org/rest-cli:develop
 
   log_level: &log_level "info"
   onepanel_batch_mode_enabled: &onepanel_batch_mode_enabled true

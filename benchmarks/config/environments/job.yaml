@@ -1,7 +1,7 @@
 # This gets injected into job chart on it's root level
 # overriding variables from 'environment' section above
 oneclient:
-  image: docker.onedata.org/oneclient:ID-7d4dcfe534
+  image: docker.onedata.org/oneclient-dev:develop
   provider_host: !var ${provider.krakow}
 
   graphite_prefix: exper.${experiment}.date.${date}.args.${args}.release.${release}.dc.${dc}.cluster.${cluster}.host.${MY_NODE_NAME}.pod.${MY_POD_NAMESPACE}-${MY_POD_NAME}.container.oneclient.uid.0
