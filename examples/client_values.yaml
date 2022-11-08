@@ -1,4 +1,4 @@
-image: docker.onedata.org/oneclient-dev:ID-3c60ebb24b
+image: docker.onedata.org/oneclient-dev:develop
 imagePullPolicy: IfNotPresent
 
 # Number of oneclients to launch. Each oneclient pod will be identical.

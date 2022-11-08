@@ -55,7 +55,7 @@ oneproviderImage: "docker.onedata.org/oneprovider-dev:develop"
 oneclientImage: "docker.onedata.org/oneclient-dev:develop"
 
 # Onedata rest client image to use.
-onedataCliImage: "onedata/rest-cli:21.02.0-alpha27"
+onedataCliImage: "docker.onedata.org/rest-cli:develop"
 
 # When enabled, all images will be pulled before every deployment.
 # If disabled, they will only be pulled if not existent.
