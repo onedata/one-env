@@ -276,6 +276,7 @@ onedata-3p:
     openfaas-pod-status-monitor:
       enabled: *openfaas_pod_status_monitor_enabled
       suffix: *op1s
+      image: *psm_image
 
     # below 2 lines regarding external volumes are modified using sed by onenv and MUST be kept in one line format
     external-volume-mounts: &oneprovider-krakow-volume-mounts []
@@ -426,6 +427,7 @@ onedata-3p:
     openfaas-pod-status-monitor:
       enabled: *openfaas_pod_status_monitor_enabled
       suffix: *op2s
+      image: *psm_image
 
     volume-data-sync:
       enabled: *volume_data_sync_enabled
@@ -543,6 +545,7 @@ onedata-3p:
     openfaas-pod-status-monitor:
       enabled: *openfaas_pod_status_monitor_enabled
       suffix: *op3s
+      image: *psm_image
 
     volume-data-sync:
       enabled: *volume_data_sync_enabled
