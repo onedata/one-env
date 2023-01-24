@@ -103,6 +103,7 @@ onedata-3p:
   oc_image: &oc_image docker.onedata.org/oneclient-dev:develop
   odfsj_image: &odfsj_image docker.onedata.org/onedatafs-jupyter:develop
   cli_image: &cli_image docker.onedata.org/rest-cli:develop
+  psm_image: &psm_image docker.onedata.org/openfaas-pod-status-monitor:develop
 
   log_level: &log_level "info"
   onepanel_batch_mode_enabled: &onepanel_batch_mode_enabled true
