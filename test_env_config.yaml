@@ -36,7 +36,7 @@ oneclientImage: "docker.onedata.org/oneclient-dev:develop"
 # Onedata rest client image to use.
 onedataCliImage: "docker.onedata.org/rest-cli:develop"
 
-# Openfaas Pod Status Monitor image to use.
+# OpenFaaS Pod Status Monitor image to use.
 openfaasPodStatusMonitorImage: "docker.onedata.org/openfaas-pod-status-monitor:develop"
 
 # When enabled, onezoneImage and oneproviderImage will be pulled before every
