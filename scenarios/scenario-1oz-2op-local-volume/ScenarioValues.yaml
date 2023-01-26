@@ -112,6 +112,7 @@ onedata-3p:
   oc_image: &oc_image docker.onedata.org/oneclient-dev:develop
   odfsj_image: &odfsj_image docker.onedata.org/onedatafs-jupyter:develop
   cli_image: &cli_image docker.onedata.org/rest-cli:develop
+  psm_image: &psm_image docker.onedata.org/openfaas-pod-status-monitor:develop
 
   log_level: &log_level "info"
   onepanel_batch_mode_enabled: &onepanel_batch_mode_enabled true
@@ -312,6 +313,7 @@ onedata-3p:
     openfaas-pod-status-monitor:
       enabled: *openfaas_pod_status_monitor_enabled
       suffix: *op1s
+      image: *psm_image
 
     # below 2 lines regarding external volumes are modified using sed by onenv and MUST be kept in one line format
     external-volumes: []
@@ -433,6 +435,7 @@ onedata-3p:
     openfaas-pod-status-monitor:
       enabled: *openfaas_pod_status_monitor_enabled
       suffix: *op2s
+      image: *psm_image
 
 
     # below 2 lines regarding external volumes are modified using sed by onenv and MUST be kept in one line format
