@@ -133,7 +133,7 @@ onedata-3p:
 
   erlang_related_envs: &erlang_related_envs
     - name: WAIT_FOR_ERLANG
-      value: "180"
+      value: "240"
 
   oneclients_enabled: &oneclients_enabled false
   oneclientFlags: &oneclientFlags ""
@@ -505,6 +505,8 @@ onedata-3p:
 
     panelOverlayConfig: *oneprovidersPanelOverlayConfig
     workerOverlayConfig: *oneprovidersWorkerOverlayConfig
+
+    envs: *erlang_related_envs
 
     onezone_service_url:
       type: auto-generate
