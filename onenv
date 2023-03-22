@@ -92,7 +92,7 @@ def run_one_env_docker(path_to_sources: str) -> str:
             output=True
         )
     except sp.CalledProcessError as ex:
-        print(ex.stdout.decode('utf-8')).strip()
+        print(ex.stdout.decode('utf-8').strip())
         sys.exit(1)
     else:
         exec_cmd_in_one_env_docker(container, ['init'], 'init')
