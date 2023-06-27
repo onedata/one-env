@@ -1,6 +1,5 @@
 # one-env image that should be used
-# FIXME: set release number after approve
-onenvImage: docker.onedata.org/one_env:c2ae4c8
+onenvImage: docker.onedata.org/one_env:v34
 
 # used when no specific version is requested (in config or any override)
 defaultChartsVersion: 0.2.18-rc34
