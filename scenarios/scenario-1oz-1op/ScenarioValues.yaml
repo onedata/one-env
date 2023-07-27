@@ -287,6 +287,25 @@ onedata-3p:
       enabled: *openfaas_enabled
       suffix: *op1s
       kubernetesDNSDomain: *kubernetesDNSDomain
+      # TODO VFS-10105 get rid of these overrides when we use the newest Onedata's charts for OpenFaaS (and these are the defaults)
+      basicAuthPlugin:
+        image: onedata/openfaas-basic-auth:0.21.1
+      gateway:
+        image: onedata/openfaas-gateway:0.26.3
+      faasnetes:
+        image: onedata/openfaas-faas-netes:0.16.4
+        readinessProbe:
+          initialDelaySeconds: 1
+          timeoutSeconds: 20           # Tuned-in to run checks early and quickly to support fast cold-start from zero replicas
+          periodSeconds: 1            # Reduce to 1 for a faster cold-start, increase higher for lower-CPU usageoperator
+      operator:
+        image: onedata/openfaas-faas-netes:0.16.4
+      queueWorker:
+        image: onedata/openfaas-queue-worker:0.13.0
+        ackWait: "6000000000s"
+      queueWorkerPro:
+        # Control the concurrent invocations
+        maxInflight: 5
 
     openfaas-pod-status-monitor:
       enabled: *openfaas_pod_status_monitor_enabled
