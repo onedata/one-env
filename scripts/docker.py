@@ -44,9 +44,10 @@ def assemble_volumes(volumes: Optional[Volume] = None) -> List[str]:
 
     if volumes:
         for volume in volumes:
-            tokens.extend(['-v', '{}:{}:{}'.format(volume.host_path,
-                                                   volume.mount_path,
-                                                   volume.options)])
+            volume_spec = '{}:{}'.format(volume.host_path, volume.mount_path)
+            if volume.options:
+                volume_spec += ':{}'.format(volume.options)
+            tokens.extend(['-v', volume_spec])
     return tokens
 
 
