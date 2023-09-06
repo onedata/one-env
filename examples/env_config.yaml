@@ -179,3 +179,6 @@ openfaas: true
 # A boolean flag determining if a handle proxy mock service should be deployed
 # alongside Onezone and made available to all users for registering OpenData.
 handleProxyMock: true
+
+# determines if the ES service should be deployed
+elasticSearch: true

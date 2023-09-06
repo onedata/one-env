@@ -2,4 +2,4 @@
 onenvImage: docker.onedata.org/one_env:v34
 
 # used when no specific version is requested (in config or any override)
-defaultChartsVersion: 0.2.18-rc34
+defaultChartsVersion: 0.2.18-rc54
