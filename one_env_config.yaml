@@ -1,5 +1,5 @@
 # one-env image that should be used
-onenvImage: docker.onedata.org/one_env:v34
+onenvImage: docker.onedata.org/one_env:24b16d5  # fixme tag nicely at the end
 
 # used when no specific version is requested (in config or any override)
-defaultChartsVersion: 0.2.18-rc54
+defaultChartsVersion: 0.2.18-rc57

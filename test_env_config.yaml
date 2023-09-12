@@ -39,6 +39,9 @@ onedataCliImage: "docker.onedata.org/rest-cli:develop"
 # OpenFaaS Pod Status Monitor image to use.
 openfaasPodStatusMonitorImage: "docker.onedata.org/openfaas-pod-status-monitor:develop"
 
+# OpenFaaS Lambda Result Streamer image to use.
+openfaasLambdaResultStreamerImage: "docker.onedata.org/openfaas-lambda-result-streamer:develop"
+
 # When enabled, onezoneImage and oneproviderImage will be pulled before every
 # deployment. If disabled, they will only be pulled if not existent.
 forceImagePull: false
