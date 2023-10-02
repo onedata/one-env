@@ -93,12 +93,13 @@ handle-proxy-mock:
 
 onedata-3p:
   enabled: *deployment_enabled
-  oz_image: &oz_image docker.onedata.org/onezone-dev:develop
-  op_image: &op_image docker.onedata.org/oneprovider-dev:develop
-  oc_image: &oc_image docker.onedata.org/oneclient-dev:develop
-  odfsj_image: &odfsj_image docker.onedata.org/onedatafs-jupyter:develop
-  cli_image: &cli_image docker.onedata.org/rest-cli:develop
-  psm_image: &psm_image docker.onedata.org/openfaas-pod-status-monitor:develop
+  oz_image: &oz_image docker.onedata.org/onezone-dev:nonexistent-tag
+  op_image: &op_image docker.onedata.org/oneprovider-dev:nonexistent-tag
+  oc_image: &oc_image docker.onedata.org/oneclient-dev:nonexistent-tag
+  odfsj_image: &odfsj_image docker.onedata.org/onedatafs-jupyter:nonexistent-tag
+  cli_image: &cli_image docker.onedata.org/rest-cli:nonexistent-tag
+  psm_image: &psm_image docker.onedata.org/openfaas-pod-status-monitor:nonexistent-tag
+  lrs_image: &lrs_image docker.onedata.org/openfaas-lambda-result-streamer:nonexistent-tag
 
   log_level: &log_level "info"
   onepanel_batch_mode_enabled: &onepanel_batch_mode_enabled true
@@ -177,7 +178,6 @@ onedata-3p:
     onepanel_generate_test_web_cert: true
     onepanel_trust_test_ca: true
     guiDebugMode: true
-
     image: *oz_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
     log_level: *log_level
@@ -187,6 +187,9 @@ onedata-3p:
     generate-certificates:
       enabled: false
     persistence:
+      enabled: *onedata_persistence
+    gracefulStop:
+      # if there is no persistence, we don't care for graceful stops, all services can be insta-killed
       enabled: *onedata_persistence
     onezone_nodes_count: 1
     cluster_config:
@@ -282,35 +285,22 @@ onedata-3p:
       enabled: *oneproviders_generate_certificates
     persistence:
       enabled: *onedata_persistence
+    gracefulStop:
+      # if there is no persistence, we don't care for graceful stops, all services can be insta-killed
+      enabled: *onedata_persistence
 
     openfaas:
       enabled: *openfaas_enabled
       suffix: *op1s
       kubernetesDNSDomain: *kubernetesDNSDomain
-      # TODO VFS-10105 get rid of these overrides when we use the newest Onedata's charts for OpenFaaS (and these are the defaults)
-      basicAuthPlugin:
-        image: onedata/openfaas-basic-auth:0.21.1
-      gateway:
-        image: onedata/openfaas-gateway:0.26.3
-      faasnetes:
-        image: onedata/openfaas-faas-netes:0.16.4
-        readinessProbe:
-          initialDelaySeconds: 1
-          timeoutSeconds: 20           # Tuned-in to run checks early and quickly to support fast cold-start from zero replicas
-          periodSeconds: 1            # Reduce to 1 for a faster cold-start, increase higher for lower-CPU usageoperator
-      operator:
-        image: onedata/openfaas-faas-netes:0.16.4
-      queueWorker:
-        image: onedata/openfaas-queue-worker:0.13.0
-        ackWait: "6000000000s"
-      queueWorkerPro:
-        # Control the concurrent invocations
-        maxInflight: 5
 
     openfaas-pod-status-monitor:
       enabled: *openfaas_pod_status_monitor_enabled
       suffix: *op1s
       image: *psm_image
+
+    openfaas-lambda-result-streamer:
+      image: *lrs_image
 
     # below 2 lines regarding external volumes are modified using sed by onenv and MUST be kept in one line format
     external-volume-mounts: &oneprovider-krakow-volume-mounts []
@@ -357,6 +347,12 @@ onedata-3p:
     volume-nfs:
       enabled: *nfs_enabled
       suffix: *op1s
+      exports:
+        - name: empty
+          readOnly: false
+          storageClaim: 1T
+          accessModes:
+            - ReadWriteMany
     volume-gluster:
       enabled: *gluster_enabled
       suffix: *op1s
