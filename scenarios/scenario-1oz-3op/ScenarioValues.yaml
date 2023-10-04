@@ -606,7 +606,7 @@ onedata-3p:
     volume-nfs:
       enabled: *nfs_enabled
       suffix: *op3s
-      exports:
+      exports: &op3s-nfs-exports
         - name: empty
           readOnly: false
           storageClaim: 1T
