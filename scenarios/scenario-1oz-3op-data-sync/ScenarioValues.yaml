@@ -143,19 +143,16 @@ onedata-3p:
       latencyMin: 0
       latencyMax: 0
       #timeoutProbability: !!float 0.0
-      skipStorageDetection: true
     SlowNullStorage:
       type: nulldevice
       latencyMin: 2
       latencyMax: 15
       #timeoutProbability: !!float 0.0
-      skipStorageDetection: true
     BusyNullStorage:
       type: nulldevice
       latencyMin: 1
       latencyMax: 10
       timeoutProbability: !!float 0.3
-      skipStorageDetection: true
 
   # Onezone configuration
   onezone:
@@ -312,7 +309,6 @@ onedata-3p:
           imagePullPolicy: IfNotPresent
           dataPath: /data
           readOnly: true
-          skipStorageDetection: true
         - name: volume-data-sync-rw-luma
           image: onedata/eo-data-mock:Landsat-5-sample-latest
           imagePullPolicy: IfNotPresent
