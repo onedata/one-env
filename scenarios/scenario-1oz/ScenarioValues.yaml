@@ -1,0 +1,248 @@
+global:
+  # TODO VFS-4942 Find a way to eliminate necessity for region and tld values
+  # to make deployment cluster independent
+  region: cluster
+  tld: local
+  kubernetesDNSDomain: &kubernetesDNSDomain cluster.local
+  imagePullPolicy: Always
+  v21: true
+
+oneprovider-krakow:
+  enabled: &oneprovider_krakow_enabled false
+oneprovider-paris:
+  enabled: &oneprovider_paris_enabled false
+oneprovider-lisbon:
+  enabled: &oneprovider_lisbon_enabled false
+
+allOneproviders: &allOneproviders
+  - *op1s
+  - *op2s
+  - *op3s
+
+deployment_enabled: &deployment_enabled true
+
+groups: &all_groups []
+
+users: &all_users
+  - &user_joe
+    name: joe
+    firstName: Joe
+    lastName: Morgan
+    idps:
+      onepanel:
+        enabled: true
+        type: regular
+        mode: config
+    password: password
+    email: joe@example.com
+    oneclient: *allOneproviders
+    groups: []
+
+# Those variables are the unfortunate necessity of an issue discussed here:
+# https://github.com/kubernetes/helm/issues/2479]
+token-dispenser:
+  enabled: *token_dispenser_enabled
+saml-idp:
+  enabled: *idp_enabled
+keycloak-onedata:
+  enabled: *keycloak_enabled
+elasticsearch:
+  enabled: *elasticsearch_enabled
+oneclient:
+  enabled: *oneclients_enabled
+jupyter-notebook:
+  enabled: *jupyter_notebook_enabled
+onedata-cli:
+  enabled: *onedata_cli_enabled
+volume-s3:
+  enabled: *s3_enabled
+volume-ceph:
+  enabled: *ceph_enabled
+volume-nfs:
+  enabled: *nfs_enabled
+volume-gluster:
+  enabled: *gluster_enabled
+volume-swift:
+  enabled: *swift_enabled
+volume-webdav:
+  enabled: *webdav_enabled
+volume-dcache:
+  enabled: *dcache_enabled
+openfaas:
+  enabled: *openfaas_enabled
+openfaas-pod-status-monitor:
+  enabled: *openfaas_pod_status_monitor_enabled
+handle-proxy-mock:
+  enabled: *handle_proxy_mock_enabled
+
+onedata-3p:
+  enabled: *deployment_enabled
+  oz_image: &oz_image docker.onedata.org/onezone-dev:nonexistent-tag
+  op_image: &op_image docker.onedata.org/oneprovider-dev:nonexistent-tag
+  oc_image: &oc_image docker.onedata.org/oneclient-dev:nonexistent-tag
+  odfsj_image: &odfsj_image docker.onedata.org/onedatafs-jupyter:nonexistent-tag
+  cli_image: &cli_image docker.onedata.org/rest-cli:nonexistent-tag
+  psm_image: &psm_image docker.onedata.org/openfaas-pod-status-monitor:nonexistent-tag
+  lrs_image: &lrs_image docker.onedata.org/openfaas-lambda-result-streamer:nonexistent-tag
+
+  log_level: &log_level "info"
+  onepanel_batch_mode_enabled: &onepanel_batch_mode_enabled true
+  oneclients_debug_mode_enabled: &oneclients_debug_mode_enabled true
+  onepanel_debug_mode_enabled: &onepanel_debug_mode_enabled true
+  onedata_anti_affinity_enabled: &onedata_anti_affinity_enabled false
+
+  oneproviders_generate_certificates: &oneproviders_generate_certificates false
+  onedata_persistence: &onedata_persistence false
+
+  oneproviders_nodes_count: &oneproviders_nodes_count 1
+  oneprovider_cluster_configs: &oneprovider_cluster_configs
+    managers: [ ]
+    workers: [ ]
+    databases: [ ]
+
+  oneprovidersPanelOverlayConfig: &oneprovidersPanelOverlayConfig |-
+    [{onepanel, [{connect_to_onezone_attempts, 30}]}].
+  oneprovidersWorkerOverlayConfig: &oneprovidersWorkerOverlayConfig |-
+    [].
+
+  erlang_related_envs: &erlang_related_envs
+    - name: WAIT_FOR_ERLANG
+      value: "240"
+
+  oneclients_enabled: &oneclients_enabled false
+  oneclientFlags: &oneclientFlags ""
+  oneclientDirectIOEnabled: &oneclientDirectIOEnabled false
+
+  onedata_cli_enabled: &onedata_cli_enabled false
+
+  jupyter_notebook_enabled: &jupyter_notebook_enabled false
+  openfaas_enabled: &openfaas_enabled false
+  openfaas_pod_status_monitor_enabled: &openfaas_pod_status_monitor_enabled false
+  handle_proxy_mock_enabled: &handle_proxy_mock_enabled false
+
+  posix_enabled: &posix_enabled true
+  s3_enabled: &s3_enabled true
+  ceph_enabled: &ceph_enabled true
+  nfs_enabled: &nfs_enabled false
+  gluster_enabled: &gluster_enabled false
+  swift_enabled: &swift_enabled false
+  webdav_enabled: &webdav_enabled false
+  dcache_enabled: &dcache_enabled false
+
+  volume_data_sync_enabled: &volume_data_sync_enabled false
+
+  # Explicitly wait for onezone pod to enter ready state before starting oneproviders
+  wait-for-onezone-enabled: &wait-for-onezone-enabled false
+
+  # External for all providers
+  external-storages: &external-storages
+    IdealNullStorage:
+      type: nulldevice
+      latencyMin: 0
+      latencyMax: 0
+      #timeoutProbability: !!float 0.0
+    SlowNullStorage:
+      type: nulldevice
+      latencyMin: 2
+      latencyMax: 15
+      #timeoutProbability: !!float 0.0
+    BusyNullStorage:
+      type: nulldevice
+      latencyMin: 1
+      latencyMax: 10
+      timeoutProbability: !!float 0.3
+
+  # Onezone configuration
+  onezone:
+    memory: 0.5Gi
+    cpu: 0.3
+    onepanel_generate_test_web_cert: true
+    onepanel_trust_test_ca: true
+    guiDebugMode: true
+    image: *oz_image
+    onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
+    log_level: *log_level
+    guiPackageVerification: false
+    harversterGuiPackageVerification: false
+    onepanel_debug_mode: *onepanel_debug_mode_enabled
+    generate-certificates:
+      enabled: false
+    persistence:
+      enabled: *onedata_persistence
+    gracefulStop:
+      # if there is no persistence, we don't care for graceful stops, all services can be insta-killed
+      enabled: *onedata_persistence
+    onezone_nodes_count: 1
+    cluster_config:
+      managers: [ ]
+      workers: [ ]
+      databases: [ ]
+    saml-idp:
+      enabled: &idp_enabled false
+      generate-certificates:
+        enabled: false
+    onedata_anti_affinity_enabled: *onedata_anti_affinity_enabled
+    panelOverlayConfig: |-
+      [].
+    workerOverlayConfig: |-
+      [].
+
+    envs: *erlang_related_envs
+
+    onezone_main_admin: &onezone_main_admin
+      name: admin
+      password: password
+    onezoneAdmin: *onezone_main_admin
+
+    onepanel_users: *all_users
+    onezone_admin_users: []
+
+    token-dispenser:
+      enabled: &token_dispenser_enabled true
+
+    elasticsearch:
+      enabled: &elasticsearch_enabled false
+
+    handle-proxy-mock:
+      enabled: *handle_proxy_mock_enabled
+
+    # below 2 lines regarding external volumes are modified using sed by onenv and MUST be kept in one line format
+    external-volume-mounts: &onezone-volume-mounts []
+    external-volumes: []
+
+    keycloak: &keycloak
+      enabled: &keycloak_enabled false
+      users: *all_users
+      groups: *all_groups
+      idpName: rhea
+      tokenPrefix: onedata
+      appId: onedata
+      voGroupId: Onedata-Keycloak-1
+      superGroup: vo:HNSciCloud-RHEA/rl:one-data-special-role
+      init:
+        enabled: true
+        adminUsername: admin
+        adminPassword: password
+        realmId: onedata
+        clientName: onedata
+        publishClientSecret: true
+
+  # What follows are the providers configurations for providers designated as:
+  # krakow, paris, and lisbon
+  oneprovider-krakow:
+    suffix: &op1s krakow
+    geoLatitude: 50.0647
+    geoLongitude: 19.9450
+    enabled: *oneprovider_krakow_enabled
+
+  oneprovider-paris:
+    suffix: &op2s paris
+    geoLatitude: 48.8566
+    geoLongitude: 2.3522
+    enabled: *oneprovider_paris_enabled
+
+  oneprovider-lisbon:
+    suffix: &op3s lisbon
+    geoLatitude: 38.7223
+    geoLongitude: -9.1393
+    enabled: *oneprovider_lisbon_enabled
