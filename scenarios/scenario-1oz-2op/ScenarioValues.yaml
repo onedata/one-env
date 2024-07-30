@@ -310,10 +310,8 @@ onedata-3p:
       enabled: *openfaas_enabled
       suffix: *op1s
       kubernetesDNSDomain: *kubernetesDNSDomain
-      disableTlsCertificateValidation: *openfaas_enabled
       queueWorker:
-        # TODO VFS-12177 rm
-        image: onedata/openfaas-queue-worker:0.13.1-dev
+        disableTlsCertificateValidation: *openfaas_enabled
 
     openfaas-pod-status-monitor:
       enabled: *openfaas_pod_status_monitor_enabled
@@ -434,10 +432,8 @@ onedata-3p:
       enabled: *openfaas_enabled
       suffix: *op2s
       kubernetesDNSDomain: *kubernetesDNSDomain
-      disableTlsCertificateValidation: *openfaas_enabled
       queueWorker:
-        # TODO VFS-12177 rm
-        image: onedata/openfaas-queue-worker:0.13.1-dev
+        disableTlsCertificateValidation: *openfaas_enabled
 
     openfaas-pod-status-monitor:
       enabled: *openfaas_pod_status_monitor_enabled
