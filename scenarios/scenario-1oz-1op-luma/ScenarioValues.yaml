@@ -123,7 +123,11 @@ onedata-3p:
     databases: [ ]
 
   oneprovidersPanelOverlayConfig: &oneprovidersPanelOverlayConfig |-
-    [{onepanel, [{connect_to_onezone_attempts, 30}]}].
+    [{onepanel, [
+      {connect_to_onezone_attempts, 30},
+      % the default is 60s; a lower value causes onepanel to be more reactive in service restart scenarios
+      {services_check_period, 5000}
+    ]}].
   oneprovidersWorkerOverlayConfig: &oneprovidersWorkerOverlayConfig |-
     [].
 
