@@ -206,7 +206,11 @@ onedata-3p:
 
     elasticsearch:
       enabled: &elasticsearch_enabled false
-
+      elasticsearch:
+        persistence:
+          enabled: true
+          annotations: {}
+  
     handle-proxy-mock:
       enabled: *handle_proxy_mock_enabled
 
