@@ -139,6 +139,8 @@ onedata-3p:
 
   # Explicitly wait for onezone pod to enter ready state before starting oneproviders
   wait-for-onezone-enabled: &wait-for-onezone-enabled false
+  # Create ready-check job that confirms readiness of the Oneprovider cluster
+  oneprovider-ready-check-enabled: &oneprovider-ready-check-enabled true
 
   # External for all providers
   external-storages: &external-storages
@@ -258,6 +260,8 @@ onedata-3p:
     nameOverride: oneprovider
     wait-for-onezone:
       enabled: *wait-for-onezone-enabled
+    oneprovider_ready_check:
+      enabled: *oneprovider-ready-check-enabled
 
     onedata_anti_affinity_enabled: *onedata_anti_affinity_enabled
 
@@ -422,6 +426,8 @@ onedata-3p:
     nameOverride: oneprovider
     wait-for-onezone:
       enabled: *wait-for-onezone-enabled
+    oneprovider_ready_check:
+      enabled: *oneprovider-ready-check-enabled
 
     onedata_anti_affinity_enabled: *onedata_anti_affinity_enabled
 
@@ -550,6 +556,8 @@ onedata-3p:
     nameOverride: oneprovider
     wait-for-onezone:
       enabled: *wait-for-onezone-enabled
+    oneprovider_ready_check:
+      enabled: *oneprovider-ready-check-enabled
 
     oneprovider_nodes_count: *oneproviders_nodes_count
     cluster_config: *oneprovider_cluster_configs
