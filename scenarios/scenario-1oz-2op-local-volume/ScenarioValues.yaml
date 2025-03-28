@@ -167,8 +167,9 @@ onedata-3p:
 
   # Explicitly wait for onezone pod to enter ready state before starting oneproviders
   wait-for-onezone-enabled: &wait-for-onezone-enabled false
-  # Create ready-check job that confirms readiness of the Oneprovider cluster
-  oneprovider-ready-check-enabled: &oneprovider-ready-check-enabled true
+  # If set to true, readiness probe will make rest calls to the Onepanel until http server is up.
+  # Otherwise, it will simply return after 5 seconds.
+  oneprovider-readiness-probe-enabled: &oneprovider-readiness-probe-enabled false
 
   # External for all providers
   external-storages: &external-storages
@@ -295,8 +296,8 @@ onedata-3p:
     nameOverride: oneprovider
     wait-for-onezone:
       enabled: *wait-for-onezone-enabled
-    oneprovider_ready_check:
-      enabled: *oneprovider-ready-check-enabled
+    readinessProbe:
+      enabled: *oneprovider-readiness-probe-enabled
 
     onedata_anti_affinity_enabled: *onedata_anti_affinity_enabled
 
@@ -433,8 +434,8 @@ onedata-3p:
     nameOverride: oneprovider
     wait-for-onezone:
       enabled: *wait-for-onezone-enabled
-    oneprovider_ready_check:
-      enabled: *oneprovider-ready-check-enabled
+    readinessProbe:
+      enabled: *oneprovider-readiness-probe-enabled
 
     onedata_anti_affinity_enabled: *onedata_anti_affinity_enabled
 
