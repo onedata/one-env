@@ -167,6 +167,14 @@ onedata-3p:
 
   # Explicitly wait for onezone pod to enter ready state before starting oneproviders
   wait-for-onezone-enabled: &wait-for-onezone-enabled false
+  # The readiness probe checks if the HTTP server is ready to handle requests. This extends the startup time
+  # of a multi-node environment using source code because:
+  # - the service starts only after syncing (rsync) the sources - the whole process takes ~1 minute
+  # - pods start up sequentially after the previous one is ready
+  # Disabling this allows all pods to start roughly at the same time. This doesn't cause any issues since
+  # there is a ready check job that verifies if everything started correctly anyway.
+  onezone-readiness-probe-enabled: &onezone-readiness-probe-enabled false
+  oneprovider-readiness-probe-enabled: &oneprovider-readiness-probe-enabled false
 
   # External for all providers
   external-storages: &external-storages
@@ -231,6 +239,9 @@ onedata-3p:
 
     envs: *erlang_related_envs
 
+    readinessProbe:
+      enabled: *onezone-readiness-probe-enabled
+
     onezone_main_admin: &onezone_main_admin
       name: admin
       password: password
@@ -293,6 +304,8 @@ onedata-3p:
     nameOverride: oneprovider
     wait-for-onezone:
       enabled: *wait-for-onezone-enabled
+    readinessProbe:
+      enabled: *oneprovider-readiness-probe-enabled
 
     onedata_anti_affinity_enabled: *onedata_anti_affinity_enabled
 
@@ -429,6 +442,8 @@ onedata-3p:
     nameOverride: oneprovider
     wait-for-onezone:
       enabled: *wait-for-onezone-enabled
+    readinessProbe:
+      enabled: *oneprovider-readiness-probe-enabled
 
     onedata_anti_affinity_enabled: *onedata_anti_affinity_enabled
 
