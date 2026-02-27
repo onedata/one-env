@@ -53,3 +53,8 @@ forceImagePull: false
 # space configuration please refer to one of MyValues.yaml file in
 # scenario directory.
 spaces: false
+
+# enabling OneS3 on given provider
+oneprovider-1:
+  oneS3:
+    enabled: true
