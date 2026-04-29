@@ -1,5 +1,5 @@
 # Name of the scenario to run (must match name present in scenarios directory)
-scenario: "scenario-1oz-1op"
+scenario: "scenario-1oz-2op"
 
 # Path or list of paths in which look for sources (can be either relative or
 # absolute path)
