@@ -378,6 +378,7 @@ onedata-3p:
     volume-s3:
       enabled: *s3_enabled
       suffix: *op1s
+      image: docker.onedata.org/minio:RELEASE.2018-07-23T18-34-49Z
       aws_client_image: groundnuty/docker-aws:aws-relative-path-fix-2 #TODO VFS-7854
     volume-ceph:
       enabled: *ceph_enabled
