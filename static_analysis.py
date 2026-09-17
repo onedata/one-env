@@ -15,7 +15,7 @@ import argparse
 import subprocess
 
 
-RC_FILE_PATH = '/tmp/rc_file'
+RC_FILE_PATH = '/root/rc_file'
 DOCKER_ONE_ENV_PATH = '/tmp/one-env'
 
 
@@ -28,7 +28,7 @@ def main():
 
     static_analysis_parser.add_argument(
         '-i', '--image',
-        default='docker.onedata.org/python_static_analyser:v4',
+        default='docker.onedata.org/python_static_analyser:v14',
         help='Docker image'
     )
 
